@@ -1,0 +1,30 @@
+import React from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import "./Navbar.css";
+const Navbar = () => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <nav className="navbar">
+            <div className="nav-left">
+                <Link to="/" className="logo">Insert Logo Here</Link>
+                <div className={`nav-links ${isOpen ? "mobile-menu" : ""}`}>
+                    <Link to="/news">News</Link>
+                    <Link to="/forum">Forum</Link>
+                    <Link to="/products">Products</Link>
+                    <Link to="/about">About</Link>
+                </div>
+                <button className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>☰</button>
+            </div>
+            <div className="nav-right">
+                <Link to="/contact" className="btnContact">Contact</Link>
+                <div className="auth-links">
+                    <Link to="/login">Login</Link> / <Link to="/register">Register</Link>
+                </div>
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;

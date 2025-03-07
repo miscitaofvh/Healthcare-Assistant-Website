@@ -2,36 +2,22 @@
   text-align: center;
 }
 
+body {
+  background-color: white;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: white;
+  border-bottom: 1px solid white;
 }
 
 .logo {
   font-size: 24px;
   font-weight: bold;
-}
-
-.nav {
-  display: flex;
-  gap: 20px;
-}
-
-.nav a {
-  text-decoration: none;
-  color: #333;
-}
-
-.user-actions {
-  display: flex;
-  gap: 20px;
-}
-
-.user-actions a {
-  text-decoration: none;
-  color: #333;
 }

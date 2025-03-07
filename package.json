@@ -1,8 +1,10 @@
 {
     "scripts": {
-      "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
-      "start:frontend": "cd FrontEnd && npm run dev",
-      "start:backend": "cd BackEnd && node server.js"
+        "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+        "start:frontend": "cd FrontEnd && npm run dev",
+        "start:backend": "cd BackEnd && node server.js"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.2"
     }
-  }
-  
+}
