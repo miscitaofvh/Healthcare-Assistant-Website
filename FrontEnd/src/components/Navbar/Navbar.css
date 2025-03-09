@@ -31,16 +31,35 @@
 
 .nav-left a,
 .nav-right a,
-.auth-links a {
-    text-decoration: none;
-    font-weight: bold;
+.auth-links {
     color: black;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    gap: 10px;
 }
 
-.navbar a:hover,
-.auth-links a:hover {
+.auth-links a {
+    text-decoration: none;
+}
+
+.btn-sign-up {
     color: black;
+}
+.auth-links .btn-log-in {
+    background-color: #0c0a1f;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+}
+
+.auth-links a:hover {
     transform: scale(1.05);
+}
+
+.navbar a:hover {
+   transform: scale(1.05);
 }
 
 .menu-toggle {
@@ -67,7 +86,7 @@
 }
 
 @media (max-width: 768px) {
-    .nav-left a.logo, .btnContact{
+    .nav-left a.logo {
         display: none;
     }
     

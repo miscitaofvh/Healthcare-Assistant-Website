@@ -18,9 +18,8 @@ const Navbar = () => {
                 <button className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>☰</button>
             </div>
             <div className="nav-right">
-                <Link to="/contact" className="btnContact">Contact</Link>
                 <div className="auth-links">
-                    <Link to="/login">Login</Link> / <Link to="/register">Register</Link>
+                    <Link to="/register" className="btn-sign-up">Sign up</Link><Link to="/login" className="btn-log-in">Log in</Link>
                 </div>
             </div>
         </nav>

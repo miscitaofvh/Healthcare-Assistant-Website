@@ -1,39 +1,53 @@
-import React, { useState, useContext } from "react";
-import { AuthContext } from "../../context/AuthContext";
+import React from "react";
+import { useState } from "react";
+import "./Login.css";
 
-function Login() {
-    const auth = useContext(AuthContext);
-    const [username, setUsername] = useState("");
+const Login = () => {
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    if (!auth) {
-        return <p>Error: AuthContext is undefined</p>;
-    }
-
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        await auth.login(username, password);
+        console.log("Email or Phone:", email);
+        console.log("Password:", password);
     };
 
     return (
-        <form onSubmit={handleLogin}>
-            <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
-            <button type="submit">Login</button>
-        </form>
+        <div className="login-container">
+            <div className="login-content">
+                <div className="login-text">Login Form</div>
+                <form onSubmit={handleSubmit}>
+                    <div className="login-field">
+                        <input
+                            type="text"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <span className="fas fa-user"></span>
+                        <label>Email or Phone</label>
+                    </div>
+                    <div className="login-field">
+                        <input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <span className="fas fa-lock"></span>
+                        <label>Password</label>
+                    </div>
+                    <div className="login-forgot-pass">
+                        <a href="#">Forgot Password?</a>
+                    </div>
+                    <button type="submit" className="login-button">Sign in</button>
+                    <div className="login-sign-up">
+                        Not a member? <a href="#">Sign up now</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
-}
+};
 
 export default Login;
