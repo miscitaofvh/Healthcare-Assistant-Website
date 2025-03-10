@@ -22,11 +22,11 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/forum', forumRoutes);
-app.use('/api/chat', chatRoutes);
+// app.use('/api/chat', chatRoutes);
 app.use('/api/account', accountRoutes);
 
 // Error handling middleware
-app.use(errorHandler);
+// app.use(errorHandler);
 
 
 app.post("/api/login", (req, res) => {

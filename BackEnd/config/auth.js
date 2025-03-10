@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { addUser } = require('../services/userService'); // Import the function
+// const { addUser } = require('../services/userService'); // Import the function
+const {addUser} = require('../controllers/authController/register');
+const {login} = require('../controllers/authController/login');
 
 // Register User Endpoint
 router.post('/register', async (req, res) => {
