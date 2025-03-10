@@ -1,30 +1,30 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import "./Login.css";
 import axios from "axios";
 
-const Login = () => {
+const Login: React.FC = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        //console.log("Email or Phone:", email);
-        //console.log("Password:", password);
         try {
-            const { data } = await axios.post("http://localhost:5000/api/login", {
-                username: email,
+            const { data } = await axios.post("http://localhost:5000/api/auth/login", {
+                email, 
                 password,
             });
 
             if (data.success) {
                 console.log("Login successful:", data);
+                alert("Login successful!");
+                localStorage.setItem("token", data.token); // Store JWT for authentication
             } else {
-                console.log("Login failed:", data.message);
+                console.log("Login failed:", data.error);
+                alert(data.error);
             }
-        }
-        catch (error: any) {
-            console.error("Error:", error.response?.data || error.message);
+        } catch (error: any) {
+            console.error("Error:", error.response?.data?.error || "Login failed");
+            alert(error.response?.data?.error || "Login failed");
         }
     };
 
@@ -41,7 +41,7 @@ const Login = () => {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                         <span className="fas fa-user"></span>
-                        <label>Email or Phone</label>
+                        <label>Email or Username</label>
                     </div>
                     <div className="login-field">
                         <input
@@ -58,7 +58,7 @@ const Login = () => {
                     </div>
                     <button type="submit" className="login-button">Sign in</button>
                     <div className="login-sign-up">
-                        Not a member? <a href="#">Sign up now</a>
+                        Not a member? <a href="/register">Sign up now</a>
                     </div>
                 </form>
             </div>

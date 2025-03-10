@@ -2,15 +2,15 @@ DROP DATABASE IF EXISTS healthcare_service_db;
 CREATE DATABASE IF NOT EXISTS healthcare_service_db;
 USE healthcare_service_db;
 
--- Bảng người dùng
+-- Users table
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash CHAR(60) NOT NULL, -- Optimized for bcrypt
     email VARCHAR(100) UNIQUE NOT NULL,
     full_name VARCHAR(255),
     dob DATE,
-    gender ENUM('Male', 'Female'),
+    gender ENUM('Male', 'Female') NOT NULL,
     phone_number VARCHAR(15) DEFAULT NULL,
     address TEXT DEFAULT NULL,
     profile_picture_url VARCHAR(255) DEFAULT NULL,
@@ -20,21 +20,26 @@ CREATE TABLE users (
     role ENUM('User', 'Admin', 'Doctor') DEFAULT 'User'
 );
 
--- Bảng bác sĩ
+-- Indexes for performance
+CREATE INDEX idx_email ON users(email);
+CREATE INDEX idx_username ON users(username);
+
+-- Doctors table
 CREATE TABLE doctors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     specialty VARCHAR(255) NOT NULL,
     license VARCHAR(255) UNIQUE NOT NULL,
     hospital VARCHAR(255) NOT NULL,
-    FOREIGN KEY (id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_specialty ON doctors(specialty);
 
--- Bảng theo dõi sức khỏe
+-- Health tracking table (can be large, consider partitioning)
 CREATE TABLE health_tracking (
-    tracking_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
+    tracking_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     weight DECIMAL(5,2),
     height DECIMAL(5,2),
     blood_pressure VARCHAR(50),
@@ -45,73 +50,86 @@ CREATE TABLE health_tracking (
     calories_burned INT,
     exercise_data TEXT DEFAULT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Phân loại các bài viết 
+CREATE INDEX idx_tracking_user ON health_tracking(user_id);
+
+-- Categories table
 CREATE TABLE categories (
-    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT DEFAULT NULL
 );
 
--- Bảng bài viết y tế
+-- Health articles
 CREATE TABLE health_articles (
-    article_id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    author_id INT,
-    category_id INT,  
+    author_id INT UNSIGNED,
+    category_id INT UNSIGNED,  
     publication_date DATE NOT NULL,
     image_url VARCHAR(255) DEFAULT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL
 );
 
--- Bảng bình luận
+CREATE INDEX idx_article_author ON health_articles(author_id);
+CREATE INDEX idx_article_category ON health_articles(category_id);
+
+-- Comments table
 CREATE TABLE comments (
-    comment_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    article_id INT DEFAULT NULL,	
+    comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    article_id INT UNSIGNED NOT NULL,	
     comment_content TEXT NOT NULL,
     count_likes INT DEFAULT 0,
     date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (article_id) REFERENCES health_articles(article_id) ON DELETE CASCADE
 );
 
--- Bảng câu hỏi
+CREATE INDEX idx_comment_user ON comments(user_id);
+CREATE INDEX idx_comment_article ON comments(article_id);
+
+-- Questions table (Fix foreign key reference)
 CREATE TABLE questions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     question_text TEXT NOT NULL,
-    image_url Text DEFAULT NULL,
+    image_url TEXT DEFAULT NULL,
     status ENUM('pending', 'answered') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Bảng trả lời
+CREATE INDEX idx_question_user ON questions(user_id);
+
+-- Answers table
 CREATE TABLE answers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    question_id INT NOT NULL,
-    answered_by INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    question_id INT UNSIGNED NOT NULL,
+    answered_by INT UNSIGNED NOT NULL,
     answer_text TEXT NOT NULL,
     is_ai BOOLEAN DEFAULT TRUE,
     confidence_score DECIMAL(5,2) DEFAULT NULL,
-    review_by INT DEFAULT NULL,
+    review_by INT UNSIGNED DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
     FOREIGN KEY (answered_by) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (review_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- Bảng lịch hẹn
+CREATE INDEX idx_answer_question ON answers(question_id);
+CREATE INDEX idx_answer_user ON answers(answered_by);
+
+-- Appointments table
 CREATE TABLE appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    doctor_id INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    doctor_id INT UNSIGNED NOT NULL,
     appointment_date DATETIME NOT NULL,
     status ENUM('scheduled', 'completed', 'canceled') DEFAULT 'scheduled',
     notes TEXT DEFAULT NULL,
@@ -120,10 +138,14 @@ CREATE TABLE appointments (
     FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
 );
 
--- Bảng gamification
+CREATE INDEX idx_appointment_user ON appointments(user_id);
+CREATE INDEX idx_appointment_doctor ON appointments(doctor_id);
+CREATE INDEX idx_appointment_date ON appointments(appointment_date);
+
+-- Gamification table
 CREATE TABLE gamification (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     challenge_name VARCHAR(255) NOT NULL,
     progress INT DEFAULT 0,
     status ENUM('ongoing', 'completed', 'failed') DEFAULT 'ongoing',
@@ -132,12 +154,16 @@ CREATE TABLE gamification (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Bảng xếp hạng
+CREATE INDEX idx_gamification_user ON gamification(user_id);
+
+-- Leaderboards table
 CREATE TABLE leaderboards (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     points INT DEFAULT 0,
     ranking INT DEFAULT NULL,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_leaderboard_user ON leaderboards(user_id);
