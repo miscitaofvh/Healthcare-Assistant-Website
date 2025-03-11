@@ -11,14 +11,18 @@ const register = async (req, res) => {
         const sql = `INSERT INTO users (username, email, password_hash, full_name, dob, gender, phone_number, address) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-        db.query(sql, [username, email, hashedPassword, full_name, dob, gender, phone_number, address], (err, result) => {
-            if (err) {
-                return res.status(400).json({ success: false, error: err.message });
-            }
-            res.status(201).json({ success: true, message: "User registered successfully", userId: result.insertId });
+        const [result] = await db.execute(sql, [
+            username, email, hashedPassword, full_name, dob, gender, phone_number, address
+        ]);
+        console.log("✅ User registered:", result.insertId);
+        return res.status(201).json({
+            success: true,
+            message: "User registered successfully",
+            userId: result.insertId
         });
     } catch (err) {
-        res.status(500).json({ success: false, error: "Internal server error" });
+        console.error("❌ Registration error:", err);
+        return  res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
 
@@ -32,7 +36,7 @@ const login = async (req, res) => {
         return res.status(400).json({ success: false, error: "Email/Username and password are required" });
     }
     const sql = `SELECT * FROM users WHERE ${email ? "email" : "username"} = ? LIMIT 1`;
-    
+
     try {
         const [results] = await db.execute(sql, [loginField]);
         console.log("🔍 Searching for user:", loginField);
