@@ -31,53 +31,41 @@ const login = async (req, res) => {
     if (!loginField || !password) {
         return res.status(400).json({ success: false, error: "Email/Username and password are required" });
     }
-
+    const sql = `SELECT * FROM users WHERE ${email ? "email" : "username"} = ? LIMIT 1`;
+    
     try {
-        // Select based on whether an email or username is provided
-        const sql = email 
-            ? `SELECT * FROM users WHERE email = ? LIMIT 1`
-            : `SELECT * FROM users WHERE username = ? LIMIT 1`;
+        const [results] = await db.execute(sql, [loginField]);
+        console.log("🔍 Searching for user:", loginField);
+        if (results.length === 0) {
+            console.log("🔍 User not found");
+            return res.status(400).json({ success: false, error: "User not found" });
+        }
 
-        const queryStartTime = Date.now();
+        const user = results[0];
+        console.log("✅ User found:", user);
 
-        db.query(sql, [loginField], async (err, results) => {
-            console.log(`⏳ Query Execution Time: ${Date.now() - queryStartTime} ms`);
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            console.log("❌ Invalid credentials: Incorrect password");
+            return res.status(400).json({ success: false, error: "Invalid credentials" });
+        }
 
-            if (err) {
-                console.error("❌ Database error:", err);
-                return res.status(500).json({ success: false, error: "Internal server error" });
-            }
+        const token = jwt.sign(
+            { id: user.user_id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
 
-            if (results.length === 0) {
-                console.log("🔍 User not found");
-                return res.status(400).json({ success: false, error: "User not found" });
-            }
+        console.log("✅ Login successful! Token generated.");
 
-            const user = results[0];
-            console.log("✅ User found:", user);
-
-            const isMatch = await bcrypt.compare(password, user.password_hash);
-            if (!isMatch) {
-                console.log("❌ Invalid credentials: Incorrect password");
-                return res.status(400).json({ success: false, error: "Invalid credentials" });
-            }
-
-            const token = jwt.sign(
-                { id: user.user_id, role: user.role },
-                process.env.JWT_SECRET,
-                { expiresIn: "1h" }
-            );
-
-            console.log("✅ Login successful! Token generated.");
-
-            return res.json({
-                success: true,
-                token,
-                user: { id: user.user_id, username: user.username, email: user.email, role: user.role },
-            });
+        return res.json({
+            success: true,
+            token,
+            user: { id: user.user_id, username: user.username, email: user.email, role: user.role },
         });
+
     } catch (err) {
-        console.error("❌ Unexpected login error:", err);
+        console.error("❌ Database error:", err);
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 };

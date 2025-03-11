@@ -3,14 +3,17 @@ import "./Login.css";
 import axios from "axios";
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState("");
+    const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const isEmail = identifier.includes("@");
+        
         try {
             const { data } = await axios.post("http://localhost:5000/api/auth/login", {
-                email, 
+                [isEmail ? "email" : "username"]: identifier, 
                 password,
             });
 
@@ -37,8 +40,8 @@ const Login: React.FC = () => {
                         <input
                             type="text"
                             required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
                         />
                         <span className="fas fa-user"></span>
                         <label>Email or Username</label>
