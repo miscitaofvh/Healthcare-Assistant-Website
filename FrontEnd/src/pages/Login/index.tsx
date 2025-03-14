@@ -12,7 +12,7 @@ const Login: React.FC = () => {
         const isEmail = identifier.includes("@");
         
         try {
-            const { data } = await axios.post("http://localhost:5000/api/auth/login", {
+            const { data } = await axios.post("https://localhost:5000/api/auth/login", {
                 [isEmail ? "email" : "username"]: identifier, 
                 password,
             });
