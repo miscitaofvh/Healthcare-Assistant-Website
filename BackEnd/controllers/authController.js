@@ -13,7 +13,7 @@ const register = async (req, res) => {
         await connection.beginTransaction();
         
         // Check if username or email already exists
-        const checkSql = 'SELECT * FROM users WHERE username = ? OR email = ?';
+        const checkSql = 'SELECT username FROM users WHERE username = ? OR email = ?';
         const [existingUsers] = await connection.execute(checkSql, [username, email]);
 
         if (existingUsers.length > 0) {
