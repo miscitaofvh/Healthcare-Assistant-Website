@@ -41,3 +41,9 @@
     background-color: white;
     color: black;
 }
+.verify-button:disabled {
+    cursor: not-allowed;
+    background-color: white;
+    color: black;
+    pointer-events: none;
+}
