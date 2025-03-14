@@ -5,6 +5,10 @@
         "start:backend": "cd BackEnd && node server.js"
     },
     "devDependencies": {
-        "concurrently": "^9.1.2"
+        "@types/node": "^22.13.10",
+        "vite": "^6.2.1"
+    },
+    "dependencies": {
+        "bcryptjs": "^3.0.2"
     }
 }
