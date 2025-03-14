@@ -1,22 +1,27 @@
 import { requestAPI } from "../api/request";
+import {isEmail} from "../format/email";
+const BASE_URL = "http://localhost:5000/api/auth";
 
-const baseurl_login = "https://localhost:5000/api/auth";
-
-export const login = async (email: string, password: string) => {
+export async function login(email: string, password: string) {
+    if(isEmail(email) === false){
+        alert("Please enter a valid email address.");
+        return;
+    }
     try {
-        const { data } = await requestAPI(baseurl_login, "/login", "POST", {
+        const response = await requestAPI(BASE_URL, "/login", "POST", {
             email,
             password,
         });
 
-        if (data.success) {
-            localStorage.setItem("token", data.token);
+        if (response.success) {
+            localStorage.setItem("token", response.token);
+            alert("Login successful!");
             return { success: true, message: "Login successful!" };
         } else {
-            return { success: false, message: data.error };
+            alert(response.error);
+            return { success: false, message: response.error };
         }
     } catch (error: any) {
-        console.error("Error:", error.response?.data?.error || "Login failed");
-        return { success: false, message: error.response?.data?.error || "Login failed" };
+        alert(error.response?.response?.error || "Login failed");
     }
-};
+}
