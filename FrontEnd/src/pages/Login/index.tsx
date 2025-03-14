@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Login.css";
 import {requestAPI} from "../../utils/api/request";
+import {login} from "../../utils/service/auth";
 import { isEmail } from "../../utils/format/email";
 
 const baseurl_login = "http://localhost:5000/api/auth";
@@ -11,33 +12,7 @@ const Login: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if(isEmail(identifier) === false){
-            alert("Please enter a valid email address.");
-            return;
-        }
-        
-        const email = identifier;
-        
-        try {
-            const {data} = await requestAPI(baseurl_login, "/login", "POST", {
-                email,
-                password,
-            });
-
-            if(data.success){
-                console.log("Login successful:", data);
-                alert("Login successful!");
-                localStorage.setItem("token", data.token);
-            } else {
-                console.log("Login failed:", data.error);
-                alert(data.error);
-            }
-
-        } catch (error: any) {
-            console.error("Error:", error.response?.data?.error || "Login failed");
-            alert(error.response?.data?.error || "Login failed");
-        }
+        login(identifier, password);
     };
 
     return (
