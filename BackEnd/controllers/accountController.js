@@ -1,10 +1,12 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 
-exports.getUsers = async (req, res) => {
+exports.getUser = async (req, res) => {
+    const { id } = req.params;
     try {
-        const [users] = await db.query("SELECT id, username, email FROM users");
-        res.json(users);
+        const [present_user] = await db.query("SELECT id, username, email FROM users WHERE id = ?", [id]);
+        if (!present_user) return res.status(404).json({ message: "User not found" });
+        res.json(present_user);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -24,13 +26,13 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-        if (users.length === 0) return res.status(400).json({ message: "User not found" });
+        const [present_user] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+        if (!present_user) return res.status(400).json({ message: "User not found" });
 
-        const isValid = await bcrypt.compare(password, users[0].password);
+        const isValid = await bcrypt.compare(password, present_user.password);
         if (!isValid) return res.status(400).json({ message: "Invalid credentials" });
 
-        res.json({ message: "Login successful", userId: users[0].id });
+        res.json({ message: "Login successful", userId: present_user.id });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
