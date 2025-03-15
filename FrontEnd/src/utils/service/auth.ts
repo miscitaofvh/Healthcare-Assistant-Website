@@ -2,16 +2,23 @@ import { requestAPI } from "../api/request";
 import {isEmail} from "../format/email";
 const BASE_URL = "http://localhost:5000/api/auth";
 
-export async function login(email: string, password: string) {
-    if(isEmail(email) === false){
-        alert("Please enter a valid email address.");
-        return;
+export async function login(identifier: string, password: string) {
+
+    // Check if the identifier is an email or username
+    const requestData: any = { password };
+    if (identifier.includes("@")) {
+        if (!isEmail(identifier)) {
+            alert("Please enter a valid email");
+            return { success: false, message: "Invalid email" };
+        }
+        requestData.email = identifier;
     }
+    else {
+        requestData.username = identifier;
+    }
+
     try {
-        const response = await requestAPI(BASE_URL, "/login", "POST", {
-            email,
-            password,
-        });
+        const response = await requestAPI(BASE_URL, "/login", "POST", requestData);
 
         if (response.success) {
             localStorage.setItem("token", response.token);
