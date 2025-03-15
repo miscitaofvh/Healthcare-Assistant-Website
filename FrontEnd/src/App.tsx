@@ -6,7 +6,7 @@ import About from './pages/About';
 import Forum from './pages/Forum';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
-import Register from './pages/Register';
+import SignUp from './pages/SignUp';
 import Test from './pages/Test';
 import Verify from './pages/Verify';
 
@@ -19,7 +19,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/sign-up" element={<SignUp />} />
             <Route path="/test" element={<Test />} />
             <Route path="/verify" element={<Verify email="example@example.com" onResend={() => { /* resend logic */ }} />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />

@@ -4,8 +4,6 @@ import {requestAPI} from "../../utils/api/request";
 import {login} from "../../utils/service/auth";
 import { isEmail } from "../../utils/format/email";
 
-const baseurl_login = "http://localhost:5000/api/auth";
-
 const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
@@ -18,7 +16,7 @@ const Login: React.FC = () => {
     return (
         <div className="login-container">
             <div className="login-content">
-                <div className="login-text">Login Form</div>
+                <div className="login-text">Login</div>
                 <form onSubmit={handleSubmit}>
                     <div className="login-field">
                         <input
@@ -45,7 +43,7 @@ const Login: React.FC = () => {
                     </div>
                     <button type="submit" className="login-button">Sign in</button>
                     <div className="login-sign-up">
-                        Not a member? <a href="/register">Sign up now</a>
+                        Not a member? <a href="/sign-up">Sign up now</a>
                     </div>
                 </form>
             </div>
