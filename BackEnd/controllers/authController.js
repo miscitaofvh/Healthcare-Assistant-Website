@@ -5,7 +5,7 @@ const db = require("../config/db"); // Database connection
 require("dotenv").config();
 
 const register = async (req, res) => {
-    const { username, email, password, full_name, dob, gender, phone_number, address } = req.body;
+    const { username, email, password } = req.body;
     
     const connection = await db.getConnection();
     
@@ -36,11 +36,11 @@ const register = async (req, res) => {
         
         // If no existing user found, proceed with registration
         const hashedPassword = await bcrypt.hash(password, 10);
-        const sql = `INSERT INTO users (username, email, password_hash, full_name, dob, gender, phone_number, address) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const sql = `INSERT INTO users (username, email, password_hash) 
+                     VALUES (?, ?, ?)`;
 
         const [result] = await connection.execute(sql, [
-            username, email, hashedPassword, full_name, dob, gender, phone_number, address
+            username, email, hashedPassword
         ]);
         
         // Commit the transaction
