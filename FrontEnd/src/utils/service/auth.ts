@@ -1,5 +1,4 @@
 import { requestAPI } from "../api/request";
-import {isEmail} from "../format/email";
 const BASE_URL = "http://localhost:5000/api/auth";
 
 export async function login(identifier: string, password: string) {
@@ -7,10 +6,6 @@ export async function login(identifier: string, password: string) {
     // Check if the identifier is an email or username
     const requestData: any = { password };
     if (identifier.includes("@")) {
-        if (!isEmail(identifier)) {
-            alert("Please enter a valid email");
-            return { success: false, message: "Invalid email" };
-        }
         requestData.email = identifier;
     }
     else {
@@ -30,5 +25,21 @@ export async function login(identifier: string, password: string) {
         }
     } catch (error: any) {
         alert(error.response?.response?.error || "Login failed");
+    }
+}
+
+export async function register(username: string, email: string, password: string) {
+    try {
+        const response = await requestAPI(BASE_URL, "/register", "POST", { username, email, password });
+
+        if (response.success) {
+            alert("Registration successful!");
+            return { success: true, message: "Registration successful!" };
+        } else {
+            alert(response.error);
+            return { success: false, message: response.error };
+        }
+    } catch (error: any) {
+        alert(error.response?.response?.error || "Registration failed");
     }
 }
