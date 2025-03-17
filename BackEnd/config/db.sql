@@ -10,7 +10,7 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     full_name VARCHAR(255),
     dob DATE,
-    gender ENUM('Male', 'Female') NOT NULL,
+    gender ENUM('Male', 'Female') DEFAULT NULL,
     phone_number VARCHAR(15) DEFAULT NULL,
     address TEXT DEFAULT NULL,
     profile_picture_url VARCHAR(255) DEFAULT NULL,
