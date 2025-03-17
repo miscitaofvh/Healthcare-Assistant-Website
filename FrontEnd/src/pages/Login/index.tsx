@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import "./Login.css";
-import {requestAPI} from "../../utils/api/request";
 import {login} from "../../utils/service/auth";
-import { isEmail } from "../../utils/format/email";
 
 const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState("");

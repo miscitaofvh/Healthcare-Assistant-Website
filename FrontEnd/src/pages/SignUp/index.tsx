@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import {register} from "../../utils/service/auth";
 import "./SignUp.css";
 
 const SignUp = () => {
@@ -15,13 +16,7 @@ const SignUp = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        try {
-            const response = await axios.post("http://localhost:5000/api/auth/register", formData);
-            alert(response.data.message);
-        } catch (error) {
-            alert(error.response?.data?.error || "Registration failed");
-        }
+        register(formData.username, formData.email, formData.password);
     };
 
     return (
