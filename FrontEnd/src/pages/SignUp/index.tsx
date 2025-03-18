@@ -16,7 +16,13 @@ const SignUp = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        register(formData.username, formData.email, formData.password);
+        const response = await register(formData.username, formData.email, formData.password);
+        if (response.success) {
+            alert(response.message);
+            window.location.href = "/login";
+        } else if (response.message) {
+            alert(response.message);
+        }
     };
 
     return (

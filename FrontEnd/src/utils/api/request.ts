@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 /**
  * Create an axios instance with default configuration
@@ -19,6 +19,7 @@ const apiClient = axios.create({
  * @param token - Optional authentication token.
  * @returns A promise resolving to the API response data.
  */
+
 export async function requestAPI(
     baseURL: string,
     endpoint: string,
@@ -35,10 +36,20 @@ export async function requestAPI(
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         };
 
-        const response = await apiClient(config);
-        return response.data;
+        const response: AxiosResponse = await axios(config);
+
+        return {
+            data: response.data,
+            status: response.status, 
+        };
     } catch (error: any) {
-        console.error("API Request Failed:", error.response?.data || error.message);
-        throw error; // Re-throw error for handling in the calling function
+        if (error.response) {
+            return {
+                error: error.message,
+                status: error.response.status,
+                data: error.response.data, 
+            };
+        }
+        throw error; 
     }
 }

@@ -175,7 +175,7 @@ const login = async (req, res) => {
 
         console.log("✅ Login successful! Token generated.");
 
-        return res.json({
+        return res.status(200).json({
             success: true,
             token,
             user: { id: user.user_id, username: user.username, email: user.email, role: user.role },

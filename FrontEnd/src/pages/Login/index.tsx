@@ -8,7 +8,13 @@ const Login: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        login(identifier, password);
+        const response = login(identifier, password);
+        if((await response).success) {
+            alert((await response).message);
+            window.location.href = "/";
+        } else if((await response).message) {
+            alert((await response).message);
+        }
     };
 
     return (
