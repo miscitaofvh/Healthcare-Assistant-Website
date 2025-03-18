@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import {register} from "../../utils/service/auth";
 import "./SignUp.css";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
@@ -9,7 +9,7 @@ const SignUp = () => {
         email: "",
         password: "",
     });
-
+    const navigate = useNavigate();
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -19,7 +19,7 @@ const SignUp = () => {
         const response = await register(formData.username, formData.email, formData.password);
         if (response.success) {
             alert(response.message);
-            window.location.href = "/login";
+            navigate("/verify");
         } else if (response.message) {
             alert(response.message);
         }
