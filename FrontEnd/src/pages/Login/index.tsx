@@ -1,17 +1,19 @@
 import React, { useState } from "react";
 import "./Login.css";
 import {login} from "../../utils/service/auth";
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const response = login(identifier, password);
         if((await response).success) {
             alert((await response).message);
-            window.location.href = "/";
+            navigate("/");
         } else if((await response).message) {
             alert((await response).message);
         }
