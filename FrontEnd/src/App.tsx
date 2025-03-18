@@ -21,7 +21,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/test" element={<Test />} />
-            <Route path="/verify" element={<Verify email="example@example.com" onResend={() => { /* resend logic */ }} />} />
+            <Route path="/verify" element={<Verify email="miscitaofvh@gmail.com" onResend={() => { /* resend logic */ }} />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />
         </Routes>
     );

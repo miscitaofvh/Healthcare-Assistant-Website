@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const newsRoutes = require("./routes/newsRoutes");
 const forumRoutes = require("./routes/forumRoutes");
+const verifyRoutes = require("./routes/verifyRoutes");
 // const chatRoutes = require("./routes/chatRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 
@@ -23,6 +24,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/forum", forumRoutes);
+app.use("/api/verify", verifyRoutes);
 // app.use("/api/chat", chatRoutes);
 
 // Error handling middleware (should be last)

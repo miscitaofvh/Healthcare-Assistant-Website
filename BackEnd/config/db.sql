@@ -14,9 +14,10 @@ CREATE TABLE users (
     phone_number VARCHAR(15) DEFAULT NULL,
     address TEXT DEFAULT NULL,
     profile_picture_url VARCHAR(255) DEFAULT NULL,
-    date_joined TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verified_at TIMESTAMP DEFAULT NULL,
     last_login TIMESTAMP DEFAULT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT FALSE,
     role ENUM('User', 'Admin', 'Doctor') DEFAULT 'User'
 );
 

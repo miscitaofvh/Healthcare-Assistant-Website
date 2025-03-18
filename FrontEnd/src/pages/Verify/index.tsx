@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { requestAPI } from "../../utils/api/request";
 import "./Verify.css";
+const BASE_URL = "http://localhost:5000/api/";
 
 const Verify = ({ email, onResend }) => {
     const [loading, setLoading] = useState(false);
@@ -22,11 +24,13 @@ const Verify = ({ email, onResend }) => {
         setLoading(true);
 
         try {
-            await onResend(email);
-            console.log("Verification email resent successfully");
+            const requestData: any = { email };
+            const response = await requestAPI(BASE_URL, "/verify", "POST", requestData);
+
+            //console.log(data.message);
         } catch (error) {
             console.error("Failed to resend email:", error);
-            setCooldown(0); 
+            setCooldown(0);
         }
 
         setLoading(false);
