@@ -24,7 +24,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/forum", forumRoutes);
-app.use("/api/verify", verifyRoutes);
+app.use("/api/", verifyRoutes);
 // app.use("/api/chat", chatRoutes);
 
 // Error handling middleware (should be last)

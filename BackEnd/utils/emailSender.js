@@ -16,7 +16,13 @@ const sendEmail = async (to, subject, text) => {
         text,
     };
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(info);
+        }
+    });
 };
 
 module.exports = sendEmail;

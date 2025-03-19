@@ -20,13 +20,13 @@ const Verify = ({ email, onResend }) => {
     const handleResend = async () => {
         if (!onResend || cooldown > 0) return;
 
-        setCooldown(60);
+        setCooldown(30);
         setLoading(true);
 
         try {
             const requestData: any = { email };
-            const response = await requestAPI(BASE_URL, "/verify", "POST", requestData);
-
+            const response = requestAPI(BASE_URL, "/verify", "POST", requestData);
+            await onResend(email);
             //console.log(data.message);
         } catch (error) {
             console.error("Failed to resend email:", error);
