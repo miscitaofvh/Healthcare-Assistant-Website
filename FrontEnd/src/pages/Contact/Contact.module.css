@@ -1,0 +1,78 @@
+.main_navbar {
+    background-color: lightblue;
+}
+
+.form_section {
+    background: url("./img/your-background.jpg") no-repeat center center/cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    padding: 60px 20px;
+}
+
+.form_section .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f9f9f9; /* Optional dark overlay */
+    z-index: 1;
+}
+
+.form_container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    max-width: 1000px;
+    width: 90%;
+    z-index: 2;
+}
+
+.text_section {
+    flex: 1;
+    padding-right: 30px;
+    text-align: left;
+}
+
+.text_section img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 20px;
+}
+
+.form_control {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form_group {
+    margin-bottom: 20px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    background: #000;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #333;
+}
