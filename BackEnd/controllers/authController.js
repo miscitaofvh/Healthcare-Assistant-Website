@@ -4,6 +4,8 @@ import db from "../config/db.js";
 import dotenv from "dotenv";
 import { isUsernameValid, isEmailValid } from "../utils/format/account.js";
 import { PasswordCheckStrength, statePassword } from "../utils/format/passwd.js";
+import sendEmail from "../utils/emailSender.js";
+import createRedisClient from "../utils/redisClient.js";
 
 dotenv.config();
 

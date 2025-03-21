@@ -16,7 +16,7 @@ const verify = async (req, res) => {
     const lastSentTime = await redisClient.get(cooldownKey);
 
     if (lastSentTime) {
-        return res.status(429).json({ success: false, message: "Please wait before requesting another email." });
+        return res.status(429).json({ success: false, message: "Please wait!" });
     }
 
     let token = await redisClient.get(tokenKey);

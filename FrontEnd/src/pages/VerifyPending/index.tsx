@@ -1,33 +1,31 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { requestAPI } from "../../utils/api/request";
-import "./Verify.css";
+import "./VerifyPending.css";
+
 const BASE_URL = "http://localhost:5000/api/";
 
-const Verify = ({ email, onResend }) => {
+const VerifyPending = ({ email }) => {
+    const location = useLocation();
+    const email = location.state?.email || "";
     const [loading, setLoading] = useState(false);
     const [cooldown, setCooldown] = useState(0);
 
     useEffect(() => {
         if (cooldown > 0) {
             console.log(`Cooldown: ${cooldown}s`);
-            const timer = setInterval(() => {
-                setCooldown((prev) => prev - 1);
-            }, 1000);
-            return () => clearInterval(timer);
+            const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+            return () => clearTimeout(timer);
         }
     }, [cooldown]);
 
     const handleResend = async () => {
-        if (!onResend || cooldown > 0) return;
-
+        if (cooldown > 0) return;
         setCooldown(60);
         setLoading(true);
 
         try {
-            const requestData: any = { email };
-            const response = requestAPI(BASE_URL, "/verify", "POST", requestData);
-            await onResend(email);
-            //console.log(data.message);
+            const response = await requestAPI(BASE_URL, "/verify-pending", "POST", { email });
         } catch (error) {
             console.error("Failed to resend email:", error);
             setCooldown(0);
@@ -44,7 +42,7 @@ const Verify = ({ email, onResend }) => {
                     <p>We have sent a verification email to <strong>{email}</strong></p>
                     <p>Click the link in the email to verify your account</p>
                     <button className="verify-button" onClick={handleResend} disabled={loading || cooldown > 0}>
-                        {loading ? "Sending..." : cooldown > 0 ? `Try again  ${cooldown}s` : "Resend email"}
+                        {loading ? "Sending..." : cooldown > 0 ? `Try again in ${cooldown}s` : "Send email"}
                     </button>
                 </div>
             </div>
@@ -52,4 +50,4 @@ const Verify = ({ email, onResend }) => {
     );
 };
 
-export default Verify;
+export default VerifyPending;
