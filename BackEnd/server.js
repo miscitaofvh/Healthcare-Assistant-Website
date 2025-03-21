@@ -5,7 +5,7 @@ import createRedisClient from "./utils/redisClient.js";
 import authRoutes from "./routes/authRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import forumRoutes from "./routes/forumRoutes.js";
-import verifyRoutes from "./routes/verifyRoutes.js";
+import verifyRoutes from "./routes/verifyPendingRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
 import errorHandler from "./middleware/errorHandler.js"; 
 

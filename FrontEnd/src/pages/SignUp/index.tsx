@@ -19,7 +19,7 @@ const SignUp = () => {
         const response = await register(formData.username, formData.email, formData.password);
         if (response.success) {
             alert(response.message);
-            navigate("/verify");
+            navigate("/verify-pending");
         } else if (response.message) {
             alert(response.message);
         }
