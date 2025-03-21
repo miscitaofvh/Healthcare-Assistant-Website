@@ -1,5 +1,5 @@
 .vscode
 key.pem
 cert.pem
-*.env
+.env
 .sql

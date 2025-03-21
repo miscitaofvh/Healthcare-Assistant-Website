@@ -1,4 +1,4 @@
-const { body, validationResult } = require("express-validator");
+import { body, validationResult } from "express-validator";
 
 const validateRegister = [
     body("username").notEmpty().withMessage("Username is required"),
@@ -30,4 +30,4 @@ const validateLogin = [
     }
 ];
 
-module.exports = { validateRegister, validateLogin };
+export { validateRegister, validateLogin };

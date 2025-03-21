@@ -1,16 +1,15 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const db = require("../config/db"); // Database connection
-// import { error } from "console";
-const { isUsernameValid, isEmailValid } = require("../utils/format/account");
-const { PasswordCheckStrength, statePassword } = require("../utils/format/passwd");
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import db from "../config/db.js"; 
+import dotenv from "dotenv";
+import { isUsernameValid, isEmailValid } from "../utils/format/account.js";
+import { PasswordCheckStrength, statePassword } from "../utils/format/passwd.js";
 
-require("dotenv").config();
+dotenv.config();
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
     const { username, email, password } = req.body;
 
-    // Check if username is valid
     if (!isUsernameValid(username)) {
         console.log("❌ Invalid username");
         return res.status(400).json({
@@ -19,7 +18,6 @@ const register = async (req, res) => {
         });
     }
 
-    // Check if email is valid
     if (!isEmailValid(email)) {
         console.log("❌ Invalid email");
         return res.status(400).json({
@@ -28,7 +26,6 @@ const register = async (req, res) => {
         });
     }
 
-    // Check if password is strong enough
     const passwordCheck = statePassword(password);
     switch (passwordCheck) {
         case PasswordCheckStrength.Short:
@@ -64,13 +61,11 @@ const register = async (req, res) => {
     }
 
 
-    // Check if username or email already exists
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
 
-        // Check if username or email already exists
         const checkSql = 'SELECT username FROM users WHERE username = ? OR email = ?';
         const [existingUsers] = await connection.execute(checkSql, [username, email]);
 
@@ -92,7 +87,6 @@ const register = async (req, res) => {
             }
         }
 
-        // If no existing user found, proceed with registration
         const hashedPassword = await bcrypt.hash(password, 10);
         const sql = `INSERT INTO users (username, email, password_hash) 
                      VALUES (?, ?, ?)`;
@@ -101,7 +95,6 @@ const register = async (req, res) => {
             username, email, hashedPassword
         ]);
 
-        // Commit the transaction
         await connection.commit();
         console.log("✅ User registered:", result.insertId);
 
@@ -112,7 +105,6 @@ const register = async (req, res) => {
             userId: result.insertId
         });
     } catch (err) {
-        // Rollback in case of error
         if (connection) {
             await connection.rollback();
             connection.release();
@@ -123,7 +115,7 @@ const register = async (req, res) => {
     }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
     console.log("Received login request:", req.body);
 
     const { email, username, password } = req.body;
@@ -186,5 +178,3 @@ const login = async (req, res) => {
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
-
-module.exports = { register, login };

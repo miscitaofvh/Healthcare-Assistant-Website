@@ -20,7 +20,7 @@ const Verify = ({ email, onResend }) => {
     const handleResend = async () => {
         if (!onResend || cooldown > 0) return;
 
-        setCooldown(30);
+        setCooldown(60);
         setLoading(true);
 
         try {

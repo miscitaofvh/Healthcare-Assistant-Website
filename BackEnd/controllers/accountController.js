@@ -1,7 +1,4 @@
-const db = require('../config/db');
-const bcrypt = require('bcrypt');
-
-exports.getUser = async (req, res) => {
+export const getUser = async (req, res) => {
     const { id } = req.params;
     try {
         const [results] = await db.execute('SELECT * FROM users WHERE user_id = ?', [id]);
@@ -15,4 +12,3 @@ exports.getUser = async (req, res) => {
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
-

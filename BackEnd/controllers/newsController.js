@@ -1,6 +1,6 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
-exports.getNews = async (req, res) => {
+export const getNews = async (req, res) => {
     try {
         const [news] = await db.query("SELECT n.id, n.title, n.content, u.username AS author FROM news n JOIN users u ON n.author_id = u.id");
         res.json(news);
@@ -9,7 +9,7 @@ exports.getNews = async (req, res) => {
     }
 };
 
-exports.createNews = async (req, res) => {
+export const createNews = async (req, res) => {
     const { title, content, author_id } = req.body;
     try {
         await db.query("INSERT INTO news (title, content, author_id) VALUES (?, ?, ?)", [title, content, author_id]);

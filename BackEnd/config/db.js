@@ -1,13 +1,10 @@
-const dotenv = require('dotenv');
-const mysql = require('mysql2/promise');
+import dotenv from "dotenv";
+import mysql from "mysql2/promise";
 
-// Load environment variables
-dotenv.config({ path: './.env' });
+dotenv.config();
 
-// Access environment variables
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
-// Create a connection pool
 const pool = mysql.createPool({
   host: DB_HOST,
   user: DB_USER,
@@ -18,15 +15,12 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Test the database connection
-(async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL Database Connected!');
-    connection.release();
-  } catch (error) {
-    console.error('❌ MySQL Connection Error:', error.message);
-  }
-})();
+try {
+  const connection = await pool.getConnection();
+  console.log("✅ MySQL Database Connected!");
+  connection.release();
+} catch (error) {
+  console.error("❌ MySQL Connection Error:", error.message);
+}
 
-module.exports = pool;
+export default pool; // Export mặc định để dùng import
