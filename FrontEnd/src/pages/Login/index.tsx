@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./Login.css";
+import styles from "./Login.module.css";
 import {login} from "../../utils/service/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -20,11 +20,11 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="login-container">
-            <div className="login-content">
-                <div className="login-text">Login</div>
+        <div className={styles.container}>
+            <div className={styles.content}>
+                <div className={styles.text}>Login</div>
                 <form onSubmit={handleSubmit}>
-                    <div className="login-field">
+                    <div className={styles.field}>
                         <input
                             type="text"
                             required
@@ -34,7 +34,7 @@ const Login: React.FC = () => {
                         <span className="fas fa-user"></span>
                         <label>Email or Username</label>
                     </div>
-                    <div className="login-field">
+                    <div className={styles.field}>
                         <input
                             type="password"
                             required
@@ -44,11 +44,11 @@ const Login: React.FC = () => {
                         <span className="fas fa-lock"></span>
                         <label>Password</label>
                     </div>
-                    <div className="login-forgot-pass">
+                    <div className={styles.forgot_pass}>
                         <a href="#">Forgot Password?</a>
                     </div>
-                    <button type="submit" className="login-button">Sign in</button>
-                    <div className="login-sign-up">
+                    <button type="submit" className={styles.button}>Sign in</button>
+                    <div className={styles.sign_up}>
                         Not a member? <a href="/sign-up">Sign up now</a>
                     </div>
                 </form>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {register} from "../../utils/service/auth";
-import "./SignUp.css";
+import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
@@ -26,21 +26,21 @@ const SignUp = () => {
     };
 
     return (
-        <div className="sign-up-container">
-            <div className="sign-up-content">
-                <div className="sign-up-text">Sign Up</div>
+        <div className={styles.container}>
+            <div className={styles.content}>
+                <div className={styles.text}>Sign Up</div>
                 <form onSubmit={handleSubmit}>
-                    <div className="sign-up-field">
+                    <div className={styles.field}>
                         <input type="text" name="username" placeholder="Username" onChange={handleChange} required />
                     </div>
-                    <div className="sign-up-field">
+                    <div className={styles.field}>
                         <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
                     </div>
-                    <div className="sign-up-field">
+                    <div className={styles.field}>
                         <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
                     </div>
-                    <button type="submit" className="sign-up-btn">Sign Up</button>
-                    <div className="sign-up-login">
+                    <button type="submit" className={styles.btn}>Sign Up</button>
+                    <div className={styles.login}>
                         Already have an account? <a href="/login">Log in</a>
                     </div>
                 </form>
