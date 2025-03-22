@@ -1,0 +1,54 @@
+.about_page {
+    background-color: #f9f9f9; /* Light background for better readability */
+    /* min-height: 100vh; */
+    /* padding: 20px; */
+}
+
+.main_navbar {
+    background-color: lightblue;
+    padding: 10px 0;
+}
+
+.information_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap; /* Ensures responsiveness on smaller screens */
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+.image_section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image_section img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.text_section {
+    flex: 1;
+    max-width: 600px;
+    padding: 20px;
+    text-align: justify;
+}
+
+.text_section h2 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.text_section p {
+    font-size: 18px;
+    color: #555;
+    line-height: 1.6;
+}
