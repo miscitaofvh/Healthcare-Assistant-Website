@@ -1,19 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { requestAPI } from "../../utils/api/request";
 import "./VerifyPending.css";
 
-const BASE_URL = "http://localhost:5000/api/";
+const BASE_URL = "http://localhost:5000/api/verify";
 
-const VerifyPending = ({ email }) => {
-    const location = useLocation();
-    const email = location.state?.email || "";
+const VerifyPending = () => {
+    const navigate = useNavigate();
+    const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
+    const [cooldown, setCooldown] = useState(60);
+
+    useEffect(() => {
+        const fetchEmail = async () => {
+            try {
+                const response = await requestAPI(BASE_URL, "/get-email", "GET", null, null);
+                if (response.data?.email) setEmail(response.data.email);
+                else navigate("/");
+            } catch (error) {
+                console.error("Failed to get email from cookie:", error);
+                navigate("/");
+            }
+        };
+        fetchEmail();
+    }, [navigate]);
 
     useEffect(() => {
         if (cooldown > 0) {
-            console.log(`Cooldown: ${cooldown}s`);
             const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
             return () => clearTimeout(timer);
         }
@@ -25,7 +38,7 @@ const VerifyPending = ({ email }) => {
         setLoading(true);
 
         try {
-            const response = await requestAPI(BASE_URL, "/verify-pending", "POST", { email });
+            await requestAPI(BASE_URL, "/verify-pending", "POST", { email });
         } catch (error) {
             console.error("Failed to resend email:", error);
             setCooldown(0);

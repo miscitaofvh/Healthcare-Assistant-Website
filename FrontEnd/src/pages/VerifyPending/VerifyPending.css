@@ -10,7 +10,7 @@
 }
 
 .verify-content {
-    width: 330px;
+    width: 380px;
     padding: 40px 30px;
     background: #dde1e7;
     border-radius: 10px;
@@ -27,7 +27,7 @@
 
 .verify-button {
     font-family: WF Visual Sans,Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,sans-serif;
-    width: 45%;
+    width: 50%;
     padding: 15px;
     margin: 8px 0;
     border: 1px solid #ccc;

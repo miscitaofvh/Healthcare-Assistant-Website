@@ -1,11 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import db from "../config/db.js"; 
+import db from "../config/db.js";
 import dotenv from "dotenv";
 import { isUsernameValid, isEmailValid } from "../utils/format/account.js";
 import { PasswordCheckStrength, statePassword } from "../utils/format/passwd.js";
-import sendEmail from "../utils/emailSender.js";
-import createRedisClient from "../utils/redisClient.js";
 
 dotenv.config();
 
@@ -65,6 +63,7 @@ export const register = async (req, res) => {
 
     const connection = await db.getConnection();
 
+    console.log("Received registration request:", req.body);
     try {
         await connection.beginTransaction();
 
@@ -100,6 +99,15 @@ export const register = async (req, res) => {
         await connection.commit();
         console.log("✅ User registered:", result.insertId);
 
+        const token = jwt.sign({ email }, process.env.EMAIL_SECRET, { expiresIn: "15m" });
+
+        res.cookie("pendingEmail", token, {
+            httpOnly: true,
+            secure: false, // run on http
+            maxAge: 10 * 60 * 1000,
+            sameSite: "Lax"
+        });
+
         connection.release();
         return res.status(201).json({
             success: true,
@@ -128,15 +136,14 @@ export const login = async (req, res) => {
         return res.status(400).json({ success: false, error: "Missing login credentials" });
     }
 
-    if(email && !isEmailValid(email)) {
+    if (email && !isEmailValid(email)) {
         return res.status(400).json({
             success: false,
             error: "Invalid email"
         });
     }
 
-    if(username && !isUsernameValid(username)) {
-
+    if (username && !isUsernameValid(username)) {
         return res.status(400).json({
             success: false,
             error: "Invalid username"

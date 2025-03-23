@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import {register} from "../../utils/service/auth";
 import styles from "./SignUp.module.css";
+import { requestAPI } from "../../utils/api/request";
 import { useNavigate } from "react-router-dom";
+
+const BASE_URL = "http://localhost:5000/api/verify";
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
@@ -18,8 +21,9 @@ const SignUp = () => {
         e.preventDefault();
         const response = await register(formData.username, formData.email, formData.password);
         if (response.success) {
-            alert(response.message);
-            navigate("/verify-pending", { state: { email: formData.email } });
+            //alert(response.message);
+            await requestAPI(BASE_URL, "/verify-pending", "POST", { email: formData.email });
+            navigate("/verify-pending");
         } else if (response.message) {
             alert(response.message);
         }

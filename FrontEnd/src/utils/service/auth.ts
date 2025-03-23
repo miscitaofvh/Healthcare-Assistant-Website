@@ -1,7 +1,6 @@
 import { requestAPI } from "../api/request";
 const BASE_URL = "http://localhost:5000/api/auth";
 
-
 export async function login(identifier: string, password: string) {
     // Determine if the identifier is an email or a username
     const requestData: any = { password };

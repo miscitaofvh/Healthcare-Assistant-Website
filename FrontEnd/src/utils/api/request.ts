@@ -19,7 +19,6 @@ const apiClient = axios.create({
  * @param token - Optional authentication token.
  * @returns A promise resolving to the API response data.
  */
-
 export async function requestAPI(
     baseURL: string,
     endpoint: string,
@@ -33,23 +32,23 @@ export async function requestAPI(
             url: endpoint,
             method,
             data: payload,
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            withCredentials: true,
         };
 
-        const response: AxiosResponse = await axios(config);
+        const response: AxiosResponse = await apiClient(config);
 
         return {
             data: response.data,
-            status: response.status, 
+            status: response.status,
         };
     } catch (error: any) {
-        if (error.response) {
-            return {
-                error: error.message,
-                status: error.response.status,
-                data: error.response.data, 
-            };
-        }
-        throw error; 
+        return {
+            error: error.message,
+            status: error.response?.status || 500,
+            data: error.response?.data || null,
+        };
     }
 }
