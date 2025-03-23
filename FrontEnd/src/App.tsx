@@ -18,9 +18,9 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/forum" element={<Forum />} />
             <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/test" element={<Test />} />
             <Route path="/error" element={<Error />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />

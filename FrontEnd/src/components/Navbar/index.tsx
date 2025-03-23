@@ -14,6 +14,7 @@ const Navbar = () => {
                     <Link to="/forum">Forum</Link>
                     <Link to="/products">Products</Link>
                     <Link to="/about">About</Link>
+                    <Link to="/contact">Contact</Link>
                 </div>
                 <button className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>☰</button>
             </div>
