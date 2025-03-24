@@ -12,12 +12,12 @@ const About: React.FC = () => {
 
       <div className={styles.information_container}>
         <div className={styles.image_section}>
-          <img src={about_image} alt="About Smart My Service" />
+          <img src={about_image} alt="About My Service" />
         </div>
         <div className={styles.text_section}>
-          <h2>About Smart My Service</h2>
+          <h2>Healthcare Service</h2>
           <p>
-            <strong>Smart My Service</strong> is a cutting-edge healthcare platform that combines AI-powered health assistance, smart health tracking, and a community-driven forum to revolutionize the way users manage their well-being.  
+            <strong>Healthcare Service</strong> is a cutting-edge healthcare platform that combines AI-powered health assistance, smart health tracking, and a community-driven forum to revolutionize the way users manage their well-being.  
             Our AI Health Assistant provides instant answers to health-related questions, while the Smart Health Checker helps users analyze symptoms and gain insights into potential conditions.  
             Through our interactive forum, users can engage with healthcare professionals and a supportive community to share experiences and seek advice.  
             With a focus on accessibility, intelligence, and security, Smart My Service empowers individuals to take control of their health with innovative, user-friendly, and secure digital healthcare solutions.

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styles from "./Login.module.css";
-import {login} from "../../utils/service/auth";
+import { login } from "../../utils/service/auth";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
@@ -9,47 +9,53 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const response = login(identifier, password);
-        if((await response).success) {
-            alert((await response).message);
-            navigate("/");
-        } else if((await response).message) {
-            alert((await response).message);
+        e.preventDefault(); // Prevent page refresh
+        try {
+            const response = await login(identifier, password);
+            if (response.success) {
+                alert(response.message);
+                navigate("/");
+            } else {
+                alert(response.message || "Login failed, please try again.");
+            }
+        } catch (error) {
+            alert("An error occurred. Please try again.");
         }
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.content}>
-                <div className={styles.text}>Login</div>
+                <h2 className={styles.text}>Login</h2>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.field}>
-                        <input
+                        <span className={styles.icon}>🔑</span>
+                        <input 
                             type="text"
-                            required
+                            className={styles.input}
+                            placeholder="Username"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
+                            required
                         />
-                        <span className="fas fa-user"></span>
-                        <label>Email or Username</label>
                     </div>
                     <div className={styles.field}>
+                        <span className={styles.icon}>🔒</span>
                         <input
                             type="password"
-                            required
+                            className={styles.input}
+                            placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            required
                         />
-                        <span className="fas fa-lock"></span>
-                        <label>Password</label>
                     </div>
-                    <div className={styles.forgot_pass}>
+                    <div className={styles.forgotPass}>
                         <a href="#">Forgot Password?</a>
                     </div>
-                    <button type="submit" className={styles.button}>Sign in</button>
-                    <div className={styles.sign_up}>
-                        Not a member? <a href="/sign-up">Sign up now</a>
+                    <button type="submit" className={styles.button}>Login</button>
+                    <div className={styles.signUp}>
+                        Don't have an account? <a href="/sign-up">Sign up</a>
                     </div>
                 </form>
             </div>

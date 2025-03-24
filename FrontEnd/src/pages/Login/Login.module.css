@@ -1,129 +1,145 @@
 @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
 
+/* Ensure styles are scoped to this module */
 .container {
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
+    width: 100%;
     min-height: 100vh;
     background: #dde1e7;
-    text-align: center;
 }
 
 .content {
-    width: 330px;
+    width: 100%;
+    max-width: 400px;
     padding: 40px 30px;
     background: #dde1e7;
-    border-radius: 10px;
-    box-shadow: -3px -3px 7px #ffffff73,
-        2px 2px 5px rgba(94, 104, 121, 0.288);
+    border-radius: 12px;
+    box-shadow: -5px -5px 10px #ffffff73, 5px 5px 10px rgba(94, 104, 121, 0.3);
+    transition: 0.3s ease-in-out;
+}
+
+.content:hover {
+    box-shadow: -8px -8px 15px #ffffff73, 8px 8px 15px rgba(94, 104, 121, 0.3);
 }
 
 .text {
-    font-size: 33px;
-    font-weight: 600;
-    margin-bottom: 35px;
-    color: #595959;
+    font-size: 28px;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 30px;
 }
 
+/* Input field styling */
 .field {
     height: 50px;
     width: 100%;
     display: flex;
+    align-items: center;
     position: relative;
+    margin-bottom: 15px;
 }
 
-.field:nth-child(2) {
-    margin-top: 10px;
-}
-
-.field input {
-    height: 100%;
+.input {
     width: 100%;
-    padding-left: 45px;
-    outline: none;
+    height: 100%;
+    padding: 12px 15px 12px 50px;
     border: none;
-    font-size: 14px;
+    outline: none;
+    font-size: 15px;
     background: #dde1e7;
-    color: #595959;
+    color: #333;
     border-radius: 25px;
-    box-shadow: inset 2px 2px 5px #BABECC,
-        inset -5px -5px 10px #ffffff73;
+    box-shadow: inset 2px 2px 5px #babECC, inset -3px -3px 7px #ffffff73;
+    transition: all 0.3s ease;
 }
 
-.field input:focus {
-    box-shadow: inset 1px 1px 2px #BABECC,
-        inset -1px -1px 2px #ffffff73;
+.input:focus {
+    box-shadow: inset 1px 1px 3px #babECC, inset -1px -1px 3px #ffffff73;
 }
 
-.field span {
+.icon {
     position: absolute;
-    color: #595959;
-    width: 50px;
-    line-height: 50px;
+    left: 15px;
+    font-size: 18px;
+    color: #666;
 }
 
-.field label {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 45px;
-    pointer-events: none;
-    color: #666666;
-}
-
-.field input:valid~label {
-    opacity: 0;
-}
-
-.forgot_pass {
-    text-align: left;
-    margin: 10px 0 10px 5px;
-}
-
-.forgot_pass a {
-    font-size: 16px;
-    color: #3498db;
-    text-decoration: none;
-}
-
-.forgot-forgot_pass:hover a {
-    text-decoration: underline;
-}
-
+/* Button styling */
 .button {
-    margin: 15px 0;
     width: 100%;
     height: 50px;
     font-size: 18px;
-    line-height: 50px;
     font-weight: 600;
-    background: #0064fb;
-    border-radius: 25px;
+    background: linear-gradient(135deg, #0064fb, #004ac1);
     border: none;
     outline: none;
+    border-radius: 25px;
     cursor: pointer;
-    color: #dde1e7;
-    box-shadow: 2px 2px 5px #BABECC,
-        -5px -5px 10px #ffffff73;
+    color: #fff;
+    box-shadow: 2px 2px 5px #babECC, -3px -3px 7px #ffffff73;
+    transition: all 0.3s ease-in-out;
+}
+
+.button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #004ac1, #00338a);
 }
 
 .button:focus {
-    color: #3498db;
-    box-shadow: inset 2px 2px 5px #BABECC,
-        inset -5px -5px 10px #ffffff73;
+    box-shadow: inset 2px 2px 5px #babECC, inset -3px -3px 7px #ffffff73;
 }
 
-.sign_up {
+/* Forgot password */
+.forgotPass {
+    text-align: right;
     margin: 10px 0;
-    color: #595959;
-    font-size: 16px;
 }
 
-.sign_up a {
+.forgotPass a {
+    font-size: 15px;
     color: #3498db;
     text-decoration: none;
 }
 
-.sign_up a:hover {
+.forgotPass a:hover {
     text-decoration: underline;
+}
+
+/* Sign-up link */
+.signUp {
+    margin: 15px 0;
+    color: #666;
+    font-size: 16px;
+}
+
+.signUp a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.signUp a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+    .content {
+        padding: 30px 20px;
+    }
+
+    .text {
+        font-size: 24px;
+    }
+
+    .button {
+        font-size: 16px;
+    }
+
+    .forgotPass a,
+    .signUp a {
+        font-size: 14px;
+    }
 }
