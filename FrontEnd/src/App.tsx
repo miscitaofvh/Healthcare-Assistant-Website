@@ -10,6 +10,7 @@ import SignUp from './pages/SignUp';
 import Test from './pages/Test';
 import VerifyPending from './pages/VerifyPending';
 import Error from './pages/Error';
+import VerifyEmail from './pages/VerifyEmail';
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/test" element={<Test />} />
             <Route path="/error" element={<Error />} />
             <Route path="/verify-pending" element={<VerifyPending />} />
+            <Route path="/verify" element={<VerifyEmail />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />
         </Routes>
     );

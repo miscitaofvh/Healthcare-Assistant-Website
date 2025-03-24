@@ -168,6 +168,11 @@ export const login = async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid credentials" });
         }
 
+        if (!user.verified_at) {
+            console.log("❌ Account not verified");
+            return res.status(400).json({ success: false, error: "Account not verified. Please check your email." });
+        }
+        
         const token = jwt.sign(
             { id: user.user_id, role: user.role },
             process.env.JWT_SECRET,
