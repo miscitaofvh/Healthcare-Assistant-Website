@@ -1,14 +1,14 @@
 .about_page {
     background-color: #f9f9f9; /* Light background for better readability */
-    /* min-height: 100vh; */
-    /* padding: 20px; */
+    padding: 20px;
 }
 
 .main_navbar {
-    background-color: lightblue;
-    padding: 10px 0;
+    /* background-color: lightblue;
+    padding: 10px 0; */
 }
 
+/* Flex container for better alignment */
 .information_container {
     display: flex;
     justify-content: center;
@@ -25,6 +25,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    min-width: 280px;
 }
 
 .image_section img {
@@ -51,4 +52,50 @@
     font-size: 18px;
     color: #555;
     line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .information_container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .text_section {
+        max-width: 100%;
+    }
+
+    .image_section {
+        order: -1; /* Moves image above text on smaller screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .text_section h2 {
+        font-size: 24px;
+    }
+
+    .text_section p {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .text_section {
+        padding: 10px;
+    }
+
+    .text_section h2 {
+        font-size: 22px;
+    }
+
+    .text_section p {
+        font-size: 14px;
+    }
+
+    .image_section img {
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        padding-left: -500px;
+    }
 }

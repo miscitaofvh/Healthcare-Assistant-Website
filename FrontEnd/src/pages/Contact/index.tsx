@@ -5,7 +5,7 @@ import contact_image from "./img/undraw-contact.png";
 
 const Contact: React.FC = () => {
   return (
-    <div>
+    <div className={styles.contact_page}>
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
