@@ -1,30 +1,106 @@
 @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
 
-/* Ensure styles are scoped to this module */
+/* General Styles */
+/* * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+} */
+
+/* Full Page Container */
+.login_page {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-image: url("../../assets/images/Login/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.login_page::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3); /* Adjust opacity (0.5 = 50%) */
+    z-index: 1;
+}
+
+/* Make sure your content stays above the overlay */
+.login_page * {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* Navbar */
+/* Hide navbar by default */
+.main_navbar {
+    position: fixed;
+    top: -60px;
+    left: 0;
+    width: 100%;
+    background: transparent;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: top 0.3s ease-in-out;
+    padding: 10px 20px;
+    z-index: 100;
+}
+
+/* Make navbar visible */
+.visible {
+    top: 0 !important;
+}
+
+/* Keep navbar hidden */
+.hidden {
+    top: -60px !important;
+}
+
+/* Invisible hover area at the top */
+.navbar_hover_area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    z-index: 101;
+}
+
+/* Prevents sudden flickering when hovering */
+.main_navbar:hover {
+    top: 0 !important;
+}
+
+/* Login Form Container */
 .container {
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     width: 100%;
-    min-height: 100vh;
-    background: #dde1e7;
-}
-
-.content {
-    width: 100%;
     max-width: 400px;
+    /* background: #dde1e7; */
+    /* background: lightblue; */
     padding: 40px 30px;
-    background: #dde1e7;
     border-radius: 12px;
     box-shadow: -5px -5px 10px #ffffff73, 5px 5px 10px rgba(94, 104, 121, 0.3);
     transition: 0.3s ease-in-out;
 }
 
-.content:hover {
+.container:hover {
     box-shadow: -8px -8px 15px #ffffff73, 8px 8px 15px rgba(94, 104, 121, 0.3);
 }
 
+/* Title */
 .text {
     font-size: 28px;
     font-weight: 700;
@@ -32,7 +108,7 @@
     margin-bottom: 30px;
 }
 
-/* Input field styling */
+/* Input Fields */
 .field {
     height: 50px;
     width: 100%;
@@ -49,8 +125,8 @@
     border: none;
     outline: none;
     font-size: 15px;
-    background: #dde1e7;
-    color: #333;
+    background: transparent;
+    color: white;
     border-radius: 25px;
     box-shadow: inset 2px 2px 5px #babECC, inset -3px -3px 7px #ffffff73;
     transition: all 0.3s ease;
@@ -60,6 +136,7 @@
     box-shadow: inset 1px 1px 3px #babECC, inset -1px -1px 3px #ffffff73;
 }
 
+/* Input Icon */
 .icon {
     position: absolute;
     left: 15px;
@@ -67,13 +144,22 @@
     color: #666;
 }
 
-/* Button styling */
+.toggleIcon {
+    position: absolute;
+    right: 15px; /* Move to the right */
+    font-size: 18px;
+    cursor: pointer;
+    color: #666;
+}
+
+/* Button */
 .button {
     width: 100%;
     height: 50px;
     font-size: 18px;
     font-weight: 600;
-    background: linear-gradient(135deg, #0064fb, #004ac1);
+    /* background: linear-gradient(135deg, #0064fb, #004ac1); */
+    background-color: #fbceb5 !important;
     border: none;
     outline: none;
     border-radius: 25px;
@@ -84,15 +170,16 @@
 }
 
 .button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(135deg, #004ac1, #00338a);
+    transform: scale(1.1);
+    border: 1px solid #fbceb5;
+    background: transparent;
 }
 
 .button:focus {
     box-shadow: inset 2px 2px 5px #babECC, inset -3px -3px 7px #ffffff73;
 }
 
-/* Forgot password */
+/* Forgot Password */
 .forgotPass {
     text-align: right;
     margin: 10px 0;
@@ -108,10 +195,10 @@
     text-decoration: underline;
 }
 
-/* Sign-up link */
+/* Sign-up Link */
 .signUp {
     margin: 15px 0;
-    color: #666;
+    color: white;
     font-size: 16px;
 }
 
@@ -124,9 +211,18 @@
     text-decoration: underline;
 }
 
+/* Styling for Name */
+.name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #444;
+    text-align: center;
+    margin-top: 15px;
+}
+
 /* Responsive Design */
 @media (max-width: 500px) {
-    .content {
+    .container {
         padding: 30px 20px;
     }
 

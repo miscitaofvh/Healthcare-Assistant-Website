@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./Contact.module.css";
 import Navbar from "../../components/Navbar";
-import contact_image from "./img/undraw-contact.png";
+import contact_image from "../../assets/images/Contact/contact.png";
 
 const Contact: React.FC = () => {
   return (

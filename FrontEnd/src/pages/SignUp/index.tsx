@@ -55,12 +55,22 @@ const SignUp: React.FC = () => {
                         {errors.email && <small className={styles.error}>{errors.email}</small>}
                     </div>
                     <div className={styles.field}>
-                        <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
-                        <span className={styles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? "🙈" : "👁"}
-                        </span>
+                        <div className={styles.passwordContainer}>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder="Password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                            <span className={styles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? "🙈" : "👁"}
+                            </span>
+                        </div>
                         {errors.password && <small className={styles.error}>{errors.password}</small>}
                     </div>
+
                     <button type="submit" className={styles.btn} disabled={isSubmitting || Object.values(errors).some((err) => err)}>
                         {isSubmitting ? "Signing Up..." : "Sign Up"}
                     </button>

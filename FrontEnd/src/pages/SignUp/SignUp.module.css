@@ -101,6 +101,27 @@
     text-decoration: underline;
 }
 
+.passwordContainer {
+    position: relative;
+    width: 100%;
+}
+
+.passwordContainer input {
+    width: 100%;
+    padding-right: 40px; /* Space for the icon */
+}
+
+.togglePassword {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+}
+
+
 .error {
     color: red;
     font-size: 12px;

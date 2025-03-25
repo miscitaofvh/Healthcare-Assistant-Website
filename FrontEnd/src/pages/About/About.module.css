@@ -1,10 +1,9 @@
 .about_page {
-    background-color: #f9f9f9; /* Light background for better readability */
-    padding: 50px 20px;
+    background-color: #f9f9f9;
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
     flex-direction: column;
+    align-items: center;
 }
 
 .main_navbar {
@@ -14,20 +13,18 @@
     background: white;
 }
 
-/* Flex container for proper alignment */
 .information_container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 40px;
-    flex-wrap: wrap; /* Ensures responsiveness */
+    flex-wrap: wrap;
     max-width: 1100px;
     width: 100%;
     margin: auto;
     padding: 60px 20px;
 }
 
-/* Image section improvements */
 .image_section {
     flex: 1;
     display: flex;
@@ -48,7 +45,6 @@
     transform: scale(1.05);
 }
 
-/* Text section improvements */
 .text_section {
     flex: 1;
     max-width: 550px;
@@ -70,7 +66,6 @@
     line-height: 1.8;
 }
 
-/* Responsive Adjustments */
 @media (max-width: 1024px) {
     .information_container {
         flex-direction: column;
@@ -79,7 +74,6 @@
 
     .text_section {
         max-width: 100%;
-        padding: 20px;
     }
 
     .image_section img {
@@ -112,7 +106,6 @@
 
     .text_section h2 {
         font-size: 24px;
-        text-align: center;
     }
 
     .text_section p {
@@ -120,8 +113,6 @@
     }
 
     .image_section img {
-        border-radius: 10px;
         width: 100%;
-        height: auto;
     }
 }

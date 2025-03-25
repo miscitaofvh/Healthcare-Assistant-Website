@@ -1,6 +1,6 @@
 .contact_page {
     background-color: #f9f9f9; /* Light background for better readability */
-    padding: 20px;
+    /* padding: 20px; */
 }
 /* Ensure navbar stays at the top */
 .main_navbar {
@@ -12,7 +12,7 @@
 
 /* Ensure form section is pushed below the navbar */
 .form_section {
-    background: url("./img/undraw-contact.png") no-repeat center center/cover;
+    background: url("../../assets/images/Contact/contact.png") no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
