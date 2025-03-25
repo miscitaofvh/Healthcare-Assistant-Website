@@ -1,3 +1,14 @@
+.logo {
+    display: block;  /* Ensure it takes space */
+    width: 150px;    /* Adjust based on your logo size */
+    height: 50px;
+    background-image: url("../../assets/images/Logo/main_logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+
 .navbar {
     display: flex;
     justify-content: space-between;
