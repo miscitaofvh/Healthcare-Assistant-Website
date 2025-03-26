@@ -23,11 +23,11 @@ const Navbar = () => {
             </div>
             <div className="nav-right">
                 <div className="auth-links">
-                    {location.pathname !== "/sign-up" && (
-                        <Link to="/sign-up" className="btn-sign-up">Sign up</Link>
-                    )}
-                    {location.pathname !== "/login" && (
-                        <Link to="/login" className="btn-log-in">Log in</Link>
+                    {!(location.pathname === "/sign-up" || location.pathname === "/login") && (
+                        <>
+                            <Link to="/sign-up" className="btn-sign-up">Sign up</Link>
+                            <Link to="/login" className="btn-log-in">Log in</Link>
+                        </>
                     )}
                 </div>
             </div>

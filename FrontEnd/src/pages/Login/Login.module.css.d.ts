@@ -15,6 +15,10 @@ declare const styles: {
     readonly visible: string;
     readonly hidden: string;
     readonly name: string;
+    readonly image: string;
+    readonly iconLeft: string;
+    readonly iconRight: string;
+    readonly form: string;
 };
 
 export default styles; 
