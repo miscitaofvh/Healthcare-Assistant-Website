@@ -2,11 +2,12 @@ import sendEmail from "../utils/emailSender.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import getRedisClient from "../utils/redisClient.js";
-import db from "../config/db.js";
+import db from "../config/connection.js";
 
 dotenv.config();
 
 export const verifyPending = async (req, res) => {
+    console.log("📨 Received verify pending request:", req.body);
     const redisClient = await getRedisClient();
     const { email } = req.body;
 

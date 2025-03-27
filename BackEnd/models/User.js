@@ -1,23 +1,134 @@
-import pool from "../config/db.js";
+import connection from "../config/db.js";
+import bcrypt from "bcrypt";
 
-const User = {
-  async create(username, email, password) {
-    const [result] = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-      [username, email, password]
-    );
-    return result.insertId;
-  },
+export const findUserByUsernameOrEmail = async (username, email) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
 
-  async findByEmail(email) {
-    const [rows] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
-    return rows[0];
-  },
+        const sql = "SELECT username, email FROM users WHERE username = ? OR email = ?";
+        const [existingUsers] = await conn.execute(sql, [username, email]);
 
-  async findById(id) {
-    const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [id]);
-    return rows[0];
-  },
+        await conn.commit();
+        return existingUsers.length > 0 ? existingUsers[0] : null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi tìm kiếm user:", error);
+        throw new Error("Không thể tìm kiếm thông tin người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
 };
 
-export default User;
+export const createUser = async ({ username, email, password }) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Kiểm tra xem username hoặc email đã tồn tại chưa
+        const existingUser = await findUserByUsernameOrEmail(username, email);
+        if (existingUser) {
+            if (existingUser.username === username) {
+                throw new Error("Username đã tồn tại");
+            }
+            if (existingUser.email === email) {
+                throw new Error("Email đã tồn tại");
+            }
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        const sql = `INSERT INTO users (username, email, password_hash, created_at) 
+                    VALUES (?, ?, ?, NOW())`;
+        const [result] = await conn.execute(sql, [username, email, passwordHash]);
+
+        await conn.commit();
+        return result.insertId;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi tạo user:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const findUserByLoginField = async (loginField) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = `SELECT id, username, email, password_hash, created_at, last_login 
+                    FROM users 
+                    WHERE email = ? OR username = ?`;
+        const [rows] = await conn.execute(sql, [loginField, loginField]);
+
+        await conn.commit();
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi tìm kiếm user để đăng nhập:", error);
+        throw new Error("Không thể tìm kiếm thông tin người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const loginUser = async (loginField, password) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const user = await findUserByLoginField(loginField);
+        if (!user) {
+            throw new Error("Tên đăng nhập hoặc email không tồn tại");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            throw new Error("Mật khẩu không chính xác");
+        }
+
+        // Cập nhật thời gian đăng nhập
+        await updateUserLastLogin(user.id);
+
+        // Loại bỏ password_hash trước khi trả về
+        const { password_hash, ...userWithoutPassword } = user;
+
+        await conn.commit();
+        return userWithoutPassword;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi đăng nhập:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const updateUserLastLogin = async (userId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = `UPDATE users 
+                    SET last_login = NOW() 
+                    WHERE id = ?`;
+        await conn.execute(sql, [userId]);
+
+        await conn.commit();
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi cập nhật thời gian đăng nhập:", error);
+        throw new Error("Không thể cập nhật thời gian đăng nhập");
+    } finally {
+        if (conn) conn.release();
+    }
+};
