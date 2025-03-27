@@ -34,7 +34,7 @@ const SignUp: React.FC = () => {
         setIsSubmitting(false);
 
         if (response.success) {
-            await requestAPI(BASE_URL, "/verify-pending", "POST", { email: formData.email });
+            requestAPI(BASE_URL, "/verify-pending", "POST", { email: formData.email });
             navigate("/verify-pending");
         } else {
             alert(response.message);
