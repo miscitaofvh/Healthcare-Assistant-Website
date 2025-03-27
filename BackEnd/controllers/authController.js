@@ -15,10 +15,25 @@ export const register = async (req, res) => {
 
         // Tạo JWT token
         const token = jwt.sign(
-            { userId, username },
-            process.env.JWT_SECRET,
+            { email },
+            process.env.EMAIL_SECRET,
             { expiresIn: '24h' }
         );
+
+        // Dung cho https
+        // res.cookie("token", token, { 
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === "production", // Chỉ gửi cookie qua HTTPS nếu ở môi trường production
+        //     sameSite: "strict",
+        //     maxAge: 24 * 60 * 60 * 1000
+        // });
+
+        res.cookie("pendingEmail", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            maxAge: 30 * 60 * 1000
+        });
 
         res.status(201).json({
             success: true,
