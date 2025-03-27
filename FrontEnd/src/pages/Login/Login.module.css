@@ -4,14 +4,13 @@
     justify-content: center;
     min-height: 100vh;
     background: linear-gradient(to right, #2585cf, #25c3fc);
-    /* background: #7198ed; */
     padding: 20px;
 }
 
 .form {
     display: inline-flex;
     align-items: center;
-    gap: 50px;
+    gap: 30px;
     padding-top: 120px;
     padding-bottom: 150px;
     padding-left: 20px;
@@ -100,9 +99,10 @@
 }
 
 .forgotPass {
+    display: inline-block;
     text-align: left;
     margin-top: 10px;
-    width: 43%;
+    margin: 10px 0;
 }
 
 .forgotPass a {
@@ -180,4 +180,31 @@
 
 .social-button:hover {
     opacity: 0.8;
+}
+
+@media (max-width: 730px) {
+    .image {
+        display: none;
+    }
+
+    .form {
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .form {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .content {
+        width: 100%;
+    }
+
+    .form {
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
 }
