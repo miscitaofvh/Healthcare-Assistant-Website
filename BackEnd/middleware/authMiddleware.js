@@ -1,18 +1,14 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import jwt from 'jsonwebtoken';
 
-dotenv.config();
-
-export const authenticateToken = (req, res, next) => {
-    const token = req.header("Authorization")?.split(" ")[1];
-
-    if (!token) return res.status(401).json({ success: false, error: "Access denied. No token provided." });
+export const authenticateUser = (req, res, next) => {
+    const token = req.cookies.token; // Get JWT from HTTP-only cookie
+    if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        req.user = decoded; // Attach user info to request
         next();
-    } catch (err) {
-        return res.status(403).json({ success: false, error: "Invalid token" });
+    } catch (error) {
+        return res.status(403).json({ success: false, message: "Token invalid" });
     }
 };

@@ -127,3 +127,23 @@ export const updateUserLastLogin = async (userId) => {
         if (conn) conn.release();
     }
 };
+
+export const getUserById = async (userId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();  
+        
+        const sql = "SELECT user_id, username, email FROM users WHERE user_id = ?"; 
+        const [rows] = await conn.execute(sql, [userId]);
+
+        await conn.commit();
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+        throw new Error("Không thể lấy thông tin người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
+};

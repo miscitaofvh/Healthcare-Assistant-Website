@@ -3,15 +3,16 @@ const BASE_URL = "http://localhost:5000/api/auth";
 
 export async function login(identifier: string, password: string) {
     // Determine if the identifier is an email or a username
-    const requestData: any = { password };
-    if (identifier.includes("@")) {
-        requestData.email = identifier;
-    } else {
-        requestData.username = identifier;
-    }
+    // const requestData: any = { password };
+    // if (identifier.includes("@")) {
+    //     requestData.email = identifier;
+    // } else {
+    //     requestData.username = identifier;
+    // }
 
     try {
-        const response = await requestAPI(BASE_URL, "/login", "POST", requestData);
+        // const response = await requestAPI(BASE_URL, "/login", "POST", requestData);
+        const response = await requestAPI(BASE_URL, "/login", "POST", { identifier, password });
         const { data, status } = response;
 
         if (status === 200 && data.success) {

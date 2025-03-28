@@ -57,22 +57,38 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { identifier, password } = req.body;
-        // Đăng nhập user
+
+        // Authenticate user
         const user = await loginUser(identifier, password);
 
-        // Tạo JWT token
+        // Token expiration setup
+        const expiresIn = process.env.JWT_EXPIRATION || '24h';
+        const expiresInSeconds = typeof expiresIn === 'string' && expiresIn.endsWith('h') 
+            ? parseInt(expiresIn) * 3600
+            : 86400; // Default 24h in seconds
+
+        // Generate JWT token
         const token = jwt.sign(
             { userId: user.id, username: user.username },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn }
         );
+
+        // Set token as HTTP-only cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: expiresInSeconds * 1000 // Convert seconds to milliseconds
+        });
 
         res.json({
             success: true,
             message: "Đăng nhập thành công",
             data: {
                 ...user,
-                token
+                token,
+                expiresIn: expiresInSeconds // Remaining time in seconds
             }
         });
     } catch (error) {
@@ -81,5 +97,16 @@ export const login = async (req, res) => {
             success: false,
             message: error.message || "Đăng nhập thất bại"
         });
+    }
+};
+
+export const getAuthenticatedUser = async (req, res) => {
+    try {
+        const user = await getUserById(req.user.userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };

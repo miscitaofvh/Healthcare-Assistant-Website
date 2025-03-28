@@ -11,23 +11,26 @@ import Test from './pages/Test';
 import VerifyPending from './pages/VerifyPending';
 import Error from './pages/Error';
 import VerifyEmail from './pages/VerifyEmail';
+import { UserProvider } from "./context/UserContext";
 
 function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/forum" element={<Forum />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/sign-up" element={<SignUp />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/test" element={<Test />} />
-            <Route path="/error" element={<Error />} />
-            <Route path="/verify-pending" element={<VerifyPending />} />
-            <Route path="/verify" element={<VerifyEmail />} />
-            <Route path="*" element={<h1>Page Not Found</h1>} />
-        </Routes>
+        <UserProvider>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/sign-up" element={<SignUp />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/test" element={<Test />} />
+                <Route path="/error" element={<Error />} />
+                <Route path="/verify-pending" element={<VerifyPending />} />
+                <Route path="/verify" element={<VerifyEmail />} />
+                <Route path="*" element={<h1>Page Not Found</h1>} />
+            </Routes>
+        </UserProvider>
     );
 }
 

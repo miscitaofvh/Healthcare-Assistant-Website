@@ -39,7 +39,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/verify", verifyRoutes);
-
+// app.get('/profile', authenticateUser, async (req, res) => {
+//     const user = await getUserById(req.user.userId);
+//     res.json({ success: true, user });
+// });
 // Error handling middleware
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
