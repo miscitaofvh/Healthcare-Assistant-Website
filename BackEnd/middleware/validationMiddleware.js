@@ -58,7 +58,7 @@ const validateRegister = [
 ];
 
 const validateLogin = [
-    body("usernameOrEmail")
+    body("identifier")
         .notEmpty()
         .withMessage("Username hoặc email là bắt buộc")
         .trim()

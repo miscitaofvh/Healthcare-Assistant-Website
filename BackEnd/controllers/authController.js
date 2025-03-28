@@ -56,10 +56,9 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const { usernameOrEmail, password } = req.body;
-
+        const { identifier, password } = req.body;
         // Đăng nhập user
-        const user = await loginUser(usernameOrEmail, password);
+        const user = await loginUser(identifier, password);
 
         // Tạo JWT token
         const token = jwt.sign(

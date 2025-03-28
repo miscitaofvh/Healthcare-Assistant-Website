@@ -27,7 +27,6 @@ export const createUser = async ({ username, email, password }) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Kiểm tra xem username hoặc email đã tồn tại chưa
         const existingUser = await findUserByUsernameOrEmail(username, email);
         if (existingUser) {
             if (existingUser.username === username) {
@@ -38,7 +37,6 @@ export const createUser = async ({ username, email, password }) => {
             }
         }
 
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
@@ -62,11 +60,10 @@ export const findUserByLoginField = async (loginField) => {
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        const sql = `SELECT id, username, email, password_hash, created_at, last_login 
-                    FROM users 
-                    WHERE email = ? OR username = ?`;
-        const [rows] = await conn.execute(sql, [loginField, loginField]);
+        const sql = loginField.includes("@")
+            ? `SELECT user_id, email, password_hash FROM users WHERE email = ?`
+            : `SELECT user_id, username, password_hash FROM users WHERE username = ?`;
+        const [rows] = await conn.execute(sql, [loginField]);
 
         await conn.commit();
         return rows.length > 0 ? rows[0] : null;
@@ -95,10 +92,8 @@ export const loginUser = async (loginField, password) => {
             throw new Error("Mật khẩu không chính xác");
         }
 
-        // Cập nhật thời gian đăng nhập
-        await updateUserLastLogin(user.id);
+        await updateUserLastLogin(user.user_id);
 
-        // Loại bỏ password_hash trước khi trả về
         const { password_hash, ...userWithoutPassword } = user;
 
         await conn.commit();
@@ -120,7 +115,7 @@ export const updateUserLastLogin = async (userId) => {
 
         const sql = `UPDATE users 
                     SET last_login = NOW() 
-                    WHERE id = ?`;
+                    WHERE user_id = ?`;
         await conn.execute(sql, [userId]);
 
         await conn.commit();
