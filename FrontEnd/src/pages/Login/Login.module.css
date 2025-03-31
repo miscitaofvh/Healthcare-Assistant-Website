@@ -214,3 +214,11 @@
         padding-bottom: 30px;
     }
 }
+
+.error {
+    color: #ff3333;
+    font-size: 12px;
+    margin-top: 5px;
+    margin-left: 10px;
+    display: block;
+}

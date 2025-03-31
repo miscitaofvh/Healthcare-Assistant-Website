@@ -2,30 +2,30 @@ import { requestAPI } from "../api/request";
 const BASE_URL = "http://localhost:5000/api/auth";
 
 export async function login(identifier: string, password: string) {
-    // Determine if the identifier is an email or a username
-    // const requestData: any = { password };
-    // if (identifier.includes("@")) {
-    //     requestData.email = identifier;
-    // } else {
-    //     requestData.username = identifier;
-    // }
 
     try {
-        // const response = await requestAPI(BASE_URL, "/login", "POST", requestData);
         const response = await requestAPI(BASE_URL, "/login", "POST", { identifier, password });
         const { data, status } = response;
 
         if (status === 200 && data.success) {
             localStorage.setItem("token", data.token);
-            return { success: true, message: "Login successful!" };
+            return { 
+                success: true, 
+                message: data.message || "Login successful!",
+                data: data
+            };
         } else {
-            return { success: false, message: data.error || "Login failed" };
+            return { 
+                success: false, 
+                message: data.errors[0].msg || "Login failed",
+                data: data
+            };
         }
     } catch (error: any) {
         return {
             success: false,
             message: error.response?.data?.error || "Login failed",
-            status: error.response?.status || 500, // Capture status code
+            status: error.response?.status || 500, 
         };
     }
 }
@@ -36,9 +36,17 @@ export async function register(username: string, email: string, password: string
         const { data, status } = response;
 
         if (status === 201 && data.success) {
-            return { success: true, message: "Registration successful!" };
+            return { 
+                success: true, 
+                message: data.message || "Registration successful!",
+                data: data
+            };
         } else {
-            return { success: false, message: data.error || "Registration failed" };
+            return { 
+                success: false, 
+                message: data.errors[0].msg || "Registration failed",
+                data: data
+            };
         }
     } catch (error: any) {
         return {

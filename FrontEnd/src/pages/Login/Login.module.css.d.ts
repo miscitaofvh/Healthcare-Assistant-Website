@@ -20,6 +20,7 @@ declare const styles: {
     readonly iconRight: string;
     readonly form: string;
     readonly exit: string;
+    readonly error: string;
 };
 
 export default styles; 

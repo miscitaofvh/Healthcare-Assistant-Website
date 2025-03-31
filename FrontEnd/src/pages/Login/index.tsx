@@ -7,22 +7,46 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faLock, faEye, faEyeSlash, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useModal } from "../../contexts/ModalContext";
 
+const validateInput = (name: string, value: string) => {
+  const usernameRegex = /^[a-zA-Z0-9_]{3,16}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(name === "identifier") {
+    if(value.includes("@")) {
+      if(!emailRegex.test(value)) return "Email không hợp lệ";
+    } else {
+      if(!usernameRegex.test(value)) return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
+    }
+  }
+  if(name === "password") {
+    if(value.length < 6) return "Password phải có ít nhất 6 ký tự";
+  }
+  return "";
+};
+
+
 const Login: React.FC = () => {
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ identifier: "", password: "" });
+  const [errors, setErrors] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { closeModal, openModal } = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = login(identifier, password);
+    if (Object.values(errors).some((err) => err)) return;
+    const response = login(formData.identifier, formData.password);
     if ((await response).success) {
       alert((await response).message);
       navigate("/");
     } else if ((await response).message) {
       alert((await response).message);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: validateInput(name, value) }));
   };
 
   return (
@@ -43,29 +67,31 @@ const Login: React.FC = () => {
               </span>
               <input
                 type="text"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                name="identifier"
                 placeholder="Email or Username"
+                required
+                value={formData.identifier}
+                onChange={handleChange}
               />
             </div>
-
+            {errors.identifier && <small className={styles.error}>{errors.identifier}</small>}
             <div className={styles.field}>
               <span className={styles.iconLeft}>
                 <FontAwesomeIcon icon={faLock} />
               </span>
               <input
+                name="password"
+                placeholder="Password"
                 type={showPassword ? "text" : "password"}
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}      
               />
               <span className={styles.iconRight} onClick={() => setShowPassword(!showPassword)}>
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
               </span>
             </div>
-
+            {errors.password && <small className={styles.error}>{errors.password}</small>}
             <div className={styles.forgotPass}>
               <a href="#">Forgot Password?</a>
             </div>

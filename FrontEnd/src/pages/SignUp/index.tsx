@@ -11,9 +11,10 @@ import Image from "../../assets/images/Login/image.jpg";
 const BASE_URL = "http://localhost:5000/api/verify";
 
 const validateInput = (name: string, value: string) => {
-    if (name === "username" && value.length < 3) return "Username must be at least 3 characters.";
-    if (name === "email" && !/^\S+@\S+\.\S+$/.test(value)) return "Invalid email format.";
-    if (name === "password" && value.length < 6) return "Password must be at least 6 characters.";
+    const usernameRegex = /^[a-zA-Z0-9_]{3,16}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (name === "username" && !usernameRegex.test(value)) return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
+    if (name === "email" && !emailRegex.test(value)) return "Email không hợp lệ";
     return "";
 };
 
@@ -62,14 +63,23 @@ const SignUp: React.FC = () => {
                             <span className={styles.iconLeft}>
                                 <FontAwesomeIcon icon={faUser} />
                             </span>
-                            <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
+                            <input type="text"
+                                name="username"
+                                placeholder="Username"
+                                value={formData.username}
+                                onChange={handleChange} required />
                             {errors.username && <small className={styles.error}>{errors.username}</small>}
                         </div>
                         <div className={styles.field}>
                             <span className={styles.iconLeft}>
                                 <FontAwesomeIcon icon={faEnvelope} />
                             </span>
-                            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Email"
+                                value={formData.email}
+                                onChange={handleChange} required />
                             {errors.email && <small className={styles.error}>{errors.email}</small>}
                         </div>
                         <div className={styles.field}>
