@@ -9,6 +9,7 @@ export const authenticateUser = (req, res, next) => {
         req.user = decoded; // Attach user info to request
         next();
     } catch (error) {
+        console.log(error);
         return res.status(403).json({ success: false, message: "Token invalid" });
     }
 };

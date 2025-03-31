@@ -133,7 +133,6 @@ export const getUserById = async (userId) => {
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();  
-        
         const sql = "SELECT user_id, username, email FROM users WHERE user_id = ?"; 
         const [rows] = await conn.execute(sql, [userId]);
 

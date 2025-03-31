@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { findUserByUsernameOrEmail, createUser, findUserByLoginField, loginUser } from "../models/User.js";
+import { findUserByUsernameOrEmail, createUser, findUserByLoginField, loginUser, getUserById } from "../models/User.js";
 import db from "../config/connection.js";
 
 dotenv.config();
@@ -63,22 +63,29 @@ export const login = async (req, res) => {
 
         // Token expiration setup
         const expiresIn = process.env.JWT_EXPIRATION || '24h';
-        const expiresInSeconds = typeof expiresIn === 'string' && expiresIn.endsWith('h') 
+        const expiresInSeconds = typeof expiresIn === 'string' && expiresIn.endsWith('h')
             ? parseInt(expiresIn) * 3600
             : 86400; // Default 24h in seconds
 
         // Generate JWT token
         const token = jwt.sign(
-            { userId: user.id, username: user.username },
+            { userId: user.user_id, username: user.username },
             process.env.JWT_SECRET,
             { expiresIn }
         );
 
         // Set token as HTTP-only cookie
-        res.cookie('token', token, {
+        // res.cookie('token', token, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'Strict',
+        //     maxAge: expiresInSeconds * 1000 // Convert seconds to milliseconds
+        // });
+
+        res.cookie("token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
+            secure: false,
+            sameSite: "strict",
             maxAge: expiresInSeconds * 1000 // Convert seconds to milliseconds
         });
 
@@ -102,7 +109,9 @@ export const login = async (req, res) => {
 
 export const getAuthenticatedUser = async (req, res) => {
     try {
-        const user = await getUserById(req.user.userId);
+
+        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const user = await getUserById(decoded.userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
         res.json({ success: true, user });
