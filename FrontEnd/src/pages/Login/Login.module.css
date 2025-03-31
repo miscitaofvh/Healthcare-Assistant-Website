@@ -1,14 +1,12 @@
 .container {
-    display: flex;
+    display: inline-block;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    background: linear-gradient(to right, #2585cf, #25c3fc);
-    padding: 20px;
 }
 
 .form {
-    display: inline-flex;
+    position: relative;
+    display: flex;
     align-items: center;
     gap: 30px;
     padding-top: 120px;
@@ -18,7 +16,15 @@
     background: white;
     border-radius: 15px;
     box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3), 
-    -5px -5px 20px rgba(255, 255, 255, 0.6);}
+    -5px -5px 20px rgba(255, 255, 255, 0.6);
+}
+
+.exit {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+}
 
 .content {
     width: 300px;
@@ -182,7 +188,7 @@
     opacity: 0.8;
 }
 
-@media (max-width: 730px) {
+@media (max-width: 800px) {
     .image {
         display: none;
     }

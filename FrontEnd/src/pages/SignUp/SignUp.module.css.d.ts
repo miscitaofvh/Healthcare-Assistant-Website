@@ -16,6 +16,11 @@ declare const styles: {
     readonly btn: string;
     readonly login: string;
     readonly passwordContainer: string;
+    readonly form: string;
+    readonly exit: string;
+    readonly image: string;
+    readonly iconLeft: string;
+    readonly iconRight: string;
 };
 
 export default styles; 

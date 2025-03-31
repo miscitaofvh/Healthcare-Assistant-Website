@@ -4,13 +4,15 @@ import { login } from "../../utils/service/auth";
 import { useNavigate } from "react-router-dom";
 import Image from "../../assets/images/Login/image.jpg";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faLock, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faLock, faEye, faEyeSlash, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { useModal } from "../../contexts/ModalContext";
 
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { closeModal, openModal } = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,9 @@ const Login: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.form}>
+        <div className={styles.exit} onClick={closeModal}>
+          <FontAwesomeIcon icon={faXmark} />
+        </div>
         <div className={styles.image}>
           <img src={Image} />
         </div>
@@ -66,7 +71,7 @@ const Login: React.FC = () => {
             </div>
             <button type="submit" className={styles.button}>Sign in</button>
             <div className={styles.signUp}>
-              Not a member? <a href="/sign-up">Sign up now</a>
+              Not a member? <a onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
             </div>
           </form>
         </div>

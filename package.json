@@ -22,6 +22,8 @@
         "mdb-react-ui-kit": "^9.0.0",
         "nodemailer": "^6.10.0",
         "npm": "^11.2.0",
-        "redis": "^4.7.0"
+        "react-modal": "^3.16.3",
+        "redis": "^4.7.0",
+        "styled-components": "^6.1.16"
     }
 }

@@ -1,13 +1,12 @@
 .logo {
-    display: block;  /* Ensure it takes space */
-    width: 150px;    /* Adjust based on your logo size */
+    display: block;
+    width: 150px; 
     height: 50px;
     background-image: url("../../assets/images/Logo/main_logo.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
-
 
 .navbar {
     position: fixed;
@@ -28,24 +27,12 @@
     gap: 30px;
 }
 
-.nav-right {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.auth-links {
-    display: flex;
-    gap: 5px;
-}
-
 .nav-links {
     display: flex;
     gap: 30px;
 }
 
 .nav-left a,
-.nav-right a,
 .auth-links {
     color: black;
     text-decoration: none;
@@ -55,21 +42,27 @@
     gap: 10px;
 }
 
-.auth-links a {
-    text-decoration: none;
+.btn-sign-up:hover {
+    background-color: white;
+}
+.btn-log-in:hover {
+    background-color: black;
+}
+.btn-sign-up {
+    font-weight: bold;
+    color: black;
+    border-radius: 25px;
+    background-color: white;
 }
 
-.btn-sign-up {
-    color: black;
-}
-.auth-links .btn-log-in {
+.btn-log-in {
     background-color: #0c0a1f;
     color: white;
     padding: 10px 20px;
     border-radius: 25px;
 }
 
-.auth-links a:hover {
+.auth-links button:hover {
     transform: scale(1.05);
 }
 

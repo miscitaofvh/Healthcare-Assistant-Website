@@ -3,6 +3,10 @@ import { register } from "../../utils/service/auth";
 import { requestAPI } from "../../utils/api/request";
 import { useNavigate } from "react-router-dom";
 import styles from "./SignUp.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faLock, faEye, faEyeSlash, faXmark, faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import { useModal } from "../../contexts/ModalContext";
+import Image from "../../assets/images/Login/image.jpg";
 
 const BASE_URL = "http://localhost:5000/api/verify";
 
@@ -18,6 +22,7 @@ const SignUp: React.FC = () => {
     const [errors, setErrors] = useState({ username: "", email: "", password: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const { closeModal, openModal } = useModal();
     const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,19 +48,34 @@ const SignUp: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.content}>
-                <h2 className={styles.text}>Sign Up</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className={styles.field}>
-                        <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
-                        {errors.username && <small className={styles.error}>{errors.username}</small>}
-                    </div>
-                    <div className={styles.field}>
-                        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-                        {errors.email && <small className={styles.error}>{errors.email}</small>}
-                    </div>
-                    <div className={styles.field}>
-                        <div className={styles.passwordContainer}>
+            <div className={styles.form}>
+                <div className={styles.exit} onClick={closeModal}>
+                    <FontAwesomeIcon icon={faXmark} />
+                </div>
+                <div className={styles.image}>
+                    <img src={Image} />
+                </div>
+                <div className={styles.content}>
+                    <h2 className={styles.text}>Sign Up</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className={styles.field}>
+                            <span className={styles.iconLeft}>
+                                <FontAwesomeIcon icon={faUser} />
+                            </span>
+                            <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
+                            {errors.username && <small className={styles.error}>{errors.username}</small>}
+                        </div>
+                        <div className={styles.field}>
+                            <span className={styles.iconLeft}>
+                                <FontAwesomeIcon icon={faEnvelope} />
+                            </span>
+                            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                            {errors.email && <small className={styles.error}>{errors.email}</small>}
+                        </div>
+                        <div className={styles.field}>
+                            <span className={styles.iconLeft}>
+                                <FontAwesomeIcon icon={faLock} />
+                            </span>
                             <input
                                 type={showPassword ? "text" : "password"}
                                 name="password"
@@ -64,20 +84,20 @@ const SignUp: React.FC = () => {
                                 onChange={handleChange}
                                 required
                             />
-                            <span className={styles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
-                                {showPassword ? "🙈" : "👁"}
+                            <span className={styles.iconRight} onClick={() => setShowPassword(!showPassword)}>
+                                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
                             </span>
+                            {errors.password && <small className={styles.error}>{errors.password}</small>}
                         </div>
-                        {errors.password && <small className={styles.error}>{errors.password}</small>}
-                    </div>
 
-                    <button type="submit" className={styles.btn} disabled={isSubmitting || Object.values(errors).some((err) => err)}>
-                        {isSubmitting ? "Signing Up..." : "Sign Up"}
-                    </button>
-                    <div className={styles.login}>
-                        Already have an account? <a href="/login">Log in</a>
-                    </div>
-                </form>
+                        <button type="submit" className={styles.btn} disabled={isSubmitting || Object.values(errors).some((err) => err)}>
+                            {isSubmitting ? "Signing Up..." : "Sign Up"}
+                        </button>
+                        <div className={styles.login}>
+                            Already have an account? <a href="/login">Log in</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );

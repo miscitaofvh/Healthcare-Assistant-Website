@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
+import { useModal } from "../../contexts/Modalcontext";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
-
+    const { openModal } = useModal();
+    
     return (
         <nav className="navbar">
             <div className="nav-left">
@@ -25,8 +27,8 @@ const Navbar = () => {
                 <div className="auth-links">
                     {!(location.pathname === "/sign-up" || location.pathname === "/login") && (
                         <>
-                            <Link to="/sign-up" className="btn-sign-up">Sign up</Link>
-                            <Link to="/login" className="btn-log-in">Log in</Link>
+                            <button onClick={() => openModal("sign-up")} className="btn-sign-up">Sign up</button>
+                            <button onClick={() => openModal("login")} className="btn-log-in">Log in</button>
                         </>
                     )}
                 </div>
