@@ -47,12 +47,29 @@ const SignUp: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        // Clear error when user edits the field
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        // Only validate when user leaves the field (on blur)
         setErrors((prev) => ({ ...prev, [name]: validateInput(name, value) }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (Object.values(errors).some((err) => err)) return;
+        
+        // Validate all fields before submission
+        const newErrors = {
+            username: validateInput("username", formData.username),
+            email: validateInput("email", formData.email),
+            password: validateInput("password", formData.password)
+        };
+        setErrors(newErrors);
+        
+        if (Object.values(newErrors).some(err => err)) return;
+        
         setIsSubmitting(true);
         const response = await register(formData.username, formData.email, formData.password);
         setIsSubmitting(false);
@@ -72,7 +89,7 @@ const SignUp: React.FC = () => {
                     <FontAwesomeIcon icon={faXmark} />
                 </div>
                 <div className={styles.image}>
-                    <img src={Image} />
+                    <img src={Image} alt="Sign up visual" />
                 </div>
                 <div className={styles.content}>
                     <h2 className={styles.text}>Sign Up</h2>
@@ -81,11 +98,15 @@ const SignUp: React.FC = () => {
                             <span className={styles.iconLeft}>
                                 <FontAwesomeIcon icon={faUser} />
                             </span>
-                            <input type="text"
+                            <input 
+                                type="text"
                                 name="username"
                                 placeholder="Username"
                                 value={formData.username}
-                                onChange={handleChange} required />
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                required 
+                            />
                             {errors.username && <small className={styles.error}>{errors.username}</small>}
                         </div>
                         <div className={styles.field}>
@@ -97,7 +118,10 @@ const SignUp: React.FC = () => {
                                 name="email"
                                 placeholder="Email"
                                 value={formData.email}
-                                onChange={handleChange} required />
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                required 
+                            />
                             {errors.email && <small className={styles.error}>{errors.email}</small>}
                         </div>
                         <div className={styles.field}>
@@ -110,6 +134,7 @@ const SignUp: React.FC = () => {
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 required
                             />
                             <span className={styles.iconRight} onClick={() => setShowPassword(!showPassword)}>
@@ -117,7 +142,11 @@ const SignUp: React.FC = () => {
                             </span>
                             {errors.password && <small className={styles.error}>{errors.password}</small>}
                         </div>
-                        <button type="submit" className={styles.btn} disabled={isSubmitting || Object.values(errors).some((err) => err)}>
+                        <button 
+                            type="submit" 
+                            className={styles.btn} 
+                            disabled={isSubmitting || Object.values(errors).some(err => err)}
+                        >
                             {isSubmitting ? "Signing Up..." : "Sign Up"}
                         </button>
                         <div className={styles.login}>

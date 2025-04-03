@@ -62,7 +62,11 @@
     display: flex;
     align-items: center;
     width: 100%;
-    height: 50px;    
+    height: 50px;  
+}
+
+.field:nth-child(2), .field:nth-child(3) {
+    margin-top: 10px;
 }
 
 

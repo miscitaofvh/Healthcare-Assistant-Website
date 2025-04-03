@@ -10,27 +10,38 @@ const BASE_URL = "http://localhost:5000/api/auth";
 
 const ForgotPassword: React.FC = () => {
   const [formData, setFormData] = useState({
-    identifier: "",
-    newPassword: "",
-    otp: ""
+    identifier: ""
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { closeModal, openModal } = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = await requestAPI(BASE_URL, "/exist", "POST", { identifier: formData.identifier });
-    const { data, status } = response;
-    if (status === 200){
-      if (data.success === true && data.exist === true)
-        alert("hihi");
-      else 
-        alert("huhu");
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await requestAPI(BASE_URL, "/exist", "POST", {
+        identifier: formData.identifier
+      });
+
+      if (response.status === 200 && response.data?.exist) {
+        alert("User exists!"); // Or handle next steps here
+      } else {
+        setError("User not found. Please check your email/username.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(""); // Clear error when user edits the input
   };
 
   return (
@@ -40,10 +51,11 @@ const ForgotPassword: React.FC = () => {
           <FontAwesomeIcon icon={faXmark} />
         </div>
         <div className={styles.image}>
-          <img src={Image}/>
+          <img src={Image} alt="Password reset" />
         </div>
         <div className={styles.content}>
           <div className={styles.text}>Reset Password</div>
+          
           <form onSubmit={handleSubmit}>
             <div className={styles.field}>
               <span className={styles.iconLeft}>
@@ -56,11 +68,33 @@ const ForgotPassword: React.FC = () => {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
-            <button type="submit" className={styles.button}>Continue</button>
+            
+            {error && (
+              <div className={styles.error}>
+                <div>User not found.</div>
+                <div>Please check your email/username.</div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className={styles.button}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Continue"}
+            </button>
+
             <div className={styles.signUp}>
-              Not a member? <a href="#" onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
+              Not a member?{" "}
+              <a href="#" onClick={(e) => {
+                e.preventDefault();
+                openModal("sign-up");
+              }}>
+                Sign up now
+              </a>
             </div>
           </form>
         </div>
