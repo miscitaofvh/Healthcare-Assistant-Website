@@ -19,9 +19,12 @@ const ForgotPassword: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const response = await requestAPI(BASE_URL, "/exist", "POST", { identifier: formData.identifier });
-    
-    if (response.status === 200){
-      if (response.data)
+    const { data, status } = response;
+    if (status === 200){
+      if (data.success === true && data.exist === true)
+        alert("hihi");
+      else 
+        alert("huhu");
     }
   };
 
