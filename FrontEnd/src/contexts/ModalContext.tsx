@@ -45,7 +45,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     <ModalContent onClick={(e) => e.stopPropagation()}>
                         {modalType === "sign-up" && <SignUp />}
                         {modalType === "login" && <Login />}
-                        {modalType === "forgot-password" && <FotgotPassword />}
+                        {modalType === "forgot-password" && <ForgotPassword />}
                     </ModalContent>
                 </Overlay>
             )}

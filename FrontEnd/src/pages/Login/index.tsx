@@ -7,6 +7,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faLock, faEye, faEyeSlash, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useModal } from "../../contexts/ModalContext";
 
+const validateInput = (name: string, value: string) => {
+  const usernameRegex = /^[a-zA-Z0-9_]{3,16}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (name === "identifier") {
+    if (value.includes("@")) {
+      if (!emailRegex.test(value)) return "Email không hợp lệ";
+    } else {
+      if (!usernameRegex.test(value)) return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
+    }
+  }
+  if (name === "password") {
+    if (value.length < 6) return "Password phải có ít nhất 6 ký tự";
+  }
+  return "";
+};
 
 
 const Login: React.FC = () => {
@@ -19,18 +34,19 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (Object.values(errors).some((err) => err)) return;
-    const response = await login(formData.identifier, formData.password);
-    if (response.success) {
-      alert(response.message);
+    const response = login(formData.identifier, formData.password);
+    if ((await response).success) {
+      alert((await response).message);
       navigate("/");
-    } else if (response.message) {
-      alert(response.message);
+    } else if ((await response).message) {
+      alert((await response).message);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: validateInput(name, value) }));
   };
 
   return (
@@ -77,7 +93,7 @@ const Login: React.FC = () => {
             </div>
             {errors.password && <small className={styles.error}>{errors.password}</small>}
             <div className={styles.forgotPass}>
-              <a href="#">Forgot Password?</a>
+              <a onClick={(e) => { e.preventDefault(); openModal("forgot-password"); }}>Forgot Password?</a>
             </div>
             <button type="submit" className={styles.button}>Sign in</button>
             <div className={styles.signUp}>

@@ -10,6 +10,7 @@ const router = express.Router();
 // Public routes
 router.post("/register", validateRegister, register);
 router.post("/login", validateLogin, login);
+router.post("/exists")
 router.get('/me', authenticateUser, getAuthenticatedUser);
 
 // router.post("/logout", authenticateToken, logout);
