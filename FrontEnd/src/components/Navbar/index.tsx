@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
-import { useModal } from "../../contexts/Modalcontext";
+import { useModal } from "../../contexts/ModalContext";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);

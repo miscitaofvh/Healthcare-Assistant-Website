@@ -13,10 +13,15 @@ const BASE_URL = "http://localhost:5000/api/verify";
 const validateInput = (name: string, value: string) => {
     const usernameRegex = /^[a-zA-Z0-9_]{3,16}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
     if (name === "username" && !usernameRegex.test(value)) return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
     if (name === "email" && !emailRegex.test(value)) return "Email không hợp lệ";
+    if (name === "password" && !passwordRegex.test(value)) return "Password phải có ít nhất 8 ký tự, bao gồm chữ và số";
+
     return "";
 };
+
 
 const SignUp: React.FC = () => {
     const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -99,7 +104,6 @@ const SignUp: React.FC = () => {
                             </span>
                             {errors.password && <small className={styles.error}>{errors.password}</small>}
                         </div>
-
                         <button type="submit" className={styles.btn} disabled={isSubmitting || Object.values(errors).some((err) => err)}>
                             {isSubmitting ? "Signing Up..." : "Sign Up"}
                         </button>
