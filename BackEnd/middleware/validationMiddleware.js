@@ -135,4 +135,34 @@ const validateArticle = [
     }
 ];
 
-export { validateRegister, validateLogin, validateArticle };
+const validateExists = [
+    body("identifier")
+        .notEmpty()
+        .withMessage("Username hoặc email là bắt buộc")
+        .trim()
+        .custom((value) => {
+            if (value.includes('@')) {
+                if (!isEmailValid(value)) {
+                    throw new Error("Email không hợp lệ");
+                }
+            } else {
+                if (!isUsernameValid(value)) {
+                    throw new Error("Username chỉ được chứa chữ cái, số và dấu gạch dưới");
+                }
+            }
+            return true;
+        }),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Dữ liệu không hợp lệ",
+                errors: errors.array()
+            });
+        }
+        next();
+    }
+];
+
+export { validateRegister, validateLogin, validateArticle, validateExists };

@@ -1,6 +1,6 @@
 import express from "express";
-import { register, login } from "../controllers/authController.js";
-import { validateRegister, validateLogin } from "../middleware/validationMiddleware.js";
+import { register, login, exists } from "../controllers/authController.js";
+import { validateRegister, validateLogin, validateExists } from "../middleware/validationMiddleware.js";
 import { getAuthenticatedUser } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
 // import { authenticateToken } from "../middleware/authMiddleware.js";
@@ -10,7 +10,7 @@ const router = express.Router();
 // Public routes
 router.post("/register", validateRegister, register);
 router.post("/login", validateLogin, login);
-router.post("/exists")
+router.post("/exists", validateExists, exists);
 router.get('/me', authenticateUser, getAuthenticatedUser);
 
 // router.post("/logout", authenticateToken, logout);

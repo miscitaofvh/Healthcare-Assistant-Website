@@ -23,30 +23,38 @@ const validateInput = (name: string, value: string) => {
   return "";
 };
 
-
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [errors, setErrors] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { closeModal, openModal } = useModal();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (Object.values(errors).some((err) => err)) return;
-    const response = login(formData.identifier, formData.password);
-    if ((await response).success) {
-      alert((await response).message);
-      navigate("/");
-    } else if ((await response).message) {
-      alert((await response).message);
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: validateInput(name, value) }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (Object.values(errors).some((err) => err)) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await login(formData.identifier, formData.password);
+      if (response.success) {
+        alert(response.message);
+        navigate("/");
+      } else {
+        alert(response.message || "Đăng nhập thất bại");
+      }
+    } catch (error) {
+      alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,7 +64,7 @@ const Login: React.FC = () => {
           <FontAwesomeIcon icon={faXmark} />
         </div>
         <div className={styles.image}>
-          <img src={Image} />
+          <img src={Image} alt="Login" />
         </div>
         <div className={styles.content}>
           <div className={styles.text}>Log In</div>
@@ -72,6 +80,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
+                disabled={isLoading}
               />
             </div>
             {errors.identifier && <small className={styles.error}>{errors.identifier}</small>}
@@ -86,6 +95,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
+                disabled={isLoading}
               />
               <span className={styles.iconRight} onClick={() => setShowPassword(!showPassword)}>
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
@@ -95,7 +105,13 @@ const Login: React.FC = () => {
             <div className={styles.forgotPass}>
               <a onClick={(e) => { e.preventDefault(); openModal("forgot-password"); }}>Forgot Password?</a>
             </div>
-            <button type="submit" className={styles.button}>Sign in</button>
+            <button 
+              type="submit" 
+              className={styles.button}
+              disabled={isLoading}
+            >
+              {isLoading ? "Đang đăng nhập..." : "Sign in"}
+            </button>
             <div className={styles.signUp}>
               Not a member? <a onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
             </div>

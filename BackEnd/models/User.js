@@ -21,6 +21,48 @@ export const findUserByUsernameOrEmail = async (username, email) => {
     }
 };
 
+export const findUserByLoginField = async (loginField) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = loginField.includes("@")
+            ? `SELECT user_id, email, password_hash FROM users WHERE email = ?`
+            : `SELECT user_id, username, password_hash FROM users WHERE username = ?`;
+        const [rows] = await conn.execute(sql, [loginField]);
+
+        await conn.commit();
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi tìm kiếm user để đăng nhập:", error);
+        throw new Error("Không thể tìm kiếm thông tin người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const existUser = async (loginField)  => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = loginField.includes("@")
+            ? `SELECT user_id, email, password_hash FROM users WHERE email = ?`
+            : `SELECT user_id, username, password_hash FROM users WHERE username = ?`;
+        const [rows] = await conn.execute(sql, [loginField]);
+
+        await conn.commit();
+        return rows.length > 0;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi tìm kiếm user để đăng nhập:", error);
+        throw new Error("Không thể tìm kiếm thông tin người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 export const createUser = async ({ username, email, password }) => {
     let conn;
     try {
@@ -55,26 +97,6 @@ export const createUser = async ({ username, email, password }) => {
     }
 };
 
-export const findUserByLoginField = async (loginField) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-        const sql = loginField.includes("@")
-            ? `SELECT user_id, email, password_hash FROM users WHERE email = ?`
-            : `SELECT user_id, username, password_hash FROM users WHERE username = ?`;
-        const [rows] = await conn.execute(sql, [loginField]);
-
-        await conn.commit();
-        return rows.length > 0 ? rows[0] : null;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Lỗi khi tìm kiếm user để đăng nhập:", error);
-        throw new Error("Không thể tìm kiếm thông tin người dùng");
-    } finally {
-        if (conn) conn.release();
-    }
-};
 
 export const loginUser = async (loginField, password) => {
     let conn;

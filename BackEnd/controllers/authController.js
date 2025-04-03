@@ -118,3 +118,16 @@ export const getAuthenticatedUser = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+
+export const exists = async (req, res) => {
+    try {
+        const { identifier } = req.body;
+        const isExists = await existUser(identifier);
+        res.json({ success: true, exists: isExists });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+
