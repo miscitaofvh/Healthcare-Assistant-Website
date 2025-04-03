@@ -40,7 +40,7 @@ app.use("/api/article", articleRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/verify", verifyRoutes);
 // app.get('/profile', authenticateUser, async (req, res) => {
-//     const user = await getUserById(req.user.userId);
+//     const user = await getUserById(req.user.user_id);
 //     res.json({ success: true, user });
 // });
 // Error handling middleware

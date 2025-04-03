@@ -76,6 +76,43 @@ CREATE TABLE article (
     FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
 );
 
+CREATE TABLE article_likes (
+    like_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    article_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_article_like_article ON article_likes(article_id);
+CREATE INDEX idx_article_like_user ON article_likes(user_id);
+
+CREATE TABLE article_comments (
+    comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    article_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    comment_content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_article_comment_article ON article_comments(article_id);
+CREATE INDEX idx_article_comment_user ON article_comments(user_id);
+
+CREATE TABLE article_views (
+    view_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    article_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_article_view_article ON article_views(article_id);
+CREATE INDEX idx_article_view_user ON article_views(user_id);
+
 CREATE INDEX idx_article_author ON article(author_id);
 CREATE INDEX idx_article_category ON article(category_id);
 CREATE INDEX idx_article_date ON article(publication_date);
@@ -143,6 +180,7 @@ CREATE TABLE appointments (
 CREATE INDEX idx_appointment_user ON appointments(user_id);
 CREATE INDEX idx_appointment_doctor ON appointments(doctor_id);
 CREATE INDEX idx_appointment_date ON appointments(appointment_date);
+
 -- Forum Categories Table
 CREATE TABLE forum_categories (
     category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

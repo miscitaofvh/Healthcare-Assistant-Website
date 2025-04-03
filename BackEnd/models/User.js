@@ -129,7 +129,7 @@ export const loginUser = async (loginField, password) => {
     }
 };
 
-export const updateUserLastLogin = async (userId) => {
+export const updateUserLastLogin = async (user_id) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -138,7 +138,7 @@ export const updateUserLastLogin = async (userId) => {
         const sql = `UPDATE users 
                     SET last_login = NOW() 
                     WHERE user_id = ?`;
-        await conn.execute(sql, [userId]);
+        await conn.execute(sql, [user_id]);
 
         await conn.commit();
     } catch (error) {
@@ -150,13 +150,13 @@ export const updateUserLastLogin = async (userId) => {
     }
 };
 
-export const getUserById = async (userId) => {
+export const getUserById = async (user_id) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();  
         const sql = "SELECT user_id, username, email FROM users WHERE user_id = ?"; 
-        const [rows] = await conn.execute(sql, [userId]);
+        const [rows] = await conn.execute(sql, [user_id]);
 
         await conn.commit();
         return rows.length > 0 ? rows[0] : null;

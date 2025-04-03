@@ -15,7 +15,7 @@ router.post('/register', async (req, res) => {
   const result = await addUser(username, email, password);
 
   if (result.success) {
-    res.status(201).json({ message: 'User registered successfully!', userId: result.userId });
+    res.status(201).json({ message: 'User registered successfully!', user_id: result.user_id });
   } else {
     res.status(500).json({ error: result.error });
   }

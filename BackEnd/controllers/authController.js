@@ -8,7 +8,7 @@ export const register = async (req, res) => {
         const { username, email, password } = req.body;
 
         // Tạo user mới
-        const userId = await createUser({ username, email, password });
+        const user_id = await createUser({ username, email, password });
 
         // Tạo JWT token
         const token = jwt.sign(
@@ -36,7 +36,7 @@ export const register = async (req, res) => {
             success: true,
             message: "Đăng ký thành công",
             data: {
-                id: userId,
+                id: user_id,
                 username,
                 email,
                 token
@@ -66,7 +66,7 @@ export const login = async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { userId: user.user_id, username: user.username },
+            { user_id: user.user_id, username: user.username },
             process.env.JWT_SECRET,
             { expiresIn }
         );
@@ -107,7 +107,7 @@ export const login = async (req, res) => {
 export const getAuthenticatedUser = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-        const user = await getUserById(decoded.userId);
+        const user = await getUserById(decoded.user_id);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
         res.json({ success: true, user });

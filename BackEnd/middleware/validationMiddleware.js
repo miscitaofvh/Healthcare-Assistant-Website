@@ -104,19 +104,10 @@ const validateArticle = [
         .isLength({ min: 10 })
         .withMessage("Content phải có ít nhất 10 ký tự")
         .trim(),
-    // body("category_id")
-    //     .notEmpty()
-    //     .withMessage("Category là bắt buộc")
-    //     .isInt()
-    //     .withMessage("Category phải là số nguyên")
-    //     .trim(),
-
-    // body("publication_date")
-    //     .notEmpty()
-    //     .withMessage("Publication date là bắt buộc")
-    //     .isDate()
-    //     .withMessage("Ngày phải là định dạng ngày tháng")
-    //     .trim(),
+    body("category_name")
+        .notEmpty()
+        .withMessage("Category là bắt buộc")
+        .trim(),
     body("image_url")
         .optional()
         .isURL()
