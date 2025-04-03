@@ -10,7 +10,6 @@ import { useModal } from "../../contexts/ModalContext";
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({ identifier: "", password: "" });
-  const [errors, setErrors] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (Object.values(errors).some((err) => err)) return;
     
     setIsLoading(true);
     try {
@@ -67,7 +65,6 @@ const Login: React.FC = () => {
                 disabled={isLoading}
               />
             </div>
-            {errors.identifier && <small className={styles.error}>{errors.identifier}</small>}
             <div className={styles.field}>
               <span className={styles.iconLeft}>
                 <FontAwesomeIcon icon={faLock} />
@@ -85,7 +82,6 @@ const Login: React.FC = () => {
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
               </span>
             </div>
-            {errors.password && <small className={styles.error}>{errors.password}</small>}
             <div className={styles.forgotPass}>
               <a onClick={(e) => { e.preventDefault(); openModal("forgot-password"); }}>Forgot Password?</a>
             </div>
