@@ -15,7 +15,7 @@ const Navbar = () => {
                     <div className="logo"></div>
                 </Link>
                 <div className={`nav-links ${isOpen ? "mobile-menu" : ""}`}>
-                    <Link to="/news">News</Link>
+                    <Link to="/article">Article</Link>
                     <Link to="/forum">Forum</Link>
                     <Link to="/products">Products</Link>
                     <Link to="/about">About</Link>

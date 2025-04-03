@@ -1,0 +1,54 @@
+.main_navbar {
+    position: relative;
+    width: 100%;
+    z-index: 1000;
+    background: white; /* Ensure visibility */
+}
+
+/* Container Styling */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Category List */
+.list-group-item {
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.list-group-item:hover {
+    background: #f8f9fa;
+}
+
+.list-group-item.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+/* Article Cards */
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+/* Article Image */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}

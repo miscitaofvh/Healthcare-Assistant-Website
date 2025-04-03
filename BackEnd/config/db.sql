@@ -168,3 +168,42 @@ CREATE TABLE leaderboards (
 );
 
 CREATE INDEX idx_leaderboard_user ON leaderboards(user_id);
+
+
+CREATE TABLE forum_posts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_forum_user ON forum_posts(user_id);
+CREATE INDEX idx_forum_title ON forum_posts(title);
+
+CREATE TABLE forum_comments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    post_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_forum_comment_post ON forum_comments(post_id);
+CREATE INDEX idx_forum_comment_user ON forum_comments(user_id);
+
+
+CREATE TABLE forum_categories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT DEFAULT NULL
+);
+
+CREATE INDEX idx_forum_category_name ON forum_categories(category_name);
+ALTER TABLE forum_posts ADD COLUMN category_id INT UNSIGNED DEFAULT NULL,
+ADD FOREIGN KEY (category_id) REFERENCES forum_categories(id) ON DELETE SET NULL;
+

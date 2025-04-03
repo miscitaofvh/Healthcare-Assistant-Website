@@ -1,0 +1,33 @@
+.main_navbar {
+    position: relative;
+    width: 100%;
+    z-index: 1000;
+    background: white; /* Ensure visibility */
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.list-group-item {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.alert {
+    margin-top: 10px;
+}
+
+.spinner-border {
+    display: block;
+    margin: auto;
+}

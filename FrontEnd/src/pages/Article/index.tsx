@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-// import "bootstrap/dist/css/bootstrap.min.css";
-import axios from "axios";
 import { getCategories, getCategoryById, getArticles, getArticleById } from "../../utils/service/article";
-import { useModal } from "../../contexts/Modalcontext";
+// import { useModal } from "../../contexts/Modalcontext";
 const API_BASE_URL = "http://localhost:5000/api/article";
-
+import Navbar from "../../components/Navbar";
+import styles from "./Article.module.css";
 interface Category {
   category_id: number;
   category_name: string;
@@ -113,64 +112,69 @@ const HealthcareNews: React.FC = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <h1 className="text-center mb-4">Healthcare News</h1>
-      <div className="row">
-        <div className="col-md-3">
-          <h4>Categories</h4>
-          <ul className="list-group">
-            <li
-              className={`list-group-item ${!selectedCategory ? "active" : ""}`}
-              onClick={() => handleCategoryClick(null)}
-              style={{ cursor: "pointer" }}
-            >
-              All Articles
-            </li>
-            {categories.map((category) => (
+    <div>
+      <div className={styles.main_navbar}>
+        <Navbar />
+      </div>
+
+      <div className={styles.container}>
+        <h1 className={styles.text_center} mb-4>Healthcare News</h1>
+        <div className={styles.row}>
+          <div className={styles.col_md_3}>
+            <h4>Categories</h4>
+            <ul className={styles.list_group}>
               <li
-                key={category.category_id}
-                className={`list-group-item ${
-                  selectedCategory === category.category_id ? "active" : ""
-                }`}
-                onClick={() => handleCategoryClick(category.category_id)}
+                className={`${styles.list_group_item} ${!selectedCategory ? "active" : ""}`}
+                onClick={() => handleCategoryClick(null)}
                 style={{ cursor: "pointer" }}
               >
-                {category.category_name}
+                All Articles
               </li>
-            ))}
-          </ul>
-        </div>
-        <div className="col-md-9">
-          <h4>Articles</h4>
-          {articles.length === 0 ? (
-            <div className="alert alert-info">Không có bài viết nào.</div>
-          ) : (
-            <div className="row">
-              {articles.map((article) => (
-                <div className="col-md-4 mb-4" key={article.article_id}>
-                  <div className="card h-100">
-                    {article.image_url && (
-                      <img 
-                        src={article.image_url} 
-                        className="card-img-top" 
-                        alt={article.title}
-                        style={{ height: "200px", objectFit: "cover" }}
-                      />
-                    )}
-                    <div className="card-body">
-                      <h5 className="card-title">{article.title}</h5>
-                      <p className="card-text">
-                        {article.content.substring(0, 100)}...
-                      </p>
-                      <a href={`/article/${article.article_id}`} className="btn btn-primary">
-                        Read More
-                      </a>
+              {categories.map((category) => (
+                <li
+                  key={category.category_id}
+                  className={`list-group-item ${selectedCategory === category.category_id ? "active" : ""
+                    }`}
+                  onClick={() => handleCategoryClick(category.category_id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {category.category_name}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={styles.col_md_9}>
+            <h4>Articles</h4>
+            {articles.length === 0 ? (
+              <div className={styles.alert}>Không có bài viết nào.</div>
+            ) : (
+              <div className={styles.row}>
+                {articles.map((article) => (
+                  <div className={styles.col_md_4} key={article.article_id}>
+                    <div className={styles.card}>
+                      {article.image_url && (
+                        <img
+                          src={article.image_url}
+                          className={styles.card_img_top}
+                          alt={article.title}
+                          style={{ height: "200px", objectFit: "cover" }}
+                        />
+                      )}
+                      <div className={styles.card_body}>
+                        <h5 className={styles.card_title}>{article.title}</h5>
+                        <p className={styles.card_text}>
+                          {article.content.substring(0, 100)}...
+                        </p>
+                        <a href={`/article/${article.article_id}`} className={styles.btn_primary}>
+                          Read More
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
