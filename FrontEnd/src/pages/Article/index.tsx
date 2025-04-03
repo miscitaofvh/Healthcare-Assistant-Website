@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getCategories, getCategoryById, getArticles, getArticleById } from "../../utils/service/article";
-// import { useModal } from "../../contexts/Modalcontext";
-const API_BASE_URL = "http://localhost:5000/api/article";
+import { getCategories, getArticles, createArticle, deleteArticle, getCategoryById, getArticleById, updateArticle } from "../../utils/service/article";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+
 import styles from "./Article.module.css";
+
 interface Category {
   category_id: number;
   category_name: string;
@@ -20,9 +21,12 @@ const HealthcareNews: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [newArticle, setNewArticle] = useState({ title: "", content: "", image_url: "" });
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCategories();
@@ -32,12 +36,10 @@ const HealthcareNews: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      setError("");
       const response = await getCategories();
       setCategories(response.data);
     } catch (error) {
-      setError("Không thể tải danh mục. Vui lòng thử lại sau.");
-      console.error("Error fetching categories:", error);
+      setError("Không thể tải danh mục.");
     } finally {
       setLoading(false);
     }
@@ -46,98 +48,50 @@ const HealthcareNews: React.FC = () => {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      setError("");
       const response = await getArticles();
       setArticles(response.data);
     } catch (error) {
-      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
-      console.error("Error fetching articles:", error);
+      setError("Không thể tải bài viết.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchArticleById = async (id: number | null) => {
+  const handleCreateArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const response = await getArticleById(id?.toString() || "");
-      setSelectedArticle(response.data);
+      const response = await createArticle(newArticle);
+      alert(response.data.message);
+      setShowModal(false);
+      setNewArticle({ title: "", content: "", image_url: "" });
+      fetchArticles();
     } catch (error) {
-      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
-      console.error("Error fetching article:", error);
+      setError("Không thể tạo bài viết.");
     }
   };
 
-  const fetchCategoryById = async (id: number | null) => {
+  const handleDeleteArticle = async (id: number) => {
     try {
-      const response = await getCategoryById(id?.toString() || "");
-      setSelectedCategory(response.data);
+      await deleteArticle(id.toString());
+      fetchArticles();
     } catch (error) {
-      setError("Không thể tải danh mục. Vui lòng thử lại sau.");
-      console.error("Error fetching category:", error);
+      setError("Không thể xóa bài viết.");
     }
   };
-
-  const handleCategoryClick = (categoryId: number | null) => {
-    try {
-      setSelectedCategory(categoryId);
-      if (categoryId !== null) {
-        fetchCategoryById(categoryId);
-      }
-    } catch (error) {
-      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
-      console.error("Error fetching articles:", error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mt-4">
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
-      <div className={styles.main_navbar}>
-        <Navbar />
-      </div>
-
+      <Navbar />
       <div className={styles.container}>
-        <h1 className={styles.text_center} mb-4>Healthcare News</h1>
+        <h1 className={styles.text_center}>Healthcare News</h1>
+        <button onClick={() => setShowModal(true)} className={styles.btn_primary}>+ Create New Article</button>
         <div className={styles.row}>
           <div className={styles.col_md_3}>
             <h4>Categories</h4>
             <ul className={styles.list_group}>
-              <li
-                className={`${styles.list_group_item} ${!selectedCategory ? "active" : ""}`}
-                onClick={() => handleCategoryClick(null)}
-                style={{ cursor: "pointer" }}
-              >
-                All Articles
-              </li>
+              <li className={`${styles.list_group_item} ${!selectedCategory ? "active" : ""}`} onClick={() => setSelectedCategory(null)}>All Articles</li>
               {categories.map((category) => (
-                <li
-                  key={category.category_id}
-                  className={`list-group-item ${selectedCategory === category.category_id ? "active" : ""
-                    }`}
-                  onClick={() => handleCategoryClick(category.category_id)}
-                  style={{ cursor: "pointer" }}
-                >
+                <li key={category.category_id} className={styles.list_group_item} onClick={() => setSelectedCategory(category.category_id)}>
                   {category.category_name}
                 </li>
               ))}
@@ -145,37 +99,39 @@ const HealthcareNews: React.FC = () => {
           </div>
           <div className={styles.col_md_9}>
             <h4>Articles</h4>
-            {articles.length === 0 ? (
-              <div className={styles.alert}>Không có bài viết nào.</div>
-            ) : (
+            {articles.length === 0 ? <div className={styles.alert}>Không có bài viết nào.</div> :
               <div className={styles.row}>
                 {articles.map((article) => (
                   <div className={styles.col_md_4} key={article.article_id}>
                     <div className={styles.card}>
-                      {article.image_url && (
-                        <img
-                          src={article.image_url}
-                          className={styles.card_img_top}
-                          alt={article.title}
-                          style={{ height: "200px", objectFit: "cover" }}
-                        />
-                      )}
+                      {article.image_url && <img src={article.image_url} className={styles.card_img_top} alt={article.title} />}
                       <div className={styles.card_body}>
                         <h5 className={styles.card_title}>{article.title}</h5>
-                        <p className={styles.card_text}>
-                          {article.content.substring(0, 100)}...
-                        </p>
-                        <a href={`/article/${article.article_id}`} className={styles.btn_primary}>
-                          Read More
-                        </a>
+                        <p className={styles.card_text}>{article.content.substring(0, 100)}...</p>
+                        <button className={styles.btn_primary} onClick={() => navigate(`/article/${article.article_id}`)}>Read More</button>
+                        <button className={styles.btn_danger} onClick={() => handleDeleteArticle(article.article_id)}>Delete</button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            }
           </div>
         </div>
+        {showModal && (
+          <div className={styles.modal_overlay}>
+            <div className={styles.modal_content}>
+              <h2>Create New Article</h2>
+              <form onSubmit={handleCreateArticle}>
+                <input type="text" placeholder="Title" value={newArticle.title} onChange={(e) => setNewArticle({ ...newArticle, title: e.target.value })} required />
+                <textarea placeholder="Content" value={newArticle.content} onChange={(e) => setNewArticle({ ...newArticle, content: e.target.value })} required />
+                <input type="text" placeholder="Image URL" value={newArticle.image_url} onChange={(e) => setNewArticle({ ...newArticle, image_url: e.target.value })} />
+                <button type="submit" className={styles.btn_primary}>Submit</button>
+                <button onClick={() => setShowModal(false)} className={styles.btn_secondary}>Cancel</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

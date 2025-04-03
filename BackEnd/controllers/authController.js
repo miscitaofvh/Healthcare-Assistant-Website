@@ -109,7 +109,6 @@ export const login = async (req, res) => {
 
 export const getAuthenticatedUser = async (req, res) => {
     try {
-
         const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
         const user = await getUserById(decoded.userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });

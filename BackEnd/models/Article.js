@@ -23,6 +23,26 @@ export const getCategoriesDB = async () => {
     }
 };
 
+export const getCategoryByIdDB = async (id) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = "SELECT * FROM categories WHERE category_id = ?";
+        const [category] = await conn.execute(sql, [id]);
+
+        await conn.commit();
+        return category;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error fetching category:", error);
+        throw new Error("Không thể lấy danh mục");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 
 export const getArticlesDB = async () => {
     let conn;

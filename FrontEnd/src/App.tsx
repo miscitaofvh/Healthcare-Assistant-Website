@@ -13,7 +13,7 @@ import Error from './pages/Error';
 import VerifyEmail from './pages/VerifyEmail';
 import Article from './pages/Article';
 import { UserProvider } from "./contexts/UserContext";
-import { ModalProvider } from './contexts/Modalcontext';
+import { ModalProvider } from './contexts/ModalContext';
 
 function App() {
     return (

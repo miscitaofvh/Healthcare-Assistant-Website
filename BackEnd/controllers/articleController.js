@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-import { getCategoriesDB, getArticlesDB, getArticleByIdDB, createArticleDB, updateArticleDB, deleteArticleDB } from "../models/Article.js";
+import { getCategoriesDB, getCategoryByIdDB, getArticlesDB, getArticleByIdDB, createArticleDB, updateArticleDB, deleteArticleDB } from "../models/Article.js";
 
 dotenv.config();
 
@@ -13,7 +13,19 @@ export const getCategories = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Error fetching categories" });
     }
+
 };
+
+export const getCategoryById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category = await getCategoryByIdDB(id);
+        res.status(200).json(category);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching category" });
+    }
+};
+
 export const getArticles = async (req, res) => {
     try {
         const articles = await getArticlesDB();
@@ -34,6 +46,7 @@ export const getArticleById = async (req, res) => {
 };
 
 export const createArticle = async (req, res) => {
+    console.log(req.body);
     try {
         const { title, content, author_id, category_id, publication_date, image_url } = req.body;
         const article = await createArticleDB(title, content, author_id, category_id, publication_date, image_url);

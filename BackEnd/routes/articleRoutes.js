@@ -1,5 +1,5 @@
 import express from "express";
-import { getCategories, getArticles, getArticleById, createArticle, updateArticle, deleteArticle } from "../controllers/articleController.js";
+import { getCategories, getCategoryById, getArticles, getArticleById, createArticle, updateArticle, deleteArticle } from "../controllers/articleController.js";
 import { validateArticle } from "../middleware/validationMiddleware.js";
 
 const asyncHandler = (fn) => (req, res, next) => {
@@ -9,6 +9,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 const router = express.Router();
 
 router.get("/categories", asyncHandler(getCategories));
+router.get("/categories/:id", asyncHandler(getCategoryById));
 router.get("/articles", asyncHandler(getArticles));
 router.get("/articles/:id", asyncHandler(getArticleById));
 router.post("/articles", validateArticle, asyncHandler(createArticle));

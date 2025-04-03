@@ -6,19 +6,33 @@ import styles from "./SignUp.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faLock, faEye, faEyeSlash, faXmark, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { useModal } from "../../contexts/ModalContext";
+import { isUsernameValid, isEmailValid } from "../../utils/validate/identifier";
+import { PasswordStrength, PasswordCheckService } from "../../utils/validate/passwd";
 import Image from "../../assets/images/Login/image.jpg";
 
 const BASE_URL = "http://localhost:5000/api/verify";
 
 const validateInput = (name: string, value: string) => {
-    const usernameRegex = /^[a-zA-Z0-9_]{3,16}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-
-    if (name === "username" && !usernameRegex.test(value)) return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
-    if (name === "email" && !emailRegex.test(value)) return "Email không hợp lệ";
-    if (name === "password" && !passwordRegex.test(value)) return "Password phải có ít nhất 8 ký tự, bao gồm chữ và số";
-
+    if (name === "username") {
+        if (!isUsernameValid(value)) {
+            return "Username chỉ được chứa chữ cái, số và dấu gạch dưới";
+        }
+    }
+    if (name === "email") {
+        if (!isEmailValid(value)) {
+            return "Email không hợp lệ";
+        }
+    }
+    if (name === "password") {
+        const passwordStrength = PasswordCheckService.checkPasswordStrength(value);
+        if (passwordStrength === PasswordStrength.Short) {
+            return "Password phải có ít nhất 8 ký tự";
+        } else if (passwordStrength === PasswordStrength.Common) {
+            return "Password quá phổ biến, vui lòng chọn password mạnh hơn";
+        } else if (passwordStrength === PasswordStrength.Weak) {
+            return "Password quá yếu, đảm bảo có ký tự đặc biệt, chữ hoa và số";
+        }
+    }
     return "";
 };
 
