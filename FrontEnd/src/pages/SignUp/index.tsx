@@ -22,7 +22,6 @@ const validateInput = (name: string, value: string) => {
     return "";
 };
 
-
 const SignUp: React.FC = () => {
     const [formData, setFormData] = useState({ username: "", email: "", password: "" });
     const [errors, setErrors] = useState({ username: "", email: "", password: "" });
@@ -108,7 +107,7 @@ const SignUp: React.FC = () => {
                             {isSubmitting ? "Signing Up..." : "Sign Up"}
                         </button>
                         <div className={styles.login}>
-                            Already have an account? <a href="/login">Log in</a>
+                            Already have an account? <a onClick={(e) => { e.preventDefault(); openModal("login"); }}>Log in</a>
                         </div>
                     </form>
                 </div>

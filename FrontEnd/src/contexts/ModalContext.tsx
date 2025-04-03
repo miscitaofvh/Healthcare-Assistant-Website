@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import SignUp from "../pages/SignUp";
 import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword"
 import styled from "styled-components";
 
 const ModalContent = styled.div`
@@ -24,7 +25,7 @@ const Overlay = styled.div`
     justify-content: center;
 `;
 
-type ModalType = "sign-up" | "login" | null;
+type ModalType = "sign-up" | "login" | "forgot-password" | null;
 
 interface ModalContextProps {
     openModal: (type: ModalType) => void;
@@ -44,6 +45,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     <ModalContent onClick={(e) => e.stopPropagation()}>
                         {modalType === "sign-up" && <SignUp />}
                         {modalType === "login" && <Login />}
+                        {modalType === "forgot-password" && <FotgotPassword />}
                     </ModalContent>
                 </Overlay>
             )}

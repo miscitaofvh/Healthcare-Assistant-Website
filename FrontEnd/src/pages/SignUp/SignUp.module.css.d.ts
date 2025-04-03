@@ -21,6 +21,7 @@ declare const styles: {
     readonly image: string;
     readonly iconLeft: string;
     readonly iconRight: string;
+    readonly link: string;
 };
 
 export default styles; 

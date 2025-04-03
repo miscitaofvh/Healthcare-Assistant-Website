@@ -134,17 +134,17 @@
     background: #4910c5;
 }
 
-.signUp {
+.login {
     margin: 10px 0;
     font-size: 16px;
 }
 
-.signUp a {
+.login a {
     color: #3498db;
     text-decoration: none;
 }
 
-.signUp a:hover {
+.login a:hover {
     color: #1573b2;
     text-decoration: underline;
 }
