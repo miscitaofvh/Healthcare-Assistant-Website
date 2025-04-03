@@ -38,9 +38,9 @@ const dbConfig = {
 let pool;
 try {
     pool = mysql.createPool(dbConfig);
-    console.log('Connection pool created successfully');
+    console.log('✅ Connection pool created successfully');
 } catch (error) {
-    console.error('Error creating connection pool:', error);
+    console.error('❌ Error creating connection pool:', error);
     throw new Error('Failed to initialize database connection pool');
 }
 
@@ -49,16 +49,16 @@ const testConnection = async (retries = 3, delay = 1000) => {
     for (let i = 0; i < retries; i++) {
         try {
             const connection = await pool.getConnection();
-            console.log('Database connection successful!');
+            console.log('✅ Database connection successful!');
             
             // Kiểm tra version của database
             const [version] = await connection.query('SELECT VERSION() as version');
-            console.log(`Connected to MySQL version: ${version[0].version}`);
+            console.log(`✅ Connected to MySQL version: ${version[0].version}`);
             
             connection.release();
             return true;
         } catch (error) {
-            console.error(`Connection attempt ${i + 1} failed:`, error.message);
+            console.error(`❌ Connection attempt ${i + 1} failed:`, error.message);
             if (i < retries - 1) {
                 console.log(`Retrying in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -72,9 +72,9 @@ const testConnection = async (retries = 3, delay = 1000) => {
 const closePool = async () => {
     try {
         await pool.end();
-        console.log('Database connection pool closed successfully');
+        console.log('✅ Database connection pool closed successfully');
     } catch (error) {
-        console.error('Error closing connection pool:', error);
+        console.error('❌ Error closing connection pool:', error);
         throw new Error('Failed to close database connection pool');
     }
 };
@@ -85,12 +85,12 @@ const getConnection = async (timeout = 5000) => {
         const connection = await Promise.race([
             pool.getConnection(),
             new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Connection timeout')), timeout)
+                setTimeout(() => reject(new Error('❌ Connection timeout')), timeout)
             )
         ]);
         return connection;
     } catch (error) {
-        console.error('Error getting connection:', error);
+        console.error('❌ Error getting connection:', error);
         throw new Error('Failed to get database connection');
     }
 };

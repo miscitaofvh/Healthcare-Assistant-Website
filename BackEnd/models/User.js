@@ -1,4 +1,4 @@
-import connection from "../config/db.js";
+import connection from "../config/connection.js";
 import bcrypt from "bcrypt";
 
 export const findUserByUsernameOrEmail = async (username, email) => {

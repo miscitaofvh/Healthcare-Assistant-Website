@@ -91,4 +91,48 @@ const validateLogin = [
     }
 ];
 
-export { validateRegister, validateLogin };
+const validateArticle = [
+    body("title")
+        .notEmpty()
+        .withMessage("Title là bắt buộc")
+        .isLength({ min: 3, max: 100 })
+        .withMessage("Title phải từ 3-100 ký tự")
+        .trim(),
+    body("content")
+        .notEmpty()
+        .withMessage("Content là bắt buộc")
+        .isLength({ min: 10 })
+        .withMessage("Content phải có ít nhất 10 ký tự")
+        .trim(),
+    body("category_id")
+        .notEmpty()
+        .withMessage("Category là bắt buộc")
+        .isInt()
+        .withMessage("Category phải là số nguyên")
+        .trim(),
+
+    body("publication_date")
+        .notEmpty()
+        .withMessage("Publication date là bắt buộc")
+        .isDate()
+        .withMessage("Ngày phải là định dạng ngày tháng")
+        .trim(),
+    body("image_url")
+        .optional()
+        .isURL()
+        .withMessage("URL ảnh không hợp lệ")
+        .trim(),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Dữ liệu không hợp lệ",
+                errors: errors.array()
+            });
+        }
+        next();
+    }
+];
+
+export { validateRegister, validateLogin, validateArticle };
