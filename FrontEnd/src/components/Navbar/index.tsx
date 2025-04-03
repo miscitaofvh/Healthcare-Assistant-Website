@@ -17,7 +17,6 @@ const Navbar = () => {
                 <div className={`nav-links ${isOpen ? "mobile-menu" : ""}`}>
                     <Link to="/article">Article</Link>
                     <Link to="/forum">Forum</Link>
-                    <Link to="/products">Products</Link>
                     <Link to="/about">About</Link>
                     <Link to="/contact">Contact</Link>
                 </div>

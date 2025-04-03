@@ -143,33 +143,6 @@ CREATE INDEX idx_appointment_user ON appointments(user_id);
 CREATE INDEX idx_appointment_doctor ON appointments(doctor_id);
 CREATE INDEX idx_appointment_date ON appointments(appointment_date);
 
--- Gamification table
-CREATE TABLE gamification (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
-    challenge_name VARCHAR(255) NOT NULL,
-    progress INT DEFAULT 0,
-    status ENUM('ongoing', 'completed', 'failed') DEFAULT 'ongoing',
-    reward_points INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_gamification_user ON gamification(user_id);
-
--- Leaderboards table
-CREATE TABLE leaderboards (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
-    points INT DEFAULT 0,
-    ranking INT DEFAULT NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_leaderboard_user ON leaderboards(user_id);
-
-
 CREATE TABLE forum_posts (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
