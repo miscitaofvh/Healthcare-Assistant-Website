@@ -37,7 +37,6 @@ export async function requestAPI(
             },
             withCredentials: true,
         };
-
         const response: AxiosResponse = await apiClient(config);
 
         return {

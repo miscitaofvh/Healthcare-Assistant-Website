@@ -4,15 +4,25 @@ import Image from "../../assets/images/Login/image.jpg";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useModal } from "../../contexts/ModalContext";
+import { requestAPI } from "../../utils/api/request";
 
-const Login: React.FC = () => {
-  const [formData, setFormData] = useState({ identifier: "", password: "" });
+const BASE_URL = "http://localhost:5000/api/auth";
 
+const ForgotPassword: React.FC = () => {
+  const [formData, setFormData] = useState({
+    identifier: "",
+    newPassword: "",
+    otp: ""
+  });
   const { closeModal, openModal } = useModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const response = await requestAPI(BASE_URL, "/exist", "POST", { identifier: formData.identifier });
     
+    if (response.status === 200){
+      if (response.data)
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +37,7 @@ const Login: React.FC = () => {
           <FontAwesomeIcon icon={faXmark} />
         </div>
         <div className={styles.image}>
-          <img src={Image} />
+          <img src={Image}/>
         </div>
         <div className={styles.content}>
           <div className={styles.text}>Reset Password</div>
@@ -47,7 +57,7 @@ const Login: React.FC = () => {
             </div>
             <button type="submit" className={styles.button}>Continue</button>
             <div className={styles.signUp}>
-              Not a member? <a onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
+              Not a member? <a href="#" onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
             </div>
           </form>
         </div>
@@ -56,4 +66,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

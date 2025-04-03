@@ -135,7 +135,7 @@ const validateArticle = [
     }
 ];
 
-const validateExists = [
+const validateExist = [
     body("identifier")
         .notEmpty()
         .withMessage("Username hoặc email là bắt buộc")
@@ -165,4 +165,4 @@ const validateExists = [
     }
 ];
 
-export { validateRegister, validateLogin, validateArticle, validateExists };
+export { validateRegister, validateLogin, validateArticle, validateExist };

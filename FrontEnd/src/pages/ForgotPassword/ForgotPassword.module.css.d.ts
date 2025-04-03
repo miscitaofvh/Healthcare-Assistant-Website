@@ -8,19 +8,17 @@ declare const styles: {
     readonly icon: string;
     readonly toggleIcon: string;
     readonly button: string;
-    readonly forgotPass: string;
     readonly signUp: string;
-    readonly navbar_hover_area: string;
-    readonly main_navbar: string;
-    readonly visible: string;
-    readonly hidden: string;
     readonly name: string;
     readonly image: string;
     readonly iconLeft: string;
     readonly iconRight: string;
     readonly form: string;
     readonly exit: string;
+    readonly message: string;
+    readonly messageIcon: string;
     readonly error: string;
+    readonly success: string;
 };
 
 export default styles; 

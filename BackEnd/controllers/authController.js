@@ -1,9 +1,6 @@
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { findUserByUsernameOrEmail, createUser, findUserByLoginField, loginUser, getUserById } from "../models/User.js";
-import db from "../config/connection.js";
-
+import { createUser, loginUser, getUserById, existUser } from "../models/User.js";
 dotenv.config();
 
 export const register = async (req, res) => {
@@ -120,11 +117,11 @@ export const getAuthenticatedUser = async (req, res) => {
 };
 
 
-export const exists = async (req, res) => {
+export const exist = async (req, res) => {
     try {
         const { identifier } = req.body;
-        const isExists = await existUser(identifier);
-        res.json({ success: true, exists: isExists });
+        const isExist = await existUser(identifier);
+        res.json({ success: true, exist: isExist });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error" });
     }
