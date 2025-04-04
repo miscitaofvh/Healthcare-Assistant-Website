@@ -133,30 +133,25 @@ CREATE TABLE comments (
 CREATE INDEX idx_comment_user ON comments(user_id);
 CREATE INDEX idx_comment_article ON comments(article_id);
 
--- Questions Table
-CREATE TABLE questions (
+CREATE TABLE chat_history (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    question_text TEXT NOT NULL,
-    image_url TEXT DEFAULT NULL,
-    status ENUM('pending', 'answered') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
 
-CREATE INDEX idx_question_user ON questions(user_id);
+    -- Question
+    user_id CHAR(36) NOT NULL,                   
+    question_text TEXT NOT NULL,                     
+    image_url TEXT DEFAULT NULL,                     
+    status ENUM('pending', 'answered') DEFAULT 'pending',  
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
 
--- Answers Table (Fixed `review_by` to allow NULL)
-CREATE TABLE answers (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    question_id INT UNSIGNED NOT NULL,
-    answered_by CHAR(36) NOT NULL,
-    answer_text TEXT NOT NULL,
-    is_ai BOOLEAN DEFAULT TRUE,
-    confidence_score DECIMAL(5,2) DEFAULT NULL,
-    review_by CHAR(36) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    -- Answer
+    answered_by CHAR(36) DEFAULT NULL,      -- NULL is AI, not NULL is doctor
+    answer_text TEXT NOT NULL,          
+    is_ai BOOLEAN DEFAULT TRUE,                   
+    review_by CHAR(36) DEFAULT NULL,                 
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign Keys
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (answered_by) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (review_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
