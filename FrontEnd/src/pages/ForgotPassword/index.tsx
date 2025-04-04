@@ -55,7 +55,7 @@ const ForgotPassword: React.FC = () => {
         </div>
         <div className={styles.content}>
           <div className={styles.text}>Reset Password</div>
-          
+
           <form onSubmit={handleSubmit}>
             <div className={styles.field}>
               <span className={styles.iconLeft}>
@@ -71,7 +71,7 @@ const ForgotPassword: React.FC = () => {
                 disabled={loading}
               />
             </div>
-            
+
             {error && (
               <div className={styles.error}>
                 <div>User not found.</div>

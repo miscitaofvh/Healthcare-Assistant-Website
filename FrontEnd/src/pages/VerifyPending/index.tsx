@@ -8,15 +8,29 @@ const BASE_URL = "http://localhost:5000/api/verify";
 const VerifyPending = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
+    const [type, setType] = useState("register"); // Default to register type
     const [loading, setLoading] = useState(false);
     const [cooldown, setCooldown] = useState(60);
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         const fetchEmail = async () => {
             try {
                 const response = await requestAPI(BASE_URL, "/get-email", "GET", null, null);
-                if (response.data?.email) setEmail(response.data.email);
-                else navigate("/");
+                if (response.data?.email && response.data?.type) {
+                    setEmail(response.data.email);
+                    setType(response.data.type);
+                    
+                    // Set appropriate message based on type
+                    setMessage(
+                        response.data.type === "register" 
+                            ? "We have sent a verification email to"
+                            : "We have sent a password reset link to"
+                    );
+                } else {
+                    console.log("Response:", response);
+                    navigate("/");
+                }
             } catch (error) {
                 console.error("Failed to get email from cookie:", error);
                 navigate("/");
@@ -38,24 +52,50 @@ const VerifyPending = () => {
         setLoading(true);
 
         try {
-            await requestAPI(BASE_URL, "/verify-pending", "POST", { email });
+            await requestAPI(BASE_URL, "/verify-pending", "POST", { email, type });
+            setMessage(
+                type === "register" 
+                    ? "Verification email resent to"
+                    : "Password reset link resent to"
+            );
         } catch (error) {
             console.error("Failed to resend email:", error);
             setCooldown(0);
+            setMessage("Failed to resend. Please try again.");
         }
 
         setLoading(false);
+    };
+
+    const getHeaderText = () => {
+        return type === "register" 
+            ? "Please verify your email" 
+            : "Check your email for password reset";
+    };
+
+    const getButtonText = () => {
+        if (loading) return "Sending...";
+        if (cooldown > 0) return `Try again in ${cooldown}s`;
+        return type === "register" ? "Resend verification" : "Resend reset link";
     };
 
     return (
         <div className="verify-container">
             <div className="verify-content">
                 <div className="verify-field">
-                    <h2>Please verify your email</h2>
-                    <p>We have sent a verification email to <strong>{email}</strong></p>
-                    <p>Click the link in the email to verify your account</p>
-                    <button className="verify-button" onClick={handleResend} disabled={loading || cooldown > 0}>
-                        {loading ? "Sending..." : cooldown > 0 ? `Try again in ${cooldown}s` : "Send email"}
+                    <h2>{getHeaderText()}</h2>
+                    <p>{message} <strong>{email}</strong></p>
+                    <p>
+                        {type === "register" 
+                            ? "Click the link in the email to verify your account"
+                            : "Click the link in the email to reset your password"}
+                    </p>
+                    <button 
+                        className="verify-button" 
+                        onClick={handleResend} 
+                        disabled={loading || cooldown > 0}
+                    >
+                        {getButtonText()}
                     </button>
                 </div>
             </div>

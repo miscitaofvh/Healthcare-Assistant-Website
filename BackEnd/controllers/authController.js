@@ -12,9 +12,9 @@ export const register = async (req, res) => {
 
         // Tạo JWT token
         const token = jwt.sign(
-            { email },
-            process.env.EMAIL_SECRET,
-            { expiresIn: '24h' }
+            { email, type: "register" }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "24h" }
         );
 
         // Dung cho https
