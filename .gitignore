@@ -3,3 +3,4 @@ key.pem
 cert.pem
 .env
 .sql
+node_modules/

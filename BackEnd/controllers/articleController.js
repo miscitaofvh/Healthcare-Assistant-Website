@@ -50,13 +50,10 @@ export const getArticleById = async (req, res) => {
 };
 
 export const createArticle = async (req, res) => {
-    console.log(req.body);
     try {
         const { title, content, category_name, image_url } = req.body;
         const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
         const author_id = decoded.user_id;
-        console.log(decoded);
-        console.log(author_id);
         const article = await createArticleDB(title, content, author_id, category_name, image_url);
         res.status(201).json(article);
     } catch (error) {

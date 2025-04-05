@@ -28,7 +28,7 @@ const VerifyPending = () => {
                             : "We have sent a password reset link to"
                     );
                 } else {
-                    console.log("Response:", response);
+                    alert(response.data.message);
                     navigate("/");
                 }
             } catch (error) {
