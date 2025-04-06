@@ -76,22 +76,17 @@ export const getPendingEmail = (req, res) => {
 
 export const verifyEmail = async (req, res) => {
     const redisClient = await getRedisClient();
-    const { token, type } = req.query;
+    const { token } = req.query;
 
-    if (!token || !type) {
-        console.log("❌ Token and type are required");
-        return res.status(400).json({ success: false, message: "Token and type are required" });
+    console.log("📨 Received email verification request with token:", token);
+    if (!token) {
+        console.log("❌ Token is required");
+        return res.status(400).json({ success: false, message: "Token is required" });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const { email, type: tokenType } = decoded;
-
-        // Validate token type matches requested type
-        if (tokenType !== type) {
-            console.log("❌ Token type mismatch");
-            return res.status(400).json({ success: false, message: "Token type mismatch" });
-        }
 
         // Check token in Redis
         const cachedToken = await redisClient.get(`email_token:${email}:${tokenType}`);
