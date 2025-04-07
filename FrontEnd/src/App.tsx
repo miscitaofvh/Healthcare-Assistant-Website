@@ -1,12 +1,9 @@
-import React from 'react'
 import './App.css'
 import { Route, Routes } from "react-router-dom";
 import Home from './pages/Home';
 import About from './pages/About';
 import Forum from './pages/Forum';
 import Contact from './pages/Contact';
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
 import Test from './pages/Test';
 import VerifyPending from './pages/VerifyPending';
 import Error from './pages/Error';

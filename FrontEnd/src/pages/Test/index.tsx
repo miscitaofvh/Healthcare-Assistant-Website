@@ -1,4 +1,3 @@
-import React from "react";
 import "./Test.css";
 import { generateToken } from "../../utils/auth/token";
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { requestAPI } from "../../utils/api/request";
 export default function VerifyEmail() {
     const [status, setStatus] = useState("Verifying...");
