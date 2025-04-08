@@ -9,6 +9,7 @@ import VerifyPending from './pages/VerifyPending';
 import Error from './pages/Error';
 import VerifyEmail from './pages/VerifyEmail';
 import Article from './pages/Article';
+import ArticleDetail from './pages/Article/[id]';
 import { UserProvider } from "./contexts/UserContext";
 import { ModalProvider } from './contexts/ModalContext';
 
@@ -20,6 +21,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/home" element={<Home />} />
                     <Route path="/article" element={<Article />} />
+                    <Route path="/article/:id" element={<ArticleDetail />} />
                     <Route path="/forum" element={<Forum />} />
                     <Route path="/about" element={<About />} />
                     {/* <Route path="/login" element={<Login />} /> */}

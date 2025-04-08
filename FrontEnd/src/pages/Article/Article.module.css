@@ -115,3 +115,31 @@
     border: none;
     cursor: pointer;
 }
+
+.article_detail {
+    padding: 2rem;
+  }
+  
+  .article_image {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 8px;
+  }
+  
+  .article_content {
+    font-size: 1rem;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+  
+  .text_center {
+    text-align: center;
+  }
+  
+  .alert {
+    color: red;
+    text-align: center;
+    margin-top: 2rem;
+  }
+  

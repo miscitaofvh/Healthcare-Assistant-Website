@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"; // If using React Router
-import axios from "axios";
+import { useParams } from "react-router-dom";
+import { getArticleById } from "../../utils/service/article";
 import Navbar from "../../components/Navbar";
+
 import styles from "./Article.module.css";
-
-
-
-const API_BASE_URL = "http://localhost:5000/api/article";
 
 interface Article {
   article_id: number;
   title: string;
   content: string;
+  author_id?: string;
+  category_id?: number;
+  publication_date?: string;
+  last_updated?: string;
   image_url?: string;
-  created_at: string;
 }
 
 const ArticleDetail: React.FC = () => {
@@ -23,15 +23,22 @@ const ArticleDetail: React.FC = () => {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    fetchArticle();
+    if (id) {
+      fetchArticle();
+    }
   }, [id]);
 
   const fetchArticle = async () => {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get<Article>(`${API_BASE_URL}/${id}`);
-      setArticle(response.data);
+      const response = await getArticleById(id || "");
+
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        setArticle(response.data[0]);
+      } else {
+        setError("Bài viết không tồn tại.");
+      }
     } catch (error) {
       setError("Không thể tải bài viết. Vui lòng thử lại sau.");
       console.error("Error fetching article:", error);
@@ -40,20 +47,36 @@ const ArticleDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="text-center">Đang tải...</div>;
-  if (error) return <div className="alert alert-danger">{error}</div>;
-  if (!article) return <div className="alert alert-warning">Không tìm thấy bài viết.</div>;
-
   return (
-    <div className={styles.articleDetailContainer}>
+    <div>
       <Navbar />
-      <div className="container mt-4">
-        <h1 className="text-center">{article.title}</h1>
-        <p className="text-muted text-center">{new Date(article.created_at).toLocaleDateString()}</p>
-        {article.image_url && <img src={article.image_url} alt={article.title} className={styles.articleImage} />}
-        <div className={styles.articleContent}>
-          <p>{article.content}</p>
-        </div>
+      <div className={styles.container}>
+        {loading ? (
+          <div className={styles.text_center}>Đang tải...</div>
+        ) : error ? (
+          <div className={styles.alert}>{error}</div>
+        ) : article ? (
+          <div className={styles.article_detail}>
+            <h1 className={styles.text_center}>{article.title}</h1>
+            {article.publication_date && (
+              <p className={styles.text_center}>
+                {new Date(article.publication_date).toLocaleDateString()}
+              </p>
+            )}
+            {article.image_url && (
+              <img
+                src={article.image_url}
+                alt={article.title}
+                className={styles.article_image}
+              />
+            )}
+            <div className={styles.article_content}>
+              <p>{article.content}</p>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.alert}>Không tìm thấy bài viết.</div>
+        )}
       </div>
     </div>
   );
