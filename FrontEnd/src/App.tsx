@@ -3,6 +3,8 @@ import { Route, Routes } from "react-router-dom";
 import Home from './pages/Home';
 import About from './pages/About';
 import Forum from './pages/Forum';
+import ForumDetail from './pages/Forum/[id]';
+import CreatePost from './pages/Forum/CreatePost';
 import Contact from './pages/Contact';
 import Test from './pages/Test';
 import VerifyPending from './pages/VerifyPending';
@@ -23,6 +25,8 @@ function App() {
                     <Route path="/article" element={<Article />} />
                     <Route path="/article/:id" element={<ArticleDetail />} />
                     <Route path="/forum" element={<Forum />} />
+                    <Route path="/forum/:id" element={<ForumDetail />} />
+                    <Route path="/forum/create" element={<CreatePost />} />
                     <Route path="/about" element={<About />} />
                     {/* <Route path="/login" element={<Login />} /> */}
                     {/* <Route path="/sign-up" element={<SignUp />} /> */}

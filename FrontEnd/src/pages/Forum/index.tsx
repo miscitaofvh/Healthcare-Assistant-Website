@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Navbar from "../../components/Navbar";
 import styles from "./Forum.module.css";
+import { useNavigate } from "react-router-dom";
+import { getPosts } from "../../utils/service/forum";
 
-const API_BASE_URL = "http://localhost:5000/api/forum"; // Adjust based on your backend route
 
 interface Post {
   id: number;
@@ -17,6 +17,7 @@ const Forum: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPosts();
@@ -26,7 +27,7 @@ const Forum: React.FC = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get<Post[]>(`${API_BASE_URL}/posts`);
+      const response = await getPosts();
       setPosts(response.data);
     } catch (error) {
       setError("Không thể tải bài viết. Vui lòng thử lại sau.");
@@ -44,6 +45,10 @@ const Forum: React.FC = () => {
       <div className={styles.container}>
         <h1 className={styles.text_center}>Forum Discussions</h1>
 
+        <div className={styles.text_center}>
+          <button className={styles.btn} onClick={() => navigate("/forum/create")}>Tạo bài viết mới</button>
+        </div>
+
         {loading && (
           <div className={styles.text_center}>
             <div className={styles.spinner_border} role="status">
@@ -60,15 +65,15 @@ const Forum: React.FC = () => {
               <div className={styles.alert}>Chưa có bài viết nào.</div>
             ) : (
               posts.map((post) => (
-                <a 
-                  key={post.id} 
-                  href={`/forum/${post.id}`} 
+                <div
+                  key={post.id}
                   className={styles.list_group_item}
+                  onClick={() => navigate(`/forum/${post.id}`)}
                 >
                   <h5 className={styles.mb_1}>{post.title}</h5>
                   <p className={styles.mb_1}>{post.content.substring(0, 150)}...</p>
                   <small>Đăng bởi {post.author} vào {new Date(post.created_at).toLocaleDateString()}</small>
-                </a>
+                </div>
               ))
             )}
           </div>
