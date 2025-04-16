@@ -9,6 +9,7 @@
 }
 
 .navbar {
+    background-color: white;
     position: fixed;
     top: 0;
     left: 0;
@@ -17,7 +18,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 2px 2px;
-    border-bottom: 2px solid black;
+    //border-bottom: 2px solid black;
     max-width: 100%;
 }
 
@@ -40,12 +41,13 @@
     align-items: center;
     font-weight: bold;
     gap: 10px;
+    padding-right: 10px;
 }
 
 .btn-sign-up:hover {
     background-color: white;
 }
-.btn-log-in:hover {
+.btn-log-in:hover, .btn-log-out:hover {
     background-color: black;
 }
 .btn-sign-up {
@@ -55,7 +57,7 @@
     background-color: white;
 }
 
-.btn-log-in {
+.btn-log-in, .btn-log-out {
     background-color: #0c0a1f;
     color: white;
     padding: 10px 20px;
@@ -99,7 +101,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 540px) {
     .nav-links {
         display: none;
         flex-direction: column;

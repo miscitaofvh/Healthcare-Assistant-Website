@@ -39,7 +39,6 @@ const validateInput = (name: string, value: string) => {
 const SignUp: React.FC = () => {
     const [formData, setFormData] = useState({ username: "", email: "", password: "" });
     const [errors, setErrors] = useState({ username: "", email: "", password: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const { closeModal, openModal } = useModal();
     const navigate = useNavigate();
@@ -70,9 +69,7 @@ const SignUp: React.FC = () => {
         
         if (Object.values(newErrors).some(err => err)) return;
         
-        setIsSubmitting(true);
         const response = await register(formData.username, formData.email, formData.password);
-        setIsSubmitting(false);
 
         if (response.success) {
             requestAPI(BASE_URL, "/verify-pending", "POST", { 
@@ -146,13 +143,7 @@ const SignUp: React.FC = () => {
                             </span>
                             {errors.password && <small className={styles.error}>{errors.password}</small>}
                         </div>
-                        <button 
-                            type="submit" 
-                            className={styles.btn} 
-                            disabled={isSubmitting || Object.values(errors).some(err => err)}
-                        >
-                            {isSubmitting ? "Signing Up..." : "Sign Up"}
-                        </button>
+                        <button type="submit" className={styles.btn} >Sign Up</button>
                         <div className={styles.login}>
                             Already have an account? <a onClick={(e) => { e.preventDefault(); openModal("login"); }}>Log in</a>
                         </div>

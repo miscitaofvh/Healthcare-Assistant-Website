@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styles from "./Login.module.css";
-import { login } from "../../utils/service/auth";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import Image from "../../assets/images/Login/image.jpg";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faLock, faEye, faEyeSlash, faXmark } from "@fortawesome/free-solid-svg-icons";
@@ -9,10 +8,9 @@ import { useModal } from "../../contexts/ModalContext";
 
 
 const Login: React.FC = () => {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const { closeModal, openModal } = useModal();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,20 +20,16 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    setIsLoading(true);
+
     try {
       const response = await login(formData.identifier, formData.password);
       if (response.success) {
-        alert(response.message);
-        navigate("/");
+        closeModal();
       } else {
         alert(response.message || "Đăng nhập thất bại");
       }
     } catch (error) {
       alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -62,7 +56,6 @@ const Login: React.FC = () => {
                 required
                 value={formData.identifier}
                 onChange={handleChange}
-                disabled={isLoading}
               />
             </div>
             <div className={styles.field}>
@@ -76,7 +69,6 @@ const Login: React.FC = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                disabled={isLoading}
               />
               <span className={styles.iconRight} onClick={() => setShowPassword(!showPassword)}>
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
@@ -85,13 +77,7 @@ const Login: React.FC = () => {
             <div className={styles.forgotPass}>
               <a onClick={(e) => { e.preventDefault(); openModal("forgot-password"); }}>Forgot Password?</a>
             </div>
-            <button 
-              type="submit" 
-              className={styles.button}
-              disabled={isLoading}
-            >
-              {isLoading ? "Đang đăng nhập..." : "Sign in"}
-            </button>
+            <button type="submit" className={styles.button}>Sign in</button>
             <div className={styles.signUp}>
               Not a member? <a onClick={(e) => { e.preventDefault(); openModal("sign-up"); }}>Sign up now</a>
             </div>
