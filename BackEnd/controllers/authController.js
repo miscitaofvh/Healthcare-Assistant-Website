@@ -79,7 +79,7 @@ export const login = async (req, res) => {
         //     maxAge: expiresInSeconds * 1000 // Convert seconds to milliseconds
         // });
 
-        res.cookie("token", token, {
+        res.cookie("auth_token", token, {
             httpOnly: true,
             secure: false,
             sameSite: "strict",
@@ -106,7 +106,7 @@ export const login = async (req, res) => {
 
 export const getAuthenticatedUser = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user = await getUserById(decoded.user_id);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
@@ -128,6 +128,6 @@ export const exist = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    res.clearCookie("token");
+    res.clearCookie("auth_token");
     res.json({ success: true, message: "Đăng xuất thành công" });
 };

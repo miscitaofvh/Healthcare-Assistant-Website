@@ -125,6 +125,8 @@
 }
 
 .btn {
+    color: white;
+    border: none;
     margin: 15px 0;
     width: 100%;
     height: 50px;

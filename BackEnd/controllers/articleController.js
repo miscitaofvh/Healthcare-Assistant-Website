@@ -52,7 +52,7 @@ export const getArticleById = async (req, res) => {
 export const createArticle = async (req, res) => {
     try {
         const { title, content, category_name, image_url } = req.body;
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const author_id = decoded.user_id;
         const article = await createArticleDB(title, content, author_id, category_name, image_url);
         res.status(201).json(article);

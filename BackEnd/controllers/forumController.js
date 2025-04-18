@@ -56,11 +56,11 @@ export const createPost = async (req, res) => {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         // Get or create category
@@ -92,11 +92,11 @@ export const updatePost = async (req, res) => {
         const { id } = req.params;
         const { content, image_url } = req.body;
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         const post = await getPostByIdDB(id);
@@ -121,11 +121,11 @@ export const deletePost = async (req, res) => {
 
         const { id } = req.params;
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         // Verify post ownership
@@ -187,11 +187,11 @@ export const likePost = async (req, res) => {
     try {
         const { id } = req.params;
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         const result = await likePostDB(id, user_id);
@@ -207,11 +207,11 @@ export const unlikePost = async (req, res) => {
     try {
         const { id } = req.params;
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         const result = await unlikePostDB(id, user_id);
@@ -228,7 +228,7 @@ export const reportPost = async (req, res) => {
         const { id } = req.params;
         const { reason } = req.body;
 
-        if (!req.cookies.token) {
+        if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
@@ -236,7 +236,7 @@ export const reportPost = async (req, res) => {
             return res.status(400).json({ message: "Reason is required" });
         }
 
-        const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const user_id = decoded.user_id;
 
         const result = await reportPostDB(id, user_id, reason);

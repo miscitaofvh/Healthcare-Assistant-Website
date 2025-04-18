@@ -18,7 +18,6 @@
     justify-content: space-between;
     align-items: center;
     padding: 2px 2px;
-    //border-bottom: 2px solid black;
     max-width: 100%;
 }
 
@@ -51,17 +50,24 @@
     background-color: black;
 }
 .btn-sign-up {
+    border: none;
     font-weight: bold;
     color: black;
     border-radius: 25px;
+    cursor: pointer;
     background-color: white;
+    transition: background 0.3s ease;
 }
 
 .btn-log-in, .btn-log-out {
-    background-color: #0c0a1f;
-    color: white;
+    font-weight: bold;
+    border: none;
+    background-color: black;
+    color:rgb(225, 225, 225);
     padding: 10px 20px;
     border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease;
 }
 
 .auth-links button:hover {
@@ -99,9 +105,7 @@
     .logo {
         display: none;
     }
-}
-
-@media (max-width: 540px) {
+}@media (max-width: 540px) {
     .nav-links {
         display: none;
         flex-direction: column;
@@ -109,11 +113,14 @@
         top: 60px;
         left: 0;
         width: 100%;
-        background: #333;
+        background: #ffffff;
+        border-top: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 10px 0;
-        text-align: center;
+        z-index: 10;
+        animation: slideDown 0.3s ease;
     }
-    
+
     .mobile-menu {
         display: flex;
     }
@@ -122,11 +129,21 @@
         display: block;
     }
 
-    .navbar {
-        padding-top: 10px;
+    .nav-links a {
+        padding: 12px 0;
+        text-align: center;
+        justify-content: center;
     }
 
-    .logo {
-        display: none;
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }

@@ -81,10 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await requestAPI(BASE_URL, "/auth/logout", "POST", {});
         const { data, status } = response;
         if (status === 200 && data.success) 
-        {
             setUser(null);
-            Cookies.remove("auth_token");   // change in backend to remove token from cookies 
-        }
         else 
             console.error("Logout failed", data);
     };
