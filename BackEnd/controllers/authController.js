@@ -127,4 +127,7 @@ export const exist = async (req, res) => {
     }
 };
 
-
+export const logout = async (req, res) => {
+    res.clearCookie("token");
+    res.json({ success: true, message: "Đăng xuất thành công" });
+};

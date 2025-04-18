@@ -1,7 +1,7 @@
 import express from "express";
 import { register, login, exist } from "../controllers/authController.js";
 import { validateRegister, validateLogin, validateExist } from "../middleware/validationMiddleware.js";
-import { getAuthenticatedUser } from '../controllers/authController.js';
+import { getAuthenticatedUser, logout } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
 // import { authenticateToken } from "../middleware/authMiddleware.js";
 // import { logout, refreshToken } from "../controllers/authController.js";
@@ -12,8 +12,7 @@ router.post("/register", validateRegister, register);
 router.post("/login", validateLogin, login);
 router.post("/exist", validateExist, exist);
 router.get('/me', authenticateUser, getAuthenticatedUser);
-
-// router.post("/logout", authenticateToken, logout);
+router.post("/logout", authenticateUser, logout);
 // router.post("/refresh-token", refreshToken);
 
 // Error handling middleware
