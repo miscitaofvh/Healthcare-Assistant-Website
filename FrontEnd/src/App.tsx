@@ -14,6 +14,7 @@ import Article from './pages/Article';
 import ArticleDetail from './pages/Article/[id]';
 import { UserProvider } from "./contexts/UserContext";
 import { ModalProvider } from './contexts/ModalContext';
+import ChatBot from './components/ChatBot';
 
 function App() {
     return (
@@ -37,6 +38,7 @@ function App() {
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="*" element={<h1>Page Not Found</h1>} />
                 </Routes>
+            <ChatBot />
             </ModalProvider>
         </UserProvider>
     );

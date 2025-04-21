@@ -8,6 +8,7 @@ import articleRoutes from "./routes/articleRoutes.js";
 import forumRoutes from "./routes/forumRoutes.js";
 import verifyRoutes from "./routes/verifyRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 import errorHandler from "./middleware/errorHandler.js"; 
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/article", articleRoutes);
 app.use("/api/forum", forumRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api/verify", verifyRoutes);
 // app.get('/profile', authenticateUser, async (req, res) => {
 //     const user = await getUserById(req.user.user_id);
