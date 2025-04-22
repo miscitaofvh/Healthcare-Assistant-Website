@@ -4,3 +4,4 @@ cert.pem
 .env
 .sql
 node_modules/
+FrontEnd/node_modules/
