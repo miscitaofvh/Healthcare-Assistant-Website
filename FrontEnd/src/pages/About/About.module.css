@@ -1,10 +1,11 @@
 .about_page {
-    background: linear-gradient(135deg, #f9f9f9 0%, #e8f4f8 100%);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #ffffff 0%, #2c5282 100%);
+    padding-top: 4rem;
 }
 
 .content_container {
@@ -12,6 +13,7 @@
     width: 100%;
     margin: 0 auto 60px;
     padding: 0 20px;
+    //background: linear-gradient(135deg, #ffffff 0%, #2c5282 100%);
 }
 
 .text_section {
@@ -44,11 +46,6 @@
     border-radius: 3px;
 }
 
-.about_page {
-    background: linear-gradient(135deg, #f9f9f9 0%, #e8f4f8 100%);
-    padding: 40px 0;
-    min-height: calc(100vh - 80px);
-}
 
 .feature_card {
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
