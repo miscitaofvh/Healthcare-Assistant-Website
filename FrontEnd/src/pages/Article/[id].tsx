@@ -10,6 +10,8 @@ interface Article {
   title: string;
   content: string;
   author_id?: string;
+  author_name?: string;
+  tag_id?: number;
   category_id?: number;
   publication_date?: string;
   last_updated?: string;

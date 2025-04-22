@@ -76,8 +76,23 @@ CREATE INDEX idx_appointment_date ON appointments(appointment_date);
 CREATE TABLE article_categories (
     category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT DEFAULT NULL
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_category_name ON article_categories(category_name);
+
+-- ========== ARTICLE TAGS ==========
+CREATE TABLE article_tags (
+    tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tag_name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_article_tag_article ON article_tags(tag_id);
 
 -- ========== ARTICLES ==========
 CREATE TABLE article (
@@ -86,6 +101,11 @@ CREATE TABLE article (
     content TEXT NOT NULL,
     author_id CHAR(36) NOT NULL,
     category_id INT UNSIGNED NOT NULL,
+    tag_id INT UNSIGNED DEFAULT NULL,
+    status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
+    view_count INT UNSIGNED DEFAULT 0,
+    like_count INT UNSIGNED DEFAULT 0,
+    comment_count INT UNSIGNED DEFAULT 0,
     publication_date DATE NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -189,10 +209,22 @@ CREATE TABLE forum_categories (
     category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_category_name ON forum_categories(category_name);
+
+-- ========== FORUM TAGS ==========
+CREATE TABLE forum_tags (
+    tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tag_name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_forum_tag_tag ON forum_tags(tag_id);
 
 -- ========== FORUM THREADS ==========
 CREATE TABLE forum_threads (

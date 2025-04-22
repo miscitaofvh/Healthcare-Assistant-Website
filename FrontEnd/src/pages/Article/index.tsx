@@ -10,11 +10,35 @@ interface Category {
   category_name: string;
 }
 
+interface Tag {
+  tag_id: number;
+  tag_name: string;
+}
+
+// CREATE TABLE article (
+//   article_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+//   title VARCHAR(255) NOT NULL,
+//   content TEXT NOT NULL,
+//   author_id CHAR(36) NOT NULL,
+//   category_id INT UNSIGNED NOT NULL,
+//   tag_id INT UNSIGNED DEFAULT NULL,
+//   status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
+//   view_count INT UNSIGNED DEFAULT 0,
+//   like_count INT UNSIGNED DEFAULT 0,
+//   comment_count INT UNSIGNED DEFAULT 0,
+//   publication_date DATE NOT NULL,
+//   image_url VARCHAR(2083) DEFAULT NULL,
+//   last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//   FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
+//   FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
+// );
 interface Article {
   article_id: number;
   title: string;
   content: string;
   image_url?: string;
+  category_name?: string;
+  tag_name?: string[];
 }
 
 const HealthcareNews: React.FC = () => {
@@ -28,6 +52,7 @@ const HealthcareNews: React.FC = () => {
     title: "",
     content: "",
     image_url: "",
+    tag_name: [] as string[], // Add tag_name to newArticle state
     category_name: "", // Add category_name to newArticle state
   });
 
@@ -50,6 +75,8 @@ const HealthcareNews: React.FC = () => {
     }
   };
 
+  // const fetchTag = async () => {
+
   const fetchArticles = async () => {
     try {
       setLoading(true);
@@ -63,15 +90,28 @@ const HealthcareNews: React.FC = () => {
   };
 
   const handleCreateArticle = async (e: React.FormEvent) => {
+   
     e.preventDefault();
+  
+    // Validate that tag_name is not empty
+    if (newArticle.tag_name.length === 0) {
+      alert("Please add at least one tag.");
+      return;
+    }
+  
     try {
-      // Add category_name to the article data
       const response = await createArticle({
         ...newArticle,
-        category_name: newArticle.category_name, // Pass category_name as part of the article data
+        category_name: newArticle.category_name,
+        tag_name: newArticle.tag_name, // Pass tag_name as an array
       });
+  
+      if (response.status !== 201) {
+        throw new Error("Failed to create article");
+      }
+  
       setShowModal(false);
-      setNewArticle({ title: "", content: "", image_url: "", category_name: "" }); // Clear category_name
+      setNewArticle({ title: "", content: "", image_url: "", tag_name: [], category_name: "" }); // Reset form
       fetchArticles();
     } catch (error) {
       setError("Không thể tạo bài viết.");
@@ -131,6 +171,15 @@ const HealthcareNews: React.FC = () => {
                       <div className={styles.card_body}>
                         <h5 className={styles.card_title}>{article.title}</h5>
                         <p className={styles.card_text}>{article.content.substring(0, 100)}...</p>
+                        <p className={styles.card_meta}>
+                          <strong>Category:</strong> {article.category_name || "N/A"}
+                        </p>
+                        <p className={styles.card_meta}>
+                          <strong>Tags:</strong>{" "}
+                          {article.tag_name && Array.isArray(article.tag_name)
+                            ? article.tag_name.join(", ")
+                            : "N/A"}
+                        </p>
                         <button
                           className={styles.btn_primary}
                           onClick={() => navigate(`/article/${article.article_id}`)}
@@ -175,7 +224,25 @@ const HealthcareNews: React.FC = () => {
                   value={newArticle.image_url}
                   onChange={(e) => setNewArticle({ ...newArticle, image_url: e.target.value })}
                 />
+                <input
+                  type="text"
+                  placeholder="Enter Tag Name (press Enter to add)"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const input = e.currentTarget.value.trim();
+                      e.preventDefault();
 
+                      if (input && !newArticle.tag_name.includes(input)) {
+                        setNewArticle((prev) => ({
+                          ...prev,
+                          tag_name: [...prev.tag_name, input],
+                        }));
+                      }
+
+                      e.currentTarget.value = ""; // Clear input after Enter
+                    }
+                  }}
+                />
                 <input
                   type="text"
                   placeholder="Enter Category Name"

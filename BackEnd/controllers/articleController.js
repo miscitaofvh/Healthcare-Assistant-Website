@@ -6,7 +6,8 @@ import {
     createArticleDB, updateArticleDB, deleteArticleDB, 
     likeArticleDB, unlikeArticleDB, getArticleLikesDB, 
     addCommentDB, deleteCommentDB, getArticleCommentsDB,
-    addArticleViewDB, getArticleViewsDB
+    addArticleViewDB, getArticleViewsDB,
+    getTagsDB, getTagByIdDB
 } from "../models/Article.js";
 dotenv.config();
 
@@ -30,6 +31,24 @@ export const getCategoryById = async (req, res) => {
     }
 };
 
+export const getTags = async (req, res) => {
+    try {
+        const tags = await getTagsDB();
+        res.status(200).json(tags);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching tags" });
+    }
+}
+
+export const getTagById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tag = await getTagByIdDB(id);
+        res.status(200).json(tag);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching tag" });
+    }
+}
 export const getArticles = async (req, res) => {
     try {
         const articles = await getArticlesDB();
@@ -50,11 +69,12 @@ export const getArticleById = async (req, res) => {
 };
 
 export const createArticle = async (req, res) => {
+    console.log("Creating article...");
     try {
-        const { title, content, category_name, image_url } = req.body;
+        const { title, content, category_name, tag_name ,image_url } = req.body;
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const author_id = decoded.user_id;
-        const article = await createArticleDB(title, content, author_id, category_name, image_url);
+        const article = await createArticleDB(title, content, author_id, category_name, tag_name, image_url);
         res.status(201).json(article);
     } catch (error) {
         res.status(500).json({ message: "Error creating article" });

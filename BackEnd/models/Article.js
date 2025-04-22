@@ -43,6 +43,46 @@ export const getCategoryByIdDB = async (id) => {
     }
 };
 
+export const getTagsDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = "SELECT * FROM article_tags";
+        const [tags] = await conn.execute(sql);
+        
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error fetching tags:", error);
+        throw new Error("Không thể lấy danh sách thẻ");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const getTagByIdDB = async (id) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = "SELECT * FROM article_tags WHERE tag_id = ?";
+        const [tag] = await conn.execute(sql, [id]);
+
+        await conn.commit();
+        return tag;
+
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error fetching tag:", error);
+        throw new Error("Không thể lấy thẻ");
+    } finally {
+        if (conn) conn.release();
+    }
+};  
 
 export const getArticlesDB = async () => {
     let conn;
@@ -84,7 +124,7 @@ export const getArticleByIdDB = async (id) => {
     }
 };
 
-export const createArticleDB = async (title, content, author_id, category_name, image_url) => {
+export const createArticleDB = async (title, content, author_id, category_name, tag_name, image_url) => {
     console.log(title, content, author_id, category_name, image_url);
     let conn;
     try {
@@ -101,6 +141,18 @@ export const createArticleDB = async (title, content, author_id, category_name, 
             const insertCategoryQuery = "INSERT INTO article_categories (category_name) VALUES (?)";
             const [categoryInsertResult] = await conn.execute(insertCategoryQuery, [category_name]);
             category_id = categoryInsertResult.insertId;
+        }
+
+        const tagQuery = "SELECT tag_id FROM article_tags WHERE tag_name = ?";
+        const [tagResult] = await conn.execute(tagQuery, [tag_name]);
+
+        let tag_id;
+        if (tagResult.length > 0) {
+            tag_id = tagResult[0].tag_id;
+        } else {
+            const insertTagQuery = "INSERT INTO article_tags (tag_name) VALUES (?)";
+            const [tagInsertResult] = await conn.execute(insertTagQuery, [tag_name]);
+            tag_id = tagInsertResult.insertId;
         }
 
         if (!title || !content || !author_id || !category_id) {
@@ -122,7 +174,6 @@ export const createArticleDB = async (title, content, author_id, category_name, 
         if (conn) conn.release();
     }
 };
-
 
 export const updateArticleDB = async (id, title, content, category_name, image_url) => {
     let conn;

@@ -23,6 +23,7 @@ export async function getArticleById(id: string) {
 
 
 export async function createArticle(article: any) {
+    alert(JSON.stringify(article));
     const response = await requestAPI(BASE_URL, "/articles", "POST", article);
     return response;
 }
