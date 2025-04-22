@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken"; 
 
 import { 
     getCategoriesDB, getCategoryByIdDB, getArticlesDB, getArticleByIdDB, 
@@ -7,9 +7,10 @@ import {
     likeArticleDB, unlikeArticleDB, getArticleLikesDB, 
     addCommentDB, deleteCommentDB, getArticleCommentsDB,
     addArticleViewDB, getArticleViewsDB,
-    getTagsDB, getTagByIdDB
+    getTagsDB, getTagByIdDB, getTagsofArticleDB
 } from "../models/Article.js";
-dotenv.config();
+
+dotenv.config();            
 
 export const getCategories = async (req, res) => {
     try {
@@ -49,6 +50,17 @@ export const getTagById = async (req, res) => {
         res.status(500).json({ message: "Error fetching tag" });
     }
 }
+
+export const getTagsofArticle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tags = await getTagsofArticleDB(id);
+        res.status(200).json(tags);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching tags of article" });
+    }
+};
+
 export const getArticles = async (req, res) => {
     try {
         const articles = await getArticlesDB();
@@ -69,12 +81,12 @@ export const getArticleById = async (req, res) => {
 };
 
 export const createArticle = async (req, res) => {
-    console.log("Creating article...");
     try {
-        const { title, content, category_name, tag_name ,image_url } = req.body;
+        const { title, content, category_name, tag_name, image_url } = req.body;
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const author_id = decoded.user_id;
-        const article = await createArticleDB(title, content, author_id, category_name, tag_name, image_url);
+        const author_name = decoded.username;
+        const article = await createArticleDB(title, content, author_id, author_name, category_name, tag_name, image_url);
         res.status(201).json(article);
     } catch (error) {
         res.status(500).json({ message: "Error creating article" });

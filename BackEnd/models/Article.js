@@ -84,6 +84,32 @@ export const getTagByIdDB = async (id) => {
     }
 };  
 
+export const getTagsofArticleDB = async (article_id) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = `
+            SELECT t.tag_id, t.tag_name
+            FROM article_tags t
+            JOIN article_tag_mapping m ON t.tag_id = m.tag_id
+            JOIN article a ON m.article_id = a.article_id
+            WHERE a.article_id = ?
+        `;
+        const [tags] = await conn.execute(sql, [article_id]);
+
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error fetching tags of article:", error);
+        throw new Error("Không thể lấy danh sách thẻ của bài viết");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 export const getArticlesDB = async () => {
     let conn;
     try {
@@ -124,48 +150,79 @@ export const getArticleByIdDB = async (id) => {
     }
 };
 
-export const createArticleDB = async (title, content, author_id, category_name, tag_name, image_url) => {
-    console.log(title, content, author_id, category_name, image_url);
+export const createArticleDB = async (title, content, author_id, author_name, category_name, tag_names, image_url) => {
     let conn;
+
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        const categoryQuery = "SELECT category_id FROM article_categories WHERE category_name = ?";
-        const [categoryResult] = await conn.execute(categoryQuery, [category_name]);
+        const [categoryResult] = await conn.execute(
+            "SELECT category_id FROM article_categories WHERE category_name = ?",
+            [category_name]
+        );
 
         let category_id;
         if (categoryResult.length > 0) {
             category_id = categoryResult[0].category_id;
         } else {
-            const insertCategoryQuery = "INSERT INTO article_categories (category_name) VALUES (?)";
-            const [categoryInsertResult] = await conn.execute(insertCategoryQuery, [category_name]);
-            category_id = categoryInsertResult.insertId;
+            const [insertCategoryResult] = await conn.execute(
+                "INSERT INTO article_categories (category_name) VALUES (?)",
+                [category_name]
+            );
+            category_id = insertCategoryResult.insertId;
         }
 
-        const tagQuery = "SELECT tag_id FROM article_tags WHERE tag_name = ?";
-        const [tagResult] = await conn.execute(tagQuery, [tag_name]);
-
-        let tag_id;
-        if (tagResult.length > 0) {
-            tag_id = tagResult[0].tag_id;
-        } else {
-            const insertTagQuery = "INSERT INTO article_tags (tag_name) VALUES (?)";
-            const [tagInsertResult] = await conn.execute(insertTagQuery, [tag_name]);
-            tag_id = tagInsertResult.insertId;
-        }
-
-        if (!title || !content || !author_id || !category_id) {
+        if(!title || !content || !author_id || !category_id) {
             throw new Error("Không thể tạo bài viết");
         }
 
-        const sql = `
-            INSERT INTO article (title, content, author_id, category_id, publication_date, image_url) 
-            VALUES (?, ?, ?, ?, NOW(), ?)`;
-        const [result] = await conn.execute(sql, [title, content, author_id, category_id, image_url || null]);
+        const insertArticleQuery = `
+            INSERT INTO article (title, content, author_id, author_name, category_id, category_name, publication_date, image_url)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+        `;
+        const [articleResult] = await conn.execute(insertArticleQuery, [
+            title,
+            content,
+            author_id,
+            author_name,
+            category_id,
+            category_name,
+            image_url || null
+        ]);
+        const article_id = articleResult.insertId;
+
+        if (!article_id) {
+            throw new Error("Tạo bài viết không thành công");
+        }
+
+        if (Array.isArray(tag_names) && tag_names.length > 0) {
+            for (const tag of tag_names.map(t => t.trim())) {
+                const [tagResult] = await conn.execute(
+                    "SELECT tag_id FROM article_tags WHERE tag_name = ?",
+                    [tag]
+                );
+
+                let tag_id;
+                if (tagResult.length > 0) {
+                    tag_id = tagResult[0].tag_id;
+                } else {
+                    const [insertTagResult] = await conn.execute(
+                        "INSERT INTO article_tags (tag_name) VALUES (?)",
+                        [tag]
+                    );
+                    tag_id = insertTagResult.insertId;
+                }
+
+                await conn.execute(
+                    "INSERT INTO article_tag_mapping (article_id, tag_id) VALUES (?, ?)",
+                    [article_id, tag_id]
+                );
+            }
+        }
 
         await conn.commit();
-        return result.insertId;
+        return article_id;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error creating article:", error);
@@ -174,6 +231,7 @@ export const createArticleDB = async (title, content, author_id, category_name, 
         if (conn) conn.release();
     }
 };
+
 
 export const updateArticleDB = async (id, title, content, category_name, image_url) => {
     let conn;

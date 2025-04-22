@@ -100,8 +100,9 @@ CREATE TABLE article (
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     author_id CHAR(36) NOT NULL,
+    author_name VARCHAR(255) NOT NULL,
     category_id INT UNSIGNED NOT NULL,
-    tag_id INT UNSIGNED DEFAULT NULL,
+    category_name VARCHAR(100) NOT NULL,
     status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
     view_count INT UNSIGNED DEFAULT 0,
     like_count INT UNSIGNED DEFAULT 0,
@@ -117,6 +118,18 @@ CREATE INDEX idx_article_author ON article(author_id);
 CREATE INDEX idx_article_category ON article(category_id);
 CREATE INDEX idx_article_date ON article(publication_date);
 CREATE FULLTEXT INDEX idx_article_search ON article(title, content);
+
+-- ========== ARTICLE TAGS RELATION ==========
+CREATE TABLE article_tag_mapping (
+    relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    article_id INT UNSIGNED NOT NULL,
+    tag_id INT UNSIGNED NOT NULL,
+    FOREIGN KEY (tag_name) REFERENCES article_tags(tag_name) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES article_tags(tag_id) ON DELETE CASCADE,
+    UNIQUE (article_id, tag_id)
+);
+
 
 -- ========== ARTICLE LIKES ==========
 CREATE TABLE article_likes (
@@ -215,17 +228,6 @@ CREATE TABLE forum_categories (
 
 CREATE INDEX idx_category_name ON forum_categories(category_name);
 
--- ========== FORUM TAGS ==========
-CREATE TABLE forum_tags (
-    tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tag_name VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_forum_tag_tag ON forum_tags(tag_id);
-
 -- ========== FORUM THREADS ==========
 CREATE TABLE forum_threads (
     thread_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -239,8 +241,27 @@ CREATE TABLE forum_threads (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- ========== FORUM THREADS RELATION ==========
+CREATE TABLE forum_threads_relation (
+    relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    thread_id INT UNSIGNED NOT NULL,
+    category_id INT UNSIGNED NOT NULL,
+    FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
+    UNIQUE (thread_id, category_id)
+);
+
 CREATE INDEX idx_thread_category ON forum_threads(category_id);
 CREATE INDEX idx_thread_user ON forum_threads(user_id);
+
+-- ========= FORUM TAG ==========
+CREATE TABLE forum_tags (
+    tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tag_name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 -- ========== FORUM POSTS ==========
 CREATE TABLE forum_posts (
@@ -257,6 +278,16 @@ CREATE TABLE forum_posts (
 
 CREATE INDEX idx_post_thread ON forum_posts(thread_id);
 CREATE INDEX idx_post_user ON forum_posts(user_id);
+
+-- ========= FORUM TAG RELATION ==========
+CREATE TABLE forum_tags_mapping (
+    relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    post_id INT UNSIGNED NOT NULL,
+    tag_id INT UNSIGNED NOT NULL,
+    FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES forum_tags(tag_id) ON DELETE CASCADE,
+    UNIQUE (post_id, tag_id)
+);
 
 -- ========== FORUM LIKES ==========
 CREATE TABLE forum_likes (

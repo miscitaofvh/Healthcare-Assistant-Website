@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getCategories, getArticles, createArticle, deleteArticle, getCategoryById, getArticleById, updateArticle } from "../../utils/service/article";
+import { getCategories, getArticles, createArticle, deleteArticle, getCategoryById, getArticleById, getTagByArticle } from "../../utils/service/article";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 
@@ -15,30 +15,21 @@ interface Tag {
   tag_name: string;
 }
 
-// CREATE TABLE article (
-//   article_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-//   title VARCHAR(255) NOT NULL,
-//   content TEXT NOT NULL,
-//   author_id CHAR(36) NOT NULL,
-//   category_id INT UNSIGNED NOT NULL,
-//   tag_id INT UNSIGNED DEFAULT NULL,
-//   status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
-//   view_count INT UNSIGNED DEFAULT 0,
-//   like_count INT UNSIGNED DEFAULT 0,
-//   comment_count INT UNSIGNED DEFAULT 0,
-//   publication_date DATE NOT NULL,
-//   image_url VARCHAR(2083) DEFAULT NULL,
-//   last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-//   FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
-//   FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
-// );
 interface Article {
   article_id: number;
   title: string;
   content: string;
   image_url?: string;
+  author_id?: number;
+  author_name?: string;
+  category_id?: number;
   category_name?: string;
-  tag_name?: string[];
+  tag_name?: string[]; 
+  view_count?: number;
+  like_count?: number;
+  comment_count?: number;
+  publication_date?: string;
+  last_updated?: string;
 }
 
 const HealthcareNews: React.FC = () => {
@@ -75,25 +66,46 @@ const HealthcareNews: React.FC = () => {
     }
   };
 
-  // const fetchTag = async () => {
+  const fetchTagofArticle = async (article_id: number) => {
+    try {
+      const response = await getTagByArticle(article_id.toString());
+      alert(JSON.stringify(response.data));
+      return response.data;
+    }
+    catch (error) {
+      setError("Không thể tải danh mục.");
+    }
+  };
 
   const fetchArticles = async () => {
     try {
       setLoading(true);
       const response = await getArticles();
-      setArticles(response.data);
+      const articlesWithTags = await Promise.all(
+        response.data.map(async (article: Article) => {
+          try {
+            const tagRes = await getTagByArticle(article.article_id.toString());
+            return {
+              ...article,
+              tag_name: tagRes.data.map((tag: Tag) => tag.tag_name),
+            };
+          } catch {
+            return { ...article, tag_name: [] }; // fallback if error
+          }
+        })
+      );
+      setArticles(articlesWithTags);
     } catch (error) {
       setError("Không thể tải bài viết.");
     } finally {
       setLoading(false);
     }
   };
-
+  
   const handleCreateArticle = async (e: React.FormEvent) => {
    
     e.preventDefault();
   
-    // Validate that tag_name is not empty
     if (newArticle.tag_name.length === 0) {
       alert("Please add at least one tag.");
       return;
@@ -179,6 +191,9 @@ const HealthcareNews: React.FC = () => {
                           {article.tag_name && Array.isArray(article.tag_name)
                             ? article.tag_name.join(", ")
                             : "N/A"}
+                        </p>
+                        <p className={styles.card_meta}>
+                          <strong>Author:</strong> {article.author_name || "N/A"}
                         </p>
                         <button
                           className={styles.btn_primary}
