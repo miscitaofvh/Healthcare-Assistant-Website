@@ -1,10 +1,8 @@
 import { body, validationResult } from "express-validator";
 import { isTagandCategoryValid } from "../../utils/format/article.js";
 
-// validateCategory, validateThread, validateForumPost,
-// validateComment, validateTag, validateReport
 
-const validateCategory = [
+export const validateCategory = [
     body("name")
         .notEmpty()
         .withMessage("Tên danh mục là bắt buộc")
@@ -24,7 +22,7 @@ const validateCategory = [
     }
 ];
 
-const validateThread = [
+export const validateThread = [
     body("name")
         .notEmpty()
         .withMessage("Tên chủ đề là bắt buộc")
@@ -54,7 +52,7 @@ const validateThread = [
     }
 ];
 
-const validateForumPost = [
+export const validateForumPost = [
     body("category_name")
         .notEmpty()
         .withMessage("Chuyên mục là bắt buộc")
@@ -172,7 +170,7 @@ export const validateReport = [
     }
 ];
 
-export const validateLike = [
+export const validateForumPostLikeUser = [
     body("userId")
         .notEmpty()
         .withMessage("ID người dùng là bắt buộc")
@@ -647,9 +645,3 @@ export const validateForumPostActivityUpdate = [
         next();
     }
 ];
-
-
-
-
-
-

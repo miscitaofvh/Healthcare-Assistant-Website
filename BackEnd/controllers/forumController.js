@@ -379,3 +379,526 @@ export const getTagsofForumPost = async (req, res) => {
         res.status(500).json({ message: "Error fetching tags" });
     }
 }
+
+export const addCommentToPost = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const { content } = req.body;
+        const result = await createCommentDB(id, content);
+        res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error adding comment to post" });
+    }
+}
+
+export const assignTagToPost = async (req, res) => {
+    try {
+        const { id, tagId } = req.params; // post_id, tag_id
+        const result = await assignTagToPostDB(id, tagId);
+        res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error assigning tag to post" });
+    }
+}
+
+// getAllTags, getTagById, createTag, updateTagById, deleteTag,
+// getTagsOfPost, assignTagToPost, removeTagFromPost,
+// // Like
+// likePost, unlikePost, getLikesOfPost,
+// // Report
+// reportPost, getReports, updateReportStatus,
+// // Forum Overview
+// getForumActivityByUser
+
+export const createTag = async (req, res) => {
+    try {
+        const { tag_name } = req.body;
+        const result = await createTagDB(tag_name);
+        res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error creating tag" });
+    }
+}
+
+export const removeTagFromPost = async (req, res) => {
+    try {
+        const { id, tagId } = req.params; // post_id, tag_id
+        const result = await removeTagFromPostDB(id, tagId);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error removing tag from post" });
+    }
+}
+
+export const deleteCategory = async (req, res) => {
+    try {
+        const { id } = req.params; // category_id
+        const result = await deleteCategoryDB(id);
+        res.status(200).json({ message: result });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting category" });
+    }
+}
+
+export const deleteCommentFromPost = async (req, res) => {
+    try {
+        const { id, commentId } = req.params; // id = post_id, commentId = comment_id
+        const result = await deleteCommentDB(commentId, id);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting comment from post" });
+    }
+}
+
+export const deleteTag = async (req, res) => {
+    try {
+        const { id } = req.params; // tag_id
+        const result = await deleteTagDB(id);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting tag" });
+    }
+}
+export const deleteReportFromPost = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const result = await deleteReportFromPostDB(id);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting report from post" });
+    }
+}
+
+export const getReports = async (req, res) => {
+    try {
+        const reports = await getReportsDB();
+        res.status(200).json(reports);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching reports" });
+    }
+}
+
+export const updateReportStatus = async (req, res) => {
+    try {
+        const { id } = req.params; // report_id
+        const { status } = req.body;
+        const result = await updateReportStatusDB(id, status);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating report status" });
+    }
+}
+
+export const getReportsByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const reports = await getReportsByPostIdDB(id);
+        res.status(200).json(reports);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching reports by post ID" });
+    }
+}
+
+export const getForumActivityByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const activity = await getForumActivityByUserDB(user_id);
+        res.status(200).json(activity);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching forum activity by user" });
+    }
+}
+
+export const getCategoryById = async (req, res) => {
+    try {
+        const { id } = req.params; // category_id
+        const category = await getCategoryByIdDB(id);
+        if (!category) {
+            return res.status(404).json({ message: "Category not found" });
+        }
+        res.status(200).json(category);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching category" });
+    }
+}
+
+export const getAllCategories = async (req, res) => {
+    try {
+        const categories = await getAllCategoriesDB();
+        res.status(200).json(categories);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching categories" });
+    }
+}
+
+export const getAllThreads = async (req, res) => {
+    try {
+        const threads = await getAllThreadsDB();
+        res.status(200).json(threads);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching threads" });
+    }
+}
+
+export const getAllPosts = async (req, res) => {
+    try {
+        const posts = await getAllPostsDB();
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching posts" });
+    }
+}
+
+export const getAllTags = async (req, res) => {
+    try {
+        const tags = await getAllTagsDB();
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags" });
+    }
+}
+
+export const getAllPostsByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const posts = await getAllPostsByUserDB(user_id);
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching posts by user" });
+    }
+}
+
+export const getAllCommentsByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const comments = await getAllCommentsByUserDB(user_id);
+        res.status(200).json(comments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching comments by user" });
+    }
+}
+
+export const getAllLikesByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const likes = await getAllLikesByUserDB(user_id);
+        res.status(200).json(likes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching likes by user" });
+    }
+}
+
+export const getAllReportsByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const reports = await getAllReportsByUserDB(user_id);
+        res.status(200).json(reports);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching reports by user" });
+    }
+}
+
+export const getAllTagsByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const tags = await getAllTagsByUserDB(user_id);
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags by user" });
+    }
+}
+
+export const getAllCategoriesByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const categories = await getAllCategoriesByUserDB(user_id);
+        res.status(200).json(categories);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching categories by user" });
+    }
+}
+
+export const getAllThreadsByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const threads = await getAllThreadsByUserDB(user_id);
+        res.status(200).json(threads);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching threads by user" });
+    }
+}
+
+export const getAllCommentsByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const comments = await getAllCommentsByPostDB(post_id);
+        res.status(200).json(comments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching comments by post" });
+    }
+}
+
+export const getAllLikesByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const likes = await getAllLikesByPostDB(post_id);
+        res.status(200).json(likes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching likes by post" });
+    }
+}
+
+export const getAllReportsByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const reports = await getAllReportsByPostDB(post_id);
+        res.status(200).json(reports);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching reports by post" });
+    }
+}
+
+export const getAllTagsByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const tags = await getAllTagsByPostDB(post_id);
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags by post" });
+    }
+}
+
+export const getAllCategoriesByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const categories = await getAllCategoriesByPostDB(post_id);
+        res.status(200).json(categories);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching categories by post" });
+    }
+}
+
+export const getAllThreadsByPost = async (req, res) => {
+    try {
+        const { post_id } = req.params; // post_id
+        const threads = await getAllThreadsByPostDB(post_id);
+        res.status(200).json(threads);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching threads by post" });
+    }
+}
+
+export const getAllPostsByCategory = async (req, res) => {
+    try {
+        const { category_id } = req.params; // category_id
+        const posts = await getAllPostsByCategoryDB(category_id);
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching posts by category" });
+    }
+}
+
+export const getAllPostsByThread = async (req, res) => {
+    try {
+        const { thread_id } = req.params; // thread_id
+        const posts = await getAllPostsByThreadDB(thread_id);
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching posts by thread" });
+    }
+}
+
+export const getAllPostsByTag = async (req, res) => {
+    try {
+        const { tag_id } = req.params; // tag_id
+        const posts = await getAllPostsByTagDB(tag_id);
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching posts by tag" });
+    }
+}
+
+export const deleteThread = async (req, res) => {
+    try {
+        const { id } = req.params; // thread_id
+        const result = await deleteThreadDB(id);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting thread" });
+    }
+}
+
+export const getCommentsByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const comments = await getCommentsDB(id);
+        res.status(200).json(comments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching comments" });
+    }
+}
+
+export const getLikesOfPost = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const likes = await getLikesOfPostDB(id);
+        res.status(200).json(likes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching likes" });
+    }
+}
+
+export const getTagsOfPost = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const tags = await getTagsOfPostDB(id);
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags" });
+    }
+}
+
+export const updateCategory = async (req, res) => {
+    try {
+        const { id } = req.params; // category_id
+        const { category_name } = req.body;
+        const result = await updateCategoryDB(id, category_name);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating category" });
+    }
+}
+
+export const updateTagById = async (req, res) => {
+    try {
+        const { id } = req.params; // tag_id
+        const { tag_name } = req.body;
+        const result = await updateTagDB(id, tag_name);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating tag" });
+    }
+}
+
+export const updateThread = async (req, res) => {
+    try {
+        const { id } = req.params; // thread_id
+        const { thread_name } = req.body;
+        const result = await updateThreadDB(id, thread_name);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating thread" });
+    }
+}
+
+export const updateCommentInPost = async (req, res) => {
+    try {
+        const { id, commentId } = req.params; // id = post_id, commentId = comment_id
+        const { content } = req.body;
+        const result = await updateCommentInPostDB(commentId, id, content);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating comment in post" });
+    }
+}
+
+export const getForumPostActivityUnmapByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const activity = await getForumPostActivityUnmapByPostIdDB(id);
+        res.status(200).json(activity);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching forum post activity" });
+    }
+}
+
+export const getForumPostActivityByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const activity = await getForumPostActivityByPostIdDB(id);
+        res.status(200).json(activity);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching forum post activity" });
+    }
+}
+
+export const deleteForumPostActivityByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const result = await deleteForumPostActivityByPostIdDB(id);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error deleting forum post activity" });
+    }
+}
+
+export const getForumPostActivityByUser = async (req, res) => {
+    try {
+        const { user_id } = req.params; // user_id
+        const activity = await getForumPostActivityByUserDB(user_id);
+        res.status(200).json(activity);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching forum post activity by user" });
+    }
+}
+
+export const updateForumPostActivityByPostId = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const { activity } = req.body;
+        const result = await updateForumPostActivityByPostIdDB(id, activity);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating forum post activity" });
+    }
+}
+
+
+

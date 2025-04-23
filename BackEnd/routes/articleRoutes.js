@@ -3,7 +3,7 @@ import { getCategories, getCategoryById,
         getArticles, getArticleById, createArticle, 
         updateArticle, deleteArticle,
         getTags, getTagById, getTagsofArticle } from "../controllers/articleController.js";
-import { validateArticle } from "../middleware/validationMiddleware.js";
+import { validateArticle } from "../middleware/validation/article.js";
 
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
