@@ -51,32 +51,19 @@ export const getPostById = async (req, res) => {
 // Create a new post
 export const createPost = async (req, res) => {
     try {
-        const { category_name, thread_name, content, image_url } = req.body;
-        if (!category_name || !thread_name || !content) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
+        const { category_name, thread_name, content, tag_name, image_url } = req.body;
+        
         if (!req.cookies.auth_token) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        console.log(decoded);
         const user_id = decoded.user_id;
-
-        // Get or create category
-        let category_id = await getCategoryNameDB(category_name);
-        if (!category_id) {
-            category_id = await createCategoryDB(category_name);
-        }
-
-        // Get or create thread
-        let thread_id = await getThreadNameDB(thread_name);
-        if (!thread_id) {
-            thread_id = await createThreadDB(thread_name, category_id, user_id, null);
-        }
-
-        // Create post
-        const postId = await createPostDB(thread_id, content, user_id, image_url);
+        const username = decoded.username;
+        
+        const forum_post = await createPostDB( user_id, username, category_name, thread_name, content, tag_name, image_url);
+        const postId = forum_post.insertId; 
         res.status(201).json({ message: "Post created successfully", postId });
     } catch (error) {
         console.error("Error creating post:", error);

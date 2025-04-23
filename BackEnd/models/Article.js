@@ -150,7 +150,7 @@ export const getArticleByIdDB = async (id) => {
     }
 };
 
-export const createArticleDB = async (title, content, author_id, author_name, category_name, tag_names, image_url) => {
+export const createArticleDB = async (author_id, author_name, title, content, category_name, tag_name = [], image_url) => {
     let conn;
 
     try {
@@ -196,8 +196,8 @@ export const createArticleDB = async (title, content, author_id, author_name, ca
             throw new Error("Tạo bài viết không thành công");
         }
 
-        if (Array.isArray(tag_names) && tag_names.length > 0) {
-            for (const tag of tag_names.map(t => t.trim())) {
+        if (Array.isArray(tag_name) && tag_name.length > 0) {
+            for (const tag of tag_name.map(t => t.trim())) {
                 const [tagResult] = await conn.execute(
                     "SELECT tag_id FROM article_tags WHERE tag_name = ?",
                     [tag]

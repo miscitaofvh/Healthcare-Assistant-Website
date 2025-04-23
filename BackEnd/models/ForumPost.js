@@ -208,30 +208,105 @@ export const createThreadDB = async (thread_name, category_id, user_id, descript
     }
 };
 
-// Create a post
-export const createPostDB = async (thread_id, content, user_id, image_url = null) => {
+export const createPostDB = async( user_id, username, category_name, thread_name, content, tag_name = [], image_url = null) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-        const sql = `
-            INSERT INTO forum_posts (thread_id, content, user_id, image_url)
-            VALUES (?, ?, ?, ?)
+        
+        const [categoryResult] = await conn.execute(
+            "SELECT category_id FROM forum_categories WHERE category_name = ?",
+            [category_name]
+        );
+
+        let category_id;
+        if (categoryResult.length > 0) {
+            category_id = categoryResult[0].category_id;
+        } else {
+            const [insertCategoryResult] = await conn.execute(
+                "INSERT INTO forum_categories (category_name) VALUES (?)",
+                [category_name]
+            );
+            category_id = insertCategoryResult.insertId;
+        }
+
+        const [threadResult] = await conn.execute(
+            "SELECT thread_id FROM forum_threads WHERE thread_name = ?",
+            [thread_name]
+        );
+
+        let thread_id;
+        if (threadResult.length > 0) {
+            thread_id = threadResult[0].thread_id;
+        } else {
+            const [insertThreadResult] = await conn.execute(
+                "INSERT INTO forum_threads (thread_name, category_id, user_id, description) VALUES (?, ?, ?, ?)",
+                [thread_name, category_id, user_id, content.slice(0, 100)]
+            );
+            thread_id = insertThreadResult.insertId;
+        }
+
+        const insertForumPostQuery = `
+            INSERT INTO forum_posts (thread_id, thread_name, user_id, username, content, image_url, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
         `;
-        const [result] = await conn.execute(sql, [thread_id, content, user_id, image_url]);
+        const [forumPostResult] = await conn.execute(insertForumPostQuery, [
+            thread_id,
+            thread_name,
+            user_id,
+            username,
+            content,
+            image_url || null
+        ]);
+
+        const post_id = forumPostResult.insertId;
+
+        if (!forumPostResult) {
+            throw new Error("Tạo bài viết không thành công");
+        }
+
+        if (Array.isArray(tag_name) && tag_name.length > 0) {
+            for (const tag of tag_name.map(t => t.trim())) {
+                const [tagResult] = await conn.execute(
+                    "SELECT tag_id FROM forum_tags WHERE tag_name = ?",
+                    [tag]
+                );
+
+                let tag_id;
+                if (tagResult.length > 0) {
+                    tag_id = tagResult[0].tag_id;
+                } else {
+                    const [insertTagResult] = await conn.execute(
+                        "INSERT INTO forum_tags (tag_name) VALUES (?)",
+                        [tag]
+                    );
+                    tag_id = insertTagResult.insertId;
+                }
+
+                await conn.execute(
+                    "INSERT INTO forum_tags_mapping (post_id, tag_id) VALUES (?, ?)",
+                    [post_id, tag_id]
+                );
+            }
+        }
+
+        await conn.execute(
+            "INSERT INTO forum (user_id, category_id, thread_id, post_id, created_at) VALUES (?, ?, ?, ?, NOW())",
+            [user_id, category_id, thread_id, post_id]
+        );
+
         await conn.commit();
-        return result.insertId;
+        return { success: true, post_id };
+
     } catch (error) {
         if (conn) await conn.rollback();
-        if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-            throw new Error("Thread does not exist. Cannot create post.");
-        }
         console.error("Error creating post:", error);
         throw new Error("Failed to create post");
     } finally {
         if (conn) conn.release();
     }
 };
+
 
 // Update a post
 export const updatePostDB = async (postId, content, image_url = null) => {

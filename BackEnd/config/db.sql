@@ -124,7 +124,6 @@ CREATE TABLE article_tag_mapping (
     relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     article_id INT UNSIGNED NOT NULL,
     tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (tag_name) REFERENCES article_tags(tag_name) ON DELETE CASCADE,
     FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES article_tags(tag_id) ON DELETE CASCADE,
     UNIQUE (article_id, tag_id)
@@ -242,14 +241,14 @@ CREATE TABLE forum_threads (
 );
 
 -- ========== FORUM THREADS RELATION ==========
-CREATE TABLE forum_threads_relation (
-    relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    thread_id INT UNSIGNED NOT NULL,
-    category_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
-    UNIQUE (thread_id, category_id)
-);
+-- CREATE TABLE forum_threads_relation (
+--     relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--     thread_id INT UNSIGNED NOT NULL,
+--     category_id INT UNSIGNED NOT NULL,
+--     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
+--     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
+--     UNIQUE (thread_id, category_id)
+-- );
 
 CREATE INDEX idx_thread_category ON forum_threads(category_id);
 CREATE INDEX idx_thread_user ON forum_threads(user_id);
@@ -267,7 +266,9 @@ CREATE TABLE forum_tags (
 CREATE TABLE forum_posts (
     post_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     thread_id INT UNSIGNED NOT NULL,
+    thread_name VARCHAR(100) NOT NULL,
     user_id CHAR(36) NOT NULL,
+    username VARCHAR(100) NOT NULL,
     content TEXT NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

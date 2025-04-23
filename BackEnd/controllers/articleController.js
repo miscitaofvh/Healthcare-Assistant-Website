@@ -83,10 +83,15 @@ export const getArticleById = async (req, res) => {
 export const createArticle = async (req, res) => {
     try {
         const { title, content, category_name, tag_name, image_url } = req.body;
+
+        if (!req.cookies.auth_token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const author_id = decoded.user_id;
         const author_name = decoded.username;
-        const article = await createArticleDB(title, content, author_id, author_name, category_name, tag_name, image_url);
+        const article = await createArticleDB(author_id, author_name, title, content, category_name, tag_name, image_url);
         res.status(201).json(article);
     } catch (error) {
         res.status(500).json({ message: "Error creating article" });
