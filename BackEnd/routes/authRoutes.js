@@ -1,6 +1,6 @@
 import express from "express";
 import { register, login, exist } from "../controllers/authController.js";
-import { validateRegister, validateLogin, validateExist } from "../middleware/validationMiddleware.js";
+import { validateRegister, validateLogin, validateExist } from "../middleware/validation/auth.js";
 import { getAuthenticatedUser, logout } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
 // import { authenticateToken } from "../middleware/authMiddleware.js";
