@@ -183,3 +183,18 @@
   margin-bottom: 1rem;
   font-weight: 500;
 }
+
+
+.tags {
+  margin-top: 0.5rem;
+}
+
+.tag {
+  display: inline-block;
+  background-color: #e1ecf4;
+  color: #39739d;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-right: 5px;
+  font-size: 0.85rem;
+}

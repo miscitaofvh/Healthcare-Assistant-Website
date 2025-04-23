@@ -17,7 +17,13 @@ import {
     createCategoryDB,
     likePostDB,
     unlikePostDB,
-    reportPostDB
+    reportPostDB,
+    getTagsDB,
+    getTagByIdDB,
+    getCategoriesDB,
+    getThreadsDB,
+    updateTagDB,
+    getTagsofForumPostDB
 } from "../models/ForumPost.js";
 
 dotenv.config();
@@ -233,3 +239,143 @@ export const reportPost = async (req, res) => {
         res.status(500).json({ message: error.message || "Error reporting post" });
     }
 };
+
+// Get thread by ID
+export const getThreadById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const thread = await getThreadByIdDB(id);
+        if (!thread) {
+            return res.status(404).json({ message: "Thread not found" });
+        }
+        res.status(200).json(thread);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching thread" });
+    }
+};
+
+// Create a new thread
+export const createThread = async (req, res) => {
+    try {
+        const { thread_name } = req.body;
+        const result = await createThreadDB(thread_name);
+        res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error creating thread" });
+    }
+};
+
+// Get thread name by ID
+export const getThreadName = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const thread_name = await getThreadNameDB(id);
+        if (!thread_name) {
+            return res.status(404).json({ message: "Thread name not found" });
+        }
+        res.status(200).json(thread_name);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching thread name" });
+    }
+};
+
+// Get category name by ID
+export const getCategoryName = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category_name = await getCategoryNameDB(id);
+        if (!category_name) {
+            return res.status(404).json({ message: "Category name not found" });
+        }
+        res.status(200).json(category_name);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching category name" });
+    }
+};
+
+// Create a new category
+export const createCategory = async (req, res) => {
+    try {
+        const { category_name } = req.body;
+        const result = await createCategoryDB(category_name);
+        res.status(201).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error creating category" });
+    }
+};
+
+// Get all categories
+export const getCategories = async (req, res) => {
+    try {
+        const categories = await getCategoriesDB();
+        res.status(200).json(categories);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching categories" });
+    }
+};
+
+// Get all threads
+export const getThreads = async (req, res) => {
+    try {
+        const threads = await getThreadsDB();
+        res.status(200).json(threads);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching threads" });
+    }
+};
+
+// Get all tags
+export const getTags = async (req, res) => {
+    try {
+        const tags = await getTagsDB();
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags" });
+    }
+};
+
+// Get tag by ID
+export const getTagById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tag = await getTagByIdDB(id);
+        if (!tag) {
+            return res.status(404).json({ message: "Tag not found" });
+        }
+        res.status(200).json(tag);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tag" });
+    }
+};
+
+export const updateTag = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tag_name } = req.body;
+        const result = await updateTagDB(id, tag_name);
+        res.status(200).json({ message: result });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating tag" });
+    }
+}
+
+export const getTagsofForumPost = async (req, res) => {
+    try {
+        const { id } = req.params; // post_id
+        const tags = await getTagsofForumPostDB(id);
+        res.status(200).json(tags);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching tags" });
+    }
+}

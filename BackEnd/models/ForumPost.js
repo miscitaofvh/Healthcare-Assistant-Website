@@ -491,3 +491,167 @@ export const deleteCommentDB = async (commentId) => {
     }
 };
 
+
+export const getTagsDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT tag_id, tag_name
+            FROM forum_tags
+        `;
+        const [tags] = await conn.execute(sql);
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting tags:", error);
+        throw new Error("Failed to get tags");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const getTagByIdDB = async (tagId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT tag_id, tag_name
+            FROM forum_tags
+            WHERE tag_id = ?
+        `;
+        const [tag] = await conn.execute(sql, [tagId]);
+        await conn.commit();
+        return tag[0] || null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting tag:", error);
+        throw new Error("Failed to get tag");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+
+export const getCategoriesDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT category_id, category_name
+            FROM forum_categories
+        `;
+        const [categories] = await conn.execute(sql);
+        await conn.commit();
+        return categories;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting categories:", error);
+        throw new Error("Failed to get categories");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const getCategoryByIdDB = async (categoryId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT category_id, category_name
+            FROM forum_categories
+            WHERE category_id = ?
+        `;
+        const [category] = await conn.execute(sql, [categoryId]);
+
+        await conn.commit();
+        return category[0] || null;
+    }
+    catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting category:", error);
+        throw new Error("Failed to get category");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const getThreadsDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT 
+                t.thread_id, t.thread_name, t.description, t.created_at, t.last_updated,
+                u.username AS author, u.user_id,
+                c.category_name, c.category_id,
+                COUNT(DISTINCT p.post_id) AS post_count
+            FROM forum_threads t
+            JOIN users u ON t.user_id = u.user_id
+            JOIN forum_categories c ON t.category_id = c.category_id
+            LEFT JOIN forum_posts p ON t.thread_id = p.thread_id
+            GROUP BY t.thread_id
+            ORDER BY t.created_at DESC
+        `;
+        const [threads] = await conn.execute(sql);
+        await conn.commit();
+        return threads;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting threads:", error);
+        throw new Error("Failed to get threads");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const updateTagDB = async (tagId, tagName) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            UPDATE forum_tags
+            SET tag_name = ?
+            WHERE tag_id = ?
+        `;
+        await conn.execute(sql, [tagName, tagId]);
+        await conn.commit();
+        return "Tag updated successfully";
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error updating tag:", error);
+        throw new Error("Failed to update tag");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
+export const getTagsofForumPostDB = async (postId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        const sql = `
+            SELECT t.tag_id, t.tag_name
+            FROM forum_tags t
+            JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
+            WHERE tm.post_id = ?
+        `;
+        const [tags] = await conn.execute(sql, [postId]);
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting tags for post:", error);
+        throw new Error("Failed to get tags for post");
+    } finally {
+        if (conn) conn.release();
+    }
+}

@@ -26,6 +26,11 @@ export async function deletePost(id: string) {
     return response;
 }   
 
+export async function getTagByForumPost(forum_post_id: string) {
+    const response = await requestAPI(BASE_URL, `/posts/${forum_post_id}/tags`, "GET");
+    return response;
+}
+
 export async function getComments(id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${id}/comments`, "GET");
     return response;

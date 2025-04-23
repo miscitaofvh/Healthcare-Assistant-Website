@@ -2,15 +2,28 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import styles from "./Forum.module.css";
 import { useNavigate } from "react-router-dom";
-import { getPosts } from "../../utils/service/forum";
-
+import { getPosts, getTagByForumPost } from "../../utils/service/forum";
 
 interface Post {
-  id: number;
+  post_id: number;
+  thread_id: number;
+  thread_name: string;
+  user_id: string;
+  username: string;
   title: string;
   content: string;
   created_at: string;
-  author: string;
+  last_updated: string;
+  image_url: string | null;
+  tag_name: string[];
+}
+
+interface Tag {
+  tag_id: number;
+  tag_name: string;
+  description: string | null;
+  created_at: string;
+  last_updated: string;
 }
 
 const Forum: React.FC = () => {
@@ -28,7 +41,21 @@ const Forum: React.FC = () => {
       setLoading(true);
       setError("");
       const response = await getPosts();
-      setPosts(response.data);
+
+      const forumPostsWithTags = await Promise.all(
+        response.data.map(async (forumPost: Post) => {
+          try {
+            const tagRes = await getTagByForumPost(forumPost.post_id.toString());
+            return {
+              ...forumPost,
+              tag_name: tagRes.data.map((tag: Tag) => tag.tag_name),
+            };
+          } catch {
+            return { ...forumPost, tag_name: [] }; // fallback if error
+          }
+        })
+      );
+      setPosts(forumPostsWithTags);
     } catch (error) {
       setError("Không thể tải bài viết. Vui lòng thử lại sau.");
       console.error("Error fetching posts:", error);
@@ -46,7 +73,9 @@ const Forum: React.FC = () => {
         <h1 className={styles.text_center}>Forum Discussions</h1>
 
         <div className={styles.text_center}>
-          <button className={styles.btn} onClick={() => navigate("/forum/create")}>Tạo bài viết mới</button>
+          <button className={styles.btn} onClick={() => navigate("/forum/create")}>
+            Tạo bài viết mới
+          </button>
         </div>
 
         {loading && (
@@ -66,13 +95,27 @@ const Forum: React.FC = () => {
             ) : (
               posts.map((post) => (
                 <div
-                  key={post.id}
+                  key={post.post_id}
                   className={styles.list_group_item}
-                  onClick={() => navigate(`/forum/${post.id}`)}
+                  onClick={() => navigate(`/forum/${post.post_id}`)}
                 >
                   <h5 className={styles.mb_1}>{post.title}</h5>
                   <p className={styles.mb_1}>{post.content.substring(0, 150)}...</p>
-                  <small>Đăng bởi {post.author} vào {new Date(post.created_at).toLocaleDateString()}</small>
+
+                  {post.tag_name.length > 0 && (
+                    <div className={styles.tags}>
+                      {post.tag_name.map((tag, index) => (
+                        <span key={index} className={styles.tag}>
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <small>
+                    Đăng bởi {post.username} vào{" "}
+                    {new Date(post.created_at).toLocaleDateString()}
+                  </small>
                 </div>
               ))
             )}
