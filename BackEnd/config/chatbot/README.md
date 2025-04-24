@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ### 1. Khởi chạy Ollama
 Trước khi chạy script, đảm bảo Ollama đang chạy trong nền:
-```g:\Ollama testing\start.py g:\Ollama testing\Modelfile.txt g:\Ollama testing\requirements.txt
+```
 ollama serve
 ```
 
@@ -56,6 +56,14 @@ Script sẽ hướng dẫn bạn qua các bước sau:
   - Sử dụng mô hình lớn hơn (llama3.2:8b hoặc llama3.2:70b) cho kết quả chính xác hơn nhưng yêu cầu phần cứng mạnh hơn.
   - Thử nghiệm với các mô hình khác như `mistral`, `gemma` hoặc `phi` bằng cách thay đổi dòng `FROM` trong Modelfile.
 
+## Streaming Responses
+Chatbot hỗ trợ phản hồi dạng streaming, giúp hiển thị câu trả lời theo thời gian thực:
+
+- API endpoint `/chat/stream` được sử dụng cho phản hồi streaming
+- Frontend hiển thị phản hồi từng ký tự một khi nhận được từ backend
+- Cải thiện trải nghiệm người dùng bằng cách giảm thời gian chờ đợi
+- Tham số `stream: true` trong Ollama API để kích hoạt tính năng này
+
 ## Khả năng của Chatbot
 Chatbot trợ lý sức khỏe có các khả năng sau:
 
@@ -73,6 +81,7 @@ Chatbot trợ lý sức khỏe có các khả năng sau:
    - Sử dụng ngôn ngữ phổ thông
    - Tôn trọng quyền riêng tư
    - Ưu tiên phản hồi ngắn gọn
+   - Phản hồi dạng streaming cho trải nghiệm mượt mà
 
 ## Lưu ý quan trọng
 - Chatbot **KHÔNG** thay thế bác sĩ, mọi thông tin chỉ mang tính tham khảo

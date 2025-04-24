@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { getChatHistory, sendMessage, getChatById, deleteChat } from '../controllers/chatController.js';
-import { handlePublicChat } from '../controllers/publicChatController.js';
+import { handlePublicChat, handleStreamingChat } from '../controllers/publicChatController.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
 import { validateChatRequest } from '../middleware/chatMiddleware.js';
 
 const router = Router();
 
-// Public chat endpoint - không cần xác thực
+// Public chat endpoints - không cần xác thực
 router.post('/', handlePublicChat);
+router.post('/stream', handleStreamingChat);
 
 // Bảo vệ các route chat còn lại bằng middleware xác thực
 router.use('/history', authenticateUser);

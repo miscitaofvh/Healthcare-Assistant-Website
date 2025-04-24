@@ -199,6 +199,102 @@
     }
   }
   
+  .cursor-blink {
+    display: inline-block;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  
+  /* Styling for streaming message */
+  .message.streaming {
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(152, 193, 217, 0.6);
+    position: relative;
+  }
+
+  .message.streaming:after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #98c1d9, transparent);
+    animation: streaming-line 2s infinite;
+  }
+
+  @keyframes streaming-line {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Enhanced Cursor animation during streaming */
+  .streaming-cursor {
+    display: inline-block;
+    position: relative;
+    width: 3px;
+    height: 16px;
+    background-color: #98c1d9; /* Match theme color */
+    margin-left: 4px;
+    vertical-align: middle;
+    border-radius: 1px;
+    animation: cursor-pulse 1.2s infinite;
+    box-shadow: 0 0 5px rgba(152, 193, 217, 0.5); /* Soft glow effect */
+  }
+
+  @keyframes cursor-pulse {
+    0% { 
+      height: 16px; 
+      opacity: 1;
+    }
+    50% { 
+      height: 8px; 
+      opacity: 0.6;
+    }
+    100% { 
+      height: 16px; 
+      opacity: 1;
+    }
+  }
+  
+  /* Enhance typing indicator */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+  }
+  
+  .typing-indicator span {
+    width: 8px;
+    height: 8px;
+    margin: 0 2px;
+    background-color: #888;
+    border-radius: 50%;
+    display: inline-block;
+    animation: typing-bounce 1.4s infinite ease-in-out both;
+  }
+  
+  .typing-indicator span:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+  
+  .typing-indicator span:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+  
+  @keyframes typing-bounce {
+    0%, 80%, 100% { 
+      transform: scale(0);
+    }
+    40% { 
+      transform: scale(1);
+    }
+  }
+  
   /* Responsive styles */
   @media (max-width: 480px) {
     .chatbot-window {
@@ -206,4 +302,3 @@
       right: 0;
     }
   }
-  

@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import API from '../../utils/api/api';
 import mainLogo from '../../assets/images/Logo/main_logo.png';
 import ReactMarkdown from 'react-markdown';
+import { streamChatMessage } from '../../utils/service/chat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +18,8 @@ const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
@@ -76,24 +79,42 @@ const ChatBot: React.FC = () => {
     setIsTyping(true);
     
     try {
-      // Use the public chat endpoint - no auth required
-      const response = await API.post('/chat', {
-        message: inputMessage,
-        history: messages
-      });
+      // Create an empty assistant message that will be updated with streaming content
+      setMessages(prevMessages => [
+        ...prevMessages,
+        {
+          role: 'assistant',
+          content: ''
+        }
+      ]);
       
-      // Add bot response
-      if (response.data && response.data.response) {
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: response.data.response
-          }
-        ]);
-      } else {
-        throw new Error('Invalid response format');
-      }
+      setIsStreaming(true);
+      setCurrentStreamingIndex(messages.length + 1); // Set the index of streaming message
+      
+      // Use the streaming API
+      await streamChatMessage(
+        inputMessage,
+        messages,
+        // On each chunk received
+        (chunk) => {
+          setMessages(prevMessages => {
+            const newMessages = [...prevMessages];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content += chunk;
+            }
+            return newMessages;
+          });
+          // Make sure we scroll as content comes in
+          scrollToBottom();
+        },
+        // When streaming is complete
+        () => {
+          setIsStreaming(false);
+          setIsTyping(false);
+          setCurrentStreamingIndex(null);
+        }
+      );
     } catch (error) {
       console.error('Error communicating with chatbot:', error);
       setMessages(prev => [
@@ -103,8 +124,9 @@ const ChatBot: React.FC = () => {
           content: 'Sorry, I encountered an error. Please try again later.'
         }
       ]);
-    } finally {
       setIsTyping(false);
+      setIsStreaming(false);
+      setCurrentStreamingIndex(null);
     }
   };
 
@@ -126,7 +148,9 @@ const ChatBot: React.FC = () => {
             {messages.map((message, index) => (
               <div 
                 key={index} 
-                className={`message ${message.role === 'user' ? 'user-message' : 'bot-message'}`}
+                className={`message ${message.role === 'user' ? 'user-message' : 'bot-message'} ${
+                  isStreaming && index === currentStreamingIndex ? 'streaming' : ''
+                }`}
               >
                 <div className="message-content">
                   {message.role === 'assistant' ? (
@@ -134,11 +158,14 @@ const ChatBot: React.FC = () => {
                   ) : (
                     message.content
                   )}
+                  {isStreaming && index === currentStreamingIndex && (
+                    <span className="streaming-cursor" aria-hidden="true"></span>
+                  )}
                 </div>
               </div>
             ))}
             
-            {isTyping && (
+            {isTyping && !isStreaming && (
               <div className="message bot-message">
                 <div className="message-content typing-indicator">
                   <span></span>
@@ -158,9 +185,9 @@ const ChatBot: React.FC = () => {
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              disabled={isTyping}
+              disabled={isTyping || isStreaming}
             />
-            <button type="submit" disabled={!inputMessage.trim() || isTyping}>
+            <button type="submit" disabled={!inputMessage.trim() || isTyping || isStreaming}>
               <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </form>
