@@ -1,8 +1,5 @@
 import express from "express";
-import { getCategories, getCategoryById, 
-        getArticles, getArticleById, createArticle, 
-        updateArticle, deleteArticle,
-        getTags, getTagById, getTagsofArticle } from "../controllers/articleController.js";
+import * as articleCtrl from "../controllers/articleController.js";
 import { validateArticle } from "../middleware/validation/article.js";
 
 const asyncHandler = (fn) => (req, res, next) => {
@@ -11,15 +8,26 @@ const asyncHandler = (fn) => (req, res, next) => {
 
 const router = express.Router();
 
-router.get("/categories", asyncHandler(getCategories));
-router.get("/categories/:id", asyncHandler(getCategoryById));
-router.get("/tags", asyncHandler(getTags));
-router.get("/tags/:id", asyncHandler(getTagById));
-router.post("/tags/article/:id", asyncHandler(getTagsofArticle));
-router.get("/articles", asyncHandler(getArticles));
-router.get("/articles/:id", asyncHandler(getArticleById));
-router.post("/articles", validateArticle, asyncHandler(createArticle));
-router.put("/articles/:id", validateArticle, asyncHandler(updateArticle));
-router.delete("/articles/:id", asyncHandler(deleteArticle));
+router.get("/categories",     asyncHandler(articleCtrl.getCategories));
+router.get("/categories/:id", asyncHandler(articleCtrl.getCategoryById));
+
+router.get("/tags",           asyncHandler(articleCtrl.getTags));
+router.get("/tags/:id",       asyncHandler(articleCtrl.getTagById));
+router.post("/tags/article/:id", asyncHandler(articleCtrl.getTagsByArticle));
+
+router.get("/articles",       asyncHandler(articleCtrl.getArticles));
+router.get("/articles/:id",   asyncHandler(articleCtrl.getArticleById));
+
+router.post("/articles",
+    validateArticle,
+    asyncHandler(articleCtrl.createArticle)
+);
+router.put("/articles/:id",
+    validateArticle,
+    asyncHandler(articleCtrl.updateArticle)
+);
+router.delete("/articles/:id",
+    asyncHandler(articleCtrl.deleteArticle)
+);
 
 export default router;

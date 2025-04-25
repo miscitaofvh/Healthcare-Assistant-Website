@@ -1,156 +1,69 @@
 import dotenv from "dotenv";
 import connection from "../config/connection.js";
+import pool from "../config/db.js";
 
 dotenv.config();
+const FIXED_LIMIT = 3;
 
-export const getCategoriesDB = async () => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "SELECT * FROM article_categories";
-        const [categories] = await conn.execute(sql);
-
-        await conn.commit();
-        return categories;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching categories:", error);
-        throw new Error("Không thể lấy danh sách danh mục");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getCategories = async () => {
+    const [rows] = await pool.query(
+        'SELECT category_id, category_name, description, created_at, last_updated FROM article_categories'
+      );
+    return rows;
 };
 
-export const getCategoryByIdDB = async (id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "SELECT * FROM article_categories WHERE category_id = ?";
-        const [category] = await conn.execute(sql, [id]);
-
-        await conn.commit();
-        return category;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching category:", error);
-        throw new Error("Không thể lấy danh mục");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getCategoryById = async (categoryId) => {
+    const [rows] = await pool.query(
+        'SELECT category_id, category_name, description, created_at, last_updated FROM article_categories WHERE category_id = ?',
+        [categoryId]
+      );
+    return rows[0] || null;
 };
 
-export const getTagsDB = async () => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "SELECT * FROM article_tags";
-        const [tags] = await conn.execute(sql);
-        
-        await conn.commit();
-        return tags;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching tags:", error);
-        throw new Error("Không thể lấy danh sách thẻ");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getTags = async () => {
+    const [rows] = await pool.query(
+        'SELECT tag_id, tag_name, description, created_at, last_updated FROM article_tags'
+      );
+    return rows;
 }
 
-export const getTagByIdDB = async (id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "SELECT * FROM article_tags WHERE tag_id = ?";
-        const [tag] = await conn.execute(sql, [id]);
-
-        await conn.commit();
-        return tag;
-
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching tag:", error);
-        throw new Error("Không thể lấy thẻ");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getTagById = async (tagId) => {
+    const [rows] = await pool.query(
+        'SELECT tag_id, tag_name, description, created_at, last_updated FROM article_tags WHERE tag_id = ?',
+        [tagId]
+      );
+    return rows[0] || null;
 };  
 
-export const getTagsofArticleDB = async (article_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = `
-            SELECT t.tag_id, t.tag_name
-            FROM article_tags t
-            JOIN article_tag_mapping m ON t.tag_id = m.tag_id
-            JOIN article a ON m.article_id = a.article_id
-            WHERE a.article_id = ?
-        `;
-        const [tags] = await conn.execute(sql, [article_id]);
-
-        await conn.commit();
-        return tags;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching tags of article:", error);
-        throw new Error("Không thể lấy danh sách thẻ của bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getTagsByArticle = async (articleId) => {
+    const [rows] = await pool.query(`SELECT t.tag_id, t.tag_name
+           FROM article_tags t
+           JOIN article_tag_mapping m ON t.tag_id = m.tag_id
+          WHERE m.article_id = ?`,
+        [articleId]
+      );
+      return rows;
 };
 
-export const getArticlesDB = async () => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
+export const getArticles = async (page = 1) => {
 
-        const sql = "SELECT * FROM article";
-        const [articles] = await conn.execute(sql);
-
-        await conn.commit();
-        return articles;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching articles:", error);
-        throw new Error("Không thể lấy danh sách bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+    const offset = (page - 1) * FIXED_LIMIT;
+        
+    const [articles] = await pool.query(`SELECT * FROM articles ORDER BY publication_date DESC LIMIT ?, ?`, 
+        [offset, FIXED_LIMIT]);
+    
+    return articles;
 };
 
-export const getArticleByIdDB = async (id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "SELECT * FROM article WHERE article_id = ?";
-        const [article] = await conn.execute(sql, [id]);
-
-        await conn.commit();
-        return article;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error fetching article:", error);
-        throw new Error("Không thể lấy bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getArticleById = async (articleId) => {
+    const [rows] = await pool.query(
+        'SELECT * FROM articles WHERE article_id = ?',
+        [articleId]
+      );
+    return rows[0] || null;
 };
 
-export const createArticleDB = async (author_id, author_name, title, content, category_name, tag_name = [], image_url) => {
+export const createArticle = async (author_id, author_name, title, content, category_name, tag_name = [], image_url) => {
     let conn;
 
     try {
@@ -178,7 +91,7 @@ export const createArticleDB = async (author_id, author_name, title, content, ca
         }
 
         const insertArticleQuery = `
-            INSERT INTO article (title, content, author_id, author_name, category_id, category_name, publication_date, image_url)
+            INSERT INTO articles (title, content, author_id, author_name, category_id, category_name, publication_date, image_url)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
         `;
         const [articleResult] = await conn.execute(insertArticleQuery, [
@@ -233,176 +146,81 @@ export const createArticleDB = async (author_id, author_name, title, content, ca
 };
 
 
-export const updateArticleDB = async (id, title, content, category_name, image_url) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "UPDATE article SET title = ?, content = ?, category_name = ?, image_url = ? WHERE article_id = ?";
-        const [result] = await conn.execute(sql, [title, content, category_name, image_url, id]);
-
-        await conn.commit();
-        return result.affectedRows > 0;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error updating article:", error);
-        throw new Error("Không thể cập nhật bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const updateArticle = async (articleId, title, content, category_name, image_url) => {
+    const [result] = await pool.query(
+        `UPDATE articles
+            SET title = ?, content = ?, category_id = (
+              SELECT category_id FROM article_categories WHERE category_name = ?
+            ), image_url = ?, last_updated = NOW()
+          WHERE article_id = ?`,
+        [title, content, category_name, image_url, articleId]
+    );
+    return result.affectedRows > 0;
 };
 
-export const deleteArticleDB = async (id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "DELETE FROM article WHERE article_id = ?";
-        const [result] = await conn.execute(sql, [id]);
-
-        await conn.commit();
-        return result.affectedRows > 0;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error deleting article:", error);
-        throw new Error("Không thể xóa bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const deleteArticle = async (articleId) => {
+    const [result] = await pool.query(
+        'DELETE FROM articles WHERE article_id = ?',
+        [articleId]
+      );
+      return result.affectedRows > 0;
 };
 
-
-
-export const likeArticleDB = async (article_id, user_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "INSERT INTO article_likes (article_id, user_id) VALUES (?, ?)";
-        await conn.execute(sql, [article_id, user_id]);
-
-        await conn.commit();
-    } catch (error) {
-        if (conn) await conn.rollback();
-        throw new Error("Không thể thích bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const likeArticle = async (article_id, user_id) => {
+    await pool.query(
+        'INSERT IGNORE INTO article_likes (article_id, user_id) VALUES (?, ?)',
+        [article_id, user_id]
+      );
 };
 
-export const unlikeArticleDB = async (article_id, user_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "DELETE FROM article_likes WHERE article_id = ? AND user_id = ?";
-        await conn.execute(sql, [article_id, user_id]);
-
-        await conn.commit();
-    } catch (error) {
-        if (conn) await conn.rollback();
-        throw new Error("Không thể bỏ thích bài viết");
-    } finally {
-        if (conn) conn.release();
-    }
+export const unlikeArticle = async (article_id, user_id) => {
+    await pool.query(
+        'DELETE FROM article_likes WHERE article_id = ? AND user_id = ?',
+        [article_id, user_id]
+    );
 };
 
-export const getArticleLikesDB = async (article_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        const sql = "SELECT COUNT(*) AS total_likes FROM article_likes WHERE article_id = ?";
-        const [likes] = await conn.execute(sql, [article_id]);
-        return likes[0];
-    } catch (error) {
-        throw new Error("Không thể lấy danh sách lượt thích");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getArticleLikes = async (article_id) => {
+    const [[{ total_likes }]] = await pool.query(
+        'SELECT COUNT(*) AS total_likes FROM article_likes WHERE article_id = ?',
+        [article_id]
+    );
+    return total_likes;
 };
 
-export const addCommentDB = async (article_id, user_id, comment_content) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "INSERT INTO article_comments (article_id, user_id, comment_content) VALUES (?, ?, ?)";
-        await conn.execute(sql, [article_id, user_id, comment_content]);
-
-        await conn.commit();
-    } catch (error) {
-        if (conn) await conn.rollback();
-        throw new Error("Không thể thêm bình luận");
-    } finally {
-        if (conn) conn.release();
-    }
+export const addComment = async (article_id, user_id, comment_content) => {
+    await pool.query(
+        'INSERT INTO article_comments (article_id, user_id, comment_content) VALUES (?, ?, ?)',
+        [article_id, user_id, comment_content]
+    );
 };
 
-export const deleteCommentDB = async (comment_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "DELETE FROM article_comments WHERE comment_id = ?";
-        await conn.execute(sql, [comment_id]);
-
-        await conn.commit();
-    } catch (error) {
-        if (conn) await conn.rollback();
-        throw new Error("Không thể xóa bình luận");
-    } finally {
-        if (conn) conn.release();
-    }
+export const deleteComment = async (comment_id) => {
+    await pool.query(
+        'DELETE FROM article_comments WHERE comment_id = ?',
+        [comment_id]
+    );
 };
 
-export const getArticleCommentsDB = async (article_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        const sql = "SELECT * FROM article_comments WHERE article_id = ? ORDER BY created_at DESC";
-        const [comments] = await conn.execute(sql, [article_id]);
-        return comments;
-    } catch (error) {
-        throw new Error("Không thể lấy danh sách bình luận");
-    } finally {
-        if (conn) conn.release();
-    }
+export const getArticleComments = async (article_id) => {
+    const [rows] = await pool.query(
+        'SELECT * FROM article_comments WHERE article_id = ? ORDER BY created_at DESC',
+        [article_id]
+    );
+    return rows;
 };
 
-export const addArticleViewDB = async (article_id, user_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = "INSERT INTO article_views (article_id, user_id) VALUES (?, ?)";
-        await conn.execute(sql, [article_id, user_id]);
-
-        await conn.commit();
-    } catch (error) {
-        if (conn) await conn.rollback();
-        throw new Error("Không thể ghi nhận lượt xem");
-    } finally {
-        if (conn) conn.release();
-    }
+export const addArticleView = async (article_id, user_id) => {
+    await pool.query(
+        'INSERT INTO article_views (article_id, user_id) VALUES (?, ?)',
+        [article_id, user_id]
+    );
 };
 
 export const getArticleViewsDB = async (article_id) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        const sql = "SELECT COUNT(*) AS total_views FROM article_views WHERE article_id = ?";
-        const [views] = await conn.execute(sql, [article_id]);
-        return views[0];
-    } catch (error) {
-        throw new Error("Không thể lấy lượt xem");
-    } finally {
-        if (conn) conn.release();
-    }
+    const [[{ total_views }]] = await pool.query(
+        'SELECT COUNT(*) AS total_views FROM article_views WHERE article_id = ?',
+        [article_id]
+    );
+    return total_views;
 };

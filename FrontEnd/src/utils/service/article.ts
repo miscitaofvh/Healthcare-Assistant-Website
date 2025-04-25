@@ -26,8 +26,8 @@ export async function getTagByArticle(article_id: string) {
     return response;
 }
 
-export async function getArticles() {
-    const response = await requestAPI(BASE_URL, "/articles", "GET");
+export async function getArticles(page: number = 1) {
+    const response = await requestAPI(BASE_URL, `/articles?page=${page}`, "GET");
     return response;
 }
 

@@ -95,15 +95,12 @@ CREATE TABLE article_tags (
 CREATE INDEX idx_article_tag_article ON article_tags(tag_id);
 
 -- ========== ARTICLES ==========
-CREATE TABLE article (
+CREATE TABLE articles (
     article_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     author_id CHAR(36) NOT NULL,
-    author_name VARCHAR(255) NOT NULL,
     category_id INT UNSIGNED NOT NULL,
-    category_name VARCHAR(100) NOT NULL,
-    status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
     view_count INT UNSIGNED DEFAULT 0,
     like_count INT UNSIGNED DEFAULT 0,
     comment_count INT UNSIGNED DEFAULT 0,
@@ -114,19 +111,18 @@ CREATE TABLE article (
     FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_article_author ON article(author_id);
-CREATE INDEX idx_article_category ON article(category_id);
-CREATE INDEX idx_article_date ON article(publication_date);
-CREATE FULLTEXT INDEX idx_article_search ON article(title, content);
+CREATE INDEX idx_article_author ON articles(author_id);
+CREATE INDEX idx_article_category ON articles(category_id);
+CREATE INDEX idx_article_date ON articles(publication_date);
+CREATE FULLTEXT INDEX idx_article_search ON articles(title, content);
 
 -- ========== ARTICLE TAGS RELATION ==========
 CREATE TABLE article_tag_mapping (
-    relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     article_id INT UNSIGNED NOT NULL,
-    tag_id INT UNSIGNED NOT NULL,
-    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES article_tags(tag_id) ON DELETE CASCADE,
-    UNIQUE (article_id, tag_id)
+    tag_id     INT UNSIGNED NOT NULL,
+    PRIMARY KEY (article_id, tag_id),
+    FOREIGN KEY (article_id) REFERENCES articles(article_id),
+    FOREIGN KEY (tag_id)     REFERENCES tags(tag_id)
 );
 
 
@@ -136,7 +132,7 @@ CREATE TABLE article_likes (
     article_id INT UNSIGNED NOT NULL,
     user_id CHAR(36) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -150,7 +146,7 @@ CREATE TABLE article_comments (
     user_id CHAR(36) NOT NULL,
     comment_content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -163,7 +159,7 @@ CREATE TABLE article_views (
     article_id INT UNSIGNED NOT NULL,
     user_id CHAR(36) NOT NULL,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -179,7 +175,7 @@ CREATE TABLE comments (
     count_likes INT DEFAULT 0,
     date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES article(article_id) ON DELETE CASCADE
+    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_comment_user ON comments(user_id);
