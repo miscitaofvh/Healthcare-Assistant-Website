@@ -1,5 +1,5 @@
 DROP DATABASE IF EXISTS healthcare_service_db;
-CREATE DATABASE IF NOT EXISTS healthcare_service_db;
+CREATE DATABASE IF NOT EXISTS healthcare_service_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE healthcare_service_db;
 
 -- ========== USERS ==========
@@ -19,7 +19,7 @@ CREATE TABLE users (
     last_login TIMESTAMP DEFAULT NULL,
     is_active BOOLEAN DEFAULT FALSE,
     role ENUM('User', 'Admin', 'Doctor', 'Moderator') DEFAULT 'User'
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_email ON users(email);
 CREATE INDEX idx_username ON users(username);
@@ -32,7 +32,7 @@ CREATE TABLE doctors (
     license VARCHAR(50) UNIQUE NOT NULL,
     hospital VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_specialty ON doctors(specialty);
 
@@ -51,7 +51,7 @@ CREATE TABLE health_tracking (
     exercise_data TEXT DEFAULT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_tracking_user ON health_tracking(user_id);
 
@@ -66,7 +66,7 @@ CREATE TABLE appointments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_appointment_user ON appointments(user_id);
 CREATE INDEX idx_appointment_doctor ON appointments(doctor_id);
@@ -79,7 +79,7 @@ CREATE TABLE article_categories (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_category_name ON article_categories(category_name);
 
@@ -90,7 +90,7 @@ CREATE TABLE article_tags (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_tag_article ON article_tags(tag_id);
 
@@ -102,14 +102,13 @@ CREATE TABLE articles (
     author_id CHAR(36) NOT NULL,
     category_id INT UNSIGNED NOT NULL,
     view_count INT UNSIGNED DEFAULT 0,
-    like_count INT UNSIGNED DEFAULT 0,
     comment_count INT UNSIGNED DEFAULT 0,
     publication_date DATE NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_author ON articles(author_id);
 CREATE INDEX idx_article_category ON articles(category_id);
@@ -122,22 +121,9 @@ CREATE TABLE article_tag_mapping (
     tag_id     INT UNSIGNED NOT NULL,
     PRIMARY KEY (article_id, tag_id),
     FOREIGN KEY (article_id) REFERENCES articles(article_id),
-    FOREIGN KEY (tag_id)     REFERENCES tags(tag_id)
-);
+    FOREIGN KEY (tag_id)     REFERENCES article_tags(tag_id)
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-
--- ========== ARTICLE LIKES ==========
-CREATE TABLE article_likes (
-    like_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    article_id INT UNSIGNED NOT NULL,
-    user_id CHAR(36) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_article_like_article ON article_likes(article_id);
-CREATE INDEX idx_article_like_user ON article_likes(user_id);
 
 -- ========== ARTICLE COMMENTS ==========
 CREATE TABLE article_comments (
@@ -148,7 +134,7 @@ CREATE TABLE article_comments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_comment_article ON article_comments(article_id);
 CREATE INDEX idx_article_comment_user ON article_comments(user_id);
@@ -161,7 +147,7 @@ CREATE TABLE article_views (
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_view_article ON article_views(article_id);
 CREATE INDEX idx_article_view_user ON article_views(user_id);
@@ -176,7 +162,7 @@ CREATE TABLE comments (
     date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_comment_user ON comments(user_id);
 CREATE INDEX idx_comment_article ON comments(article_id);
@@ -197,7 +183,7 @@ CREATE TABLE chat_history (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (answered_by) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (review_by) REFERENCES users(user_id) ON DELETE SET NULL
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ========== ANSWERS ==========
 CREATE TABLE answers (
@@ -207,7 +193,7 @@ CREATE TABLE answers (
     answer_text TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (question_id) REFERENCES chat_history(id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_answer_question ON answers(question_id);
 CREATE INDEX idx_answer_user ON answers(answered_by);
@@ -219,7 +205,7 @@ CREATE TABLE forum_categories (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_category_name ON forum_categories(category_name);
 
@@ -234,7 +220,7 @@ CREATE TABLE forum_threads (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ========== FORUM THREADS RELATION ==========
 -- CREATE TABLE forum_threads_relation (
@@ -256,7 +242,7 @@ CREATE TABLE forum_tags (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ========== FORUM POSTS ==========
 CREATE TABLE forum_posts (
@@ -271,7 +257,7 @@ CREATE TABLE forum_posts (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_post_thread ON forum_posts(thread_id);
 CREATE INDEX idx_post_user ON forum_posts(user_id);
@@ -284,7 +270,7 @@ CREATE TABLE forum_tags_mapping (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES forum_tags(tag_id) ON DELETE CASCADE,
     UNIQUE (post_id, tag_id)
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ========== FORUM LIKES ==========
 CREATE TABLE forum_likes (
@@ -295,7 +281,7 @@ CREATE TABLE forum_likes (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE (post_id, user_id)
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_like_post ON forum_likes(post_id);
 CREATE INDEX idx_like_user ON forum_likes(user_id);
@@ -312,7 +298,7 @@ CREATE TABLE forum_reports (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (reported_by) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_report_post ON forum_reports(post_id);
 CREATE INDEX idx_report_user ON forum_reports(reported_by);
@@ -329,7 +315,7 @@ CREATE TABLE forum (
     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE
-);
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_forum_user ON forum(user_id);
 CREATE INDEX idx_forum_category ON forum(category_id);

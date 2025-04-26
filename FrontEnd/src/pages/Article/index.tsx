@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getCategories, getArticles, createArticle, deleteArticle, getCategoryById, getArticleById, getTagByArticle } from "../../utils/service/article";
+import { getArticles, createArticle, deleteArticle} from "../../utils/service/article";
 import { useNavigate, useSearchParams  } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import { useLocation } from "react-router-dom";
 
 import styles from "./Article.module.css";
 
@@ -28,6 +29,7 @@ const HealthcareNews: React.FC = () => {
   const pageParam = parseInt(searchParams.get("page") || "1");
   const [page, setPage] = useState<number>(pageParam);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const updatePage = (newPage: number) => {
     setPage(newPage);
@@ -36,17 +38,27 @@ const HealthcareNews: React.FC = () => {
   
   const fetchArticle = async () => {
     try {
-      const response = await getArticles(page); 
+      const response = await getArticles(page);
       setArticles(response.data);
     } catch (error) {
       console.error("Failed to fetch articles:", error);
     }
   };
-  
+
+  useEffect(() => {
+    const isFirstPageURL = location.pathname === "/article" && !searchParams.has("page");
+    if (isFirstPageURL && page !== 1) {
+      setPage(1);
+      setSearchParams({}, { replace: true });
+    }
+  }, [location.pathname, location.key]);
+
   useEffect(() => {
     fetchArticle();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
-  
+
+
   return (
     <div>
       <Navbar />
@@ -70,7 +82,7 @@ const HealthcareNews: React.FC = () => {
                 </p>
                 <div className={styles.meta}>
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${article.author_name}`}
+                    src={`https://cdn-icons-png.flaticon.com/512/3135/3135715.png`}
                     alt="avatar"
                     className={styles.avatar}
                   />

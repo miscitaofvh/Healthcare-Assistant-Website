@@ -3,7 +3,7 @@ import connection from "../config/connection.js";
 import pool from "../config/db.js";
 
 dotenv.config();
-const FIXED_LIMIT = 3;
+const FIXED_LIMIT = 18;
 
 export const getCategories = async () => {
     const [rows] = await pool.query(
@@ -217,7 +217,7 @@ export const addArticleView = async (article_id, user_id) => {
     );
 };
 
-export const getArticleViewsDB = async (article_id) => {
+export const getArticleViews = async (article_id) => {
     const [[{ total_views }]] = await pool.query(
         'SELECT COUNT(*) AS total_views FROM article_views WHERE article_id = ?',
         [article_id]

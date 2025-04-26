@@ -1,0 +1,60 @@
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 60px 20px;
+  }
+  
+  .image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    object-fit: cover;
+  }
+  
+  .title {
+    font-size: 28px;
+    color: #4a148c;
+    margin-bottom: 10px;
+  }
+  
+  .meta {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 30px;
+  }
+  
+  .author {
+    font-weight: bold;
+  }
+  
+  .date {
+    margin-left: 10px;
+  }
+  
+  .content {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #444;
+  }
+  
+  .backButton {
+    background: none;
+    border: none;
+    color: #4a148c;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .backButton:hover {
+    text-decoration: underline;
+  }
+  
+  .loading {
+    text-align: center;
+    font-size: 18px;
+    color: #aaa;
+    padding: 100px 0;
+  }
+  

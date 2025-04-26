@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import * as ArticleModel from "../models/article.js";
+import * as ArticleModel from "../models/Article.js";
 
 dotenv.config();
 
