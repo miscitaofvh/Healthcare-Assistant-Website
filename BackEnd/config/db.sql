@@ -202,10 +202,12 @@ CREATE INDEX idx_answer_user ON answers(answered_by);
 CREATE TABLE forum_categories (
     category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) UNIQUE NOT NULL,
+    user_id CHAR(36) NOT NULL,
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE 
+);
 
 CREATE INDEX idx_category_name ON forum_categories(category_name);
 
@@ -220,7 +222,7 @@ CREATE TABLE forum_threads (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 
 -- ========== FORUM THREADS RELATION ==========
 -- CREATE TABLE forum_threads_relation (
@@ -239,10 +241,17 @@ CREATE INDEX idx_thread_user ON forum_threads(user_id);
 CREATE TABLE forum_tags (
     tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tag_name VARCHAR(100) UNIQUE NOT NULL,
+    user_id CHAR(36) NOT NULL,
     description TEXT DEFAULT NULL,
+    usage_count INT UNSIGNED DEFAULT 0,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_tag_user ON forum_tags(user_id);
+CREATE INDEX idx_tag_popularity ON forum_tags(usage_count DESC, last_used_at DESC);
 
 -- ========== FORUM POSTS ==========
 CREATE TABLE forum_posts (
@@ -250,14 +259,13 @@ CREATE TABLE forum_posts (
     thread_id INT UNSIGNED NOT NULL,
     thread_name VARCHAR(100) NOT NULL,
     user_id CHAR(36) NOT NULL,
-    username VARCHAR(100) NOT NULL,
     content TEXT NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 
 CREATE INDEX idx_post_thread ON forum_posts(thread_id);
 CREATE INDEX idx_post_user ON forum_posts(user_id);
@@ -270,7 +278,54 @@ CREATE TABLE forum_tags_mapping (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES forum_tags(tag_id) ON DELETE CASCADE,
     UNIQUE (post_id, tag_id)
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
+
+-- ========== FORUM COMMENTS ==========
+CREATE TABLE forum_comments (
+    comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    post_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_comment_post ON forum_comments(post_id);
+CREATE INDEX idx_comment_user ON forum_comments(user_id);
+
+-- ========== FORUM COMMENT LIKES ==========
+CREATE TABLE forum_comment_likes (
+    like_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    comment_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (comment_id) REFERENCES forum_comments(comment_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE (comment_id, user_id)
+);
+
+CREATE INDEX idx_comment_like_comment ON forum_comment_likes(comment_id);
+CREATE INDEX idx_comment_like_user ON forum_comment_likes(user_id);
+
+-- ========== FORUM COMMENT REPORTS ==========
+CREATE TABLE forum_comment_reports (
+    report_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    comment_id INT UNSIGNED NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('pending', 'resolved', 'dismissed') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_by CHAR(36) DEFAULT NULL,
+    reviewed_at TIMESTAMP NULL,
+    FOREIGN KEY (comment_id) REFERENCES forum_comments(comment_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_comment_report_comment ON forum_comment_reports(comment_id);
+CREATE INDEX idx_comment_report_user ON forum_comment_reports(user_id);
 
 -- ========== FORUM LIKES ==========
 CREATE TABLE forum_likes (
@@ -281,7 +336,7 @@ CREATE TABLE forum_likes (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE (post_id, user_id)
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 
 CREATE INDEX idx_like_post ON forum_likes(post_id);
 CREATE INDEX idx_like_user ON forum_likes(user_id);
@@ -298,7 +353,7 @@ CREATE TABLE forum_reports (
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
     FOREIGN KEY (reported_by) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 
 CREATE INDEX idx_report_post ON forum_reports(post_id);
 CREATE INDEX idx_report_user ON forum_reports(reported_by);
@@ -315,9 +370,8 @@ CREATE TABLE forum (
     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 
 CREATE INDEX idx_forum_user ON forum(user_id);
 CREATE INDEX idx_forum_category ON forum(category_id);
 CREATE INDEX idx_forum_thread ON forum(thread_id);
-CREATE INDEX idx_forum_post ON forum(post_id);
