@@ -129,3 +129,5 @@ router.delete("/reports/:reportId", asyncHandler(deleteReportById));
 // router.get("/user/:userId/activity/posts/:id", asyncHandler(getForumPostActivityByid)); // get post by post id
 // router.put("/user/:userId/activity/posts/:id", asyncHandler(updateForumPostActivityByid)); // update post by post id
 // router.get("/user/:userId/activity/comments", asyncHandler(getForumCommentActivityByUser));
+
+export default router;

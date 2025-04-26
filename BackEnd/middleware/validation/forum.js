@@ -1,4 +1,4 @@
-import { body, validationResult } from "express-validator";
+import { param, body, validationResult } from "express-validator";
 import { isTagandCategoryValid } from "../../utils/format/article.js";
 
 // Category
@@ -365,17 +365,14 @@ export const validatePostTag = [
         .withMessage("ID bài viết là bắt buộc")
         .isMongoId()
         .withMessage("ID bài viết không hợp lệ"),
-
     body("tagIds")
         .isArray({ min: 1 })
         .withMessage("Danh sách tag phải là một mảng và không được rỗng"),
-
     body("tagIds.*")
         .notEmpty()
         .withMessage("ID tag là bắt buộc")
         .isMongoId()
         .withMessage("ID tag không hợp lệ"),
-
     (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
