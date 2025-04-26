@@ -26,7 +26,6 @@
         "npm": "^11.2.0",
         "ollama": "^0.5.15",
         "react-icons": "^5.5.0",
-        "react-markdown": "^10.1.0",
         "react-modal": "^3.16.3",
         "redis": "^4.7.0",
         "rehype-sanitize": "^6.0.0",

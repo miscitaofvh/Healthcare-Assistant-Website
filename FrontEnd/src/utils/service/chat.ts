@@ -7,27 +7,6 @@ interface Message {
   content: string;
 }
 
-export async function sendChatMessage(message: string, history: Message[]) {
-  try {
-    const response = await requestAPI(BASE_URL, "/chat", "POST", {
-      message,
-      history
-    });
-
-    return {
-      success: true,
-      data: response.data,
-      status: response.status
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || "Failed to send message",
-      status: error.response?.status || 500
-    };
-  }
-}
-
 export async function streamChatMessage(
   message: string, 
   history: Message[], 

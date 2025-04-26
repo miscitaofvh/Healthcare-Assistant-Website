@@ -17,7 +17,6 @@ const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
-  const [isTyping, setIsTyping] = useState<boolean>(false);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -76,7 +75,7 @@ const ChatBot: React.FC = () => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsTyping(true);
+    setIsStreaming(true); // Just use isStreaming
     
     try {
       // Create an empty assistant message that will be updated with streaming content
@@ -88,7 +87,6 @@ const ChatBot: React.FC = () => {
         }
       ]);
       
-      setIsStreaming(true);
       setCurrentStreamingIndex(messages.length + 1); // Set the index of streaming message
       
       // Use the streaming API
@@ -111,7 +109,6 @@ const ChatBot: React.FC = () => {
         // When streaming is complete
         () => {
           setIsStreaming(false);
-          setIsTyping(false);
           setCurrentStreamingIndex(null);
         }
       );
@@ -124,7 +121,6 @@ const ChatBot: React.FC = () => {
           content: 'Sorry, I encountered an error. Please try again later.'
         }
       ]);
-      setIsTyping(false);
       setIsStreaming(false);
       setCurrentStreamingIndex(null);
     }
@@ -165,16 +161,6 @@ const ChatBot: React.FC = () => {
               </div>
             ))}
             
-            {isTyping && !isStreaming && (
-              <div className="message bot-message">
-                <div className="message-content typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            )}
-            
             <div ref={messagesEndRef} />
           </div>
           
@@ -185,9 +171,9 @@ const ChatBot: React.FC = () => {
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              disabled={isTyping || isStreaming}
+              disabled={isStreaming}
             />
-            <button type="submit" disabled={!inputMessage.trim() || isTyping || isStreaming}>
+            <button type="submit" disabled={!inputMessage.trim() || isStreaming}>
               <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </form>
