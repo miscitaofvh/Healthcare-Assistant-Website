@@ -8,7 +8,7 @@ export const getAllPostsDB = async () => {
         const sql = `
             SELECT 
                 p.post_id, p.content, p.image_url, p.created_at, p.last_updated,
-                u.username AS author, u.user_id,
+                u.username AS author, u.username,
                 t.thread_name, t.thread_id,
                 c.category_name, c.category_id,
                 COUNT(DISTINCT l.like_id) AS like_count,
