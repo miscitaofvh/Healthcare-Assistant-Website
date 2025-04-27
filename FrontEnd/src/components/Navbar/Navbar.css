@@ -87,6 +87,106 @@
     cursor: pointer;
 }
 
+.user-dropdown {
+    position: relative;
+    z-index: 1003; /* Higher than other elements */
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: black;
+    padding: 6px 10px;
+    border-radius: 20px;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px); /* Position it below the toggle button with some spacing */
+    background: white;
+    border-radius: 8px;
+    width: 220px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1004; /* Higher than dropdown-toggle */
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    font-weight: normal;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dropdown-item svg {
+    color: #666;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+    transform: none; /* Prevent transform from affecting layout */
+}
+
+.dropdown-divider {
+    border-top: 1px solid #eeeeee;
+    margin: 6px 0;
+}
+
+.logout-item {
+    color: #dc3545;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.logout-item svg {
+    color: #dc3545;
+}
+
+/* Remove the dropdown-overlay since we now use the click outside pattern */
+.dropdown-overlay {
+    display: none;
+}
+
+.user-name {
+    font-weight: bold;
+}
+
+/* Responsive adjustments for the dropdown menu */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        width: 200px;
+    }
+}
+
 @media (max-width: 1024px) {
     .nav-left {
         gap: 20px;
@@ -105,7 +205,9 @@
     .logo {
         display: none;
     }
-}@media (max-width: 540px) {
+}
+
+@media (max-width: 540px) {
     .nav-links {
         display: none;
         flex-direction: column;
@@ -121,6 +223,16 @@
         animation: slideDown 0.3s ease;
     }
 
+    .dropdown-menu {
+        width: 180px;
+        right: -10px;
+    }
+    
+    .dropdown-item {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
     .mobile-menu {
         display: flex;
     }
@@ -134,7 +246,6 @@
         text-align: center;
         justify-content: center;
     }
-
 
     @keyframes slideDown {
         from {

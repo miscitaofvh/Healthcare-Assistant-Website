@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 import { useModal } from "../../contexts/ModalContext";
@@ -6,16 +6,56 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 // Icons
-import { FaNewspaper, FaComments, FaInfoCircle, FaPhone } from "react-icons/fa";
+import { FaNewspaper, FaComments, FaInfoCircle, FaPhone, FaUser, FaHeartbeat, FaHistory, FaCalendarAlt, FaComment, FaSignOutAlt, FaCaretDown } from "react-icons/fa";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { openModal } = useModal();
   const { user, logout } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = () => setIsOpen(false);
+  
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropdownOpen(prev => !prev);
+  };
+  
+  const closeDropdown = () => setIsDropdownOpen(false);
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logout();
+    closeDropdown();
+  };
+
+  // Handle click on dropdown item
+  const handleDropdownItemClick = (e: React.MouseEvent) => {
+    // Don't stop propagation here to allow Link navigation
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    // Add event listener only when dropdown is open
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
     <>
@@ -25,10 +65,11 @@ const Navbar = () => {
             <div className="logo"></div>
           </Link>
           <div className={`nav-links ${isOpen ? "mobile-menu" : ""}`}>
-            <Link to="/article"
+            <Link
+              to="/article"
               onClick={(e) => {
-                e.preventDefault(); 
-                closeMenu(); 
+                e.preventDefault();
+                closeMenu();
                 if (location.pathname === "/article") {
                   navigate("/article", { replace: true });
                 } else {
@@ -68,12 +109,63 @@ const Navbar = () => {
         <div className="nav-right">
           <div className="auth-links">
             {user ? (
-              <>
-                <span className="user-name">Hi {user.username}</span>
-                <button onClick={logout} className="btn-log-out">
-                  Logout
+              <div className="user-dropdown" ref={dropdownRef}>
+                <button 
+                  className="dropdown-toggle" 
+                  onClick={toggleDropdown}
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="true"
+                >
+                  <span className="user-name">Hi {user.username}</span>
+                  <FaCaretDown />
                 </button>
-              </>
+                {isDropdownOpen && (
+                  <div className="dropdown-menu">
+                    <Link
+                      to="/user/profile"
+                      className="dropdown-item"
+                      onClick={handleDropdownItemClick}
+                    >
+                      <FaUser /> Hồ sơ cá nhân
+                    </Link>
+                    <Link
+                      to="/user/health-tracking"
+                      className="dropdown-item"
+                      onClick={handleDropdownItemClick}
+                    >
+                      <FaHeartbeat /> Theo dõi sức khỏe
+                    </Link>
+                    <Link
+                      to="/user/medical-history"
+                      className="dropdown-item" 
+                      onClick={handleDropdownItemClick}
+                    >
+                      <FaHistory /> Lịch sử y tế
+                    </Link>
+                    <Link
+                      to="/user/appointments"
+                      className="dropdown-item"
+                      onClick={handleDropdownItemClick}
+                    >
+                      <FaCalendarAlt /> Lịch hẹn
+                    </Link>
+                    <Link
+                      to="/user/chat-history"
+                      className="dropdown-item"
+                      onClick={handleDropdownItemClick}
+                    >
+                      <FaComment /> Lịch sử chat
+                    </Link>
+                    <div className="dropdown-divider"></div>
+                    <button
+                      className="dropdown-item logout-item"
+                      onClick={handleLogout}
+                    >
+                      <FaSignOutAlt /> Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               !(
                 location.pathname === "/sign-up" ||
@@ -99,6 +191,9 @@ const Navbar = () => {
         </div>
       </nav>
       {isOpen && <div className="mobile-overlay" onClick={closeMenu}></div>}
+      {isDropdownOpen && (
+        <div className="dropdown-overlay" onClick={closeDropdown}></div>
+      )}
     </>
   );
 };

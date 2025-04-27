@@ -15,6 +15,7 @@ import ArticleDetail from './pages/Article/[id]';
 import { UserProvider } from "./contexts/UserContext";
 import { ModalProvider } from './contexts/ModalContext';
 import ChatBot from './components/ChatBot';
+import UserProfile from './pages/UserProfile';
 
 function App() {
     return (
@@ -36,6 +37,7 @@ function App() {
                     <Route path="/error" element={<Error />} />
                     <Route path="/verify-pending" element={<VerifyPending />} />
                     <Route path="/verify" element={<VerifyEmail />} />
+                    <Route path="/user/profile" element={<UserProfile />} />
                     <Route path="*" element={<h1>Page Not Found</h1>} />
                 </Routes>
             <ChatBot />

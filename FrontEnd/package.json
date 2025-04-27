@@ -39,6 +39,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
+    "imagekit-javascript": "^4.0.1",
     "js-cookies": "^1.0.4",
     "jsdom": "^26.1.0",
     "vite": "^6.3.3",

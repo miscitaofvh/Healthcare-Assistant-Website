@@ -168,3 +168,71 @@ export const getUserById = async (user_id) => {
         if (conn) conn.release();
     }
 };
+
+export const getUserFullProfileById = async (user_id) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();  
+        const sql = `
+            SELECT user_id, username, email, full_name, 
+                  DATE_FORMAT(dob, '%Y-%m-%d') as dob, 
+                  gender, phone_number, address, profile_picture_url 
+            FROM users 
+            WHERE user_id = ?`; 
+        const [rows] = await conn.execute(sql, [user_id]);
+
+        await conn.commit();
+        return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi lấy thông tin đầy đủ người dùng:", error);
+        throw new Error("Không thể lấy thông tin đầy đủ người dùng");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const updateUserProfile = async (user_id, profileData) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const validFields = [
+            'full_name', 'dob', 'gender', 'phone_number', 
+            'address', 'profile_picture_url'
+        ];
+
+        // Filter only valid fields
+        const updates = {};
+        Object.keys(profileData).forEach(key => {
+            if (validFields.includes(key) && profileData[key] !== undefined) {
+                updates[key] = profileData[key];
+            }
+        });
+
+        if (Object.keys(updates).length === 0) {
+            throw new Error("Không có thông tin hợp lệ để cập nhật");
+        }
+
+        // Build update SQL query
+        const fields = Object.keys(updates).map(field => `${field} = ?`).join(', ');
+        const values = Object.values(updates);
+        
+        // Add user_id to values array
+        values.push(user_id);
+
+        const sql = `UPDATE users SET ${fields} WHERE user_id = ?`;
+        await conn.execute(sql, values);
+
+        await conn.commit();
+        return { success: true, message: "Cập nhật thông tin thành công" };
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
