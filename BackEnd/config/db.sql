@@ -19,7 +19,7 @@ CREATE TABLE users (
     last_login TIMESTAMP DEFAULT NULL,
     is_active BOOLEAN DEFAULT FALSE,
     role ENUM('User', 'Admin', 'Doctor', 'Moderator') DEFAULT 'User'
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_email ON users(email);
 CREATE INDEX idx_username ON users(username);
@@ -36,7 +36,7 @@ CREATE TABLE doctors (
     license VARCHAR(50) UNIQUE NOT NULL,
     hospital VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_specialty ON doctors(specialty);
 
@@ -55,7 +55,7 @@ CREATE TABLE health_tracking (
     exercise_data TEXT DEFAULT NULL,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_tracking_user ON health_tracking(user_id);
 
@@ -83,7 +83,7 @@ CREATE TABLE article_categories (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_category_name ON article_categories(category_name);
 
@@ -94,7 +94,7 @@ CREATE TABLE article_tags (
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_tag_article ON article_tags(tag_id);
 
@@ -112,7 +112,7 @@ CREATE TABLE articles (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES article_categories(category_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_author ON articles(author_id);
 CREATE INDEX idx_article_category ON articles(category_id);
@@ -126,7 +126,7 @@ CREATE TABLE article_tag_mapping (
     PRIMARY KEY (article_id, tag_id),
     FOREIGN KEY (article_id) REFERENCES articles(article_id),
     FOREIGN KEY (tag_id)     REFERENCES article_tags(tag_id)
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 -- ========== ARTICLE COMMENTS ==========
@@ -138,7 +138,7 @@ CREATE TABLE article_comments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_comment_article ON article_comments(article_id);
 CREATE INDEX idx_article_comment_user ON article_comments(user_id);
@@ -151,25 +151,10 @@ CREATE TABLE article_views (
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_article_view_article ON article_views(article_id);
 CREATE INDEX idx_article_view_user ON article_views(user_id);
-
--- ========== COMMENTS ==========
-CREATE TABLE comments (
-    comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    article_id INT UNSIGNED NOT NULL,
-    comment_content TEXT NOT NULL,
-    count_likes INT DEFAULT 0,
-    date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE INDEX idx_comment_user ON comments(user_id);
-CREATE INDEX idx_comment_article ON comments(article_id);
 
 -- ========== CHAT HISTORY ==========
 CREATE TABLE chat_history (

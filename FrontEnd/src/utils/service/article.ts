@@ -52,3 +52,13 @@ export async function deleteArticle(id: string) {
     return response;
 }
 
+export async function getCommentsByArticleId(articleId: number) {
+    
+    const response = await requestAPI(BASE_URL, `/articles/${articleId}/comments`, "GET");
+    return response;
+}
+
+export async function postComment(articleId: number, comment: any) {
+    const response = await requestAPI(BASE_URL, "/articles/${articleId}/comments", "POST", comment);
+    return response;
+}

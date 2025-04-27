@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getArticles, createArticle, deleteArticle} from "../../utils/service/article";
+import { formatTimeAgo } from "../../utils/format/date";
 import { useNavigate, useSearchParams  } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { useLocation } from "react-router-dom";
@@ -40,6 +41,7 @@ const HealthcareNews: React.FC = () => {
     try {
       const response = await getArticles(page);
       setArticles(response.data);
+      console.log(response.data);
     } catch (error) {
       console.error("Failed to fetch articles:", error);
     }
@@ -88,7 +90,7 @@ const HealthcareNews: React.FC = () => {
                   />
                   <div>
                     <span className={styles.author}>{article.author_name}</span><br />
-                    <span className={styles.date}>{article.publication_date}</span>
+                    <span className={styles.date}>{formatTimeAgo(article.last_updated || "")}</span>
                   </div>
                 </div>
               </div>

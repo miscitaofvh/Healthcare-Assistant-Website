@@ -139,43 +139,8 @@ export const deleteArticle = async (req, res) => {
     res.status(500).json({ message: "Error deleting article" });
   }
 };
-
-// ----- Likes -----
-export const likeArticle = async (req, res) => {
-  try {
-    const { article_id, user_id } = req.body;
-    await ArticleModel.likeArticle(article_id, user_id);
-    res.status(201).json({ message: "Article liked" });
-  } catch (error) {
-    console.error("likeArticle error:", error);
-    res.status(500).json({ message: "Error liking article" });
-  }
-};
-
-export const unlikeArticle = async (req, res) => {
-  try {
-    const { article_id, user_id } = req.body;
-    await ArticleModel.unlikeArticle(article_id, user_id);
-    res.status(200).json({ message: "Article unliked" });
-  } catch (error) {
-    console.error("unlikeArticle error:", error);
-    res.status(500).json({ message: "Error unliking article" });
-  }
-};
-
-export const getArticleLikes = async (req, res) => {
-  try {
-    const { article_id } = req.params;
-    const total = await ArticleModel.getArticleLikes(article_id);
-    res.status(200).json({ total_likes: total });
-  } catch (error) {
-    console.error("getArticleLikes error:", error);
-    res.status(500).json({ message: "Error fetching article likes" });
-  }
-};
-
 // ----- Comments -----
-export const addComment = async (req, res) => {
+export const createComment = async (req, res) => {
   try {
     const { article_id, user_id, comment_content } = req.body;
     await ArticleModel.addComment(article_id, user_id, comment_content);
@@ -197,7 +162,7 @@ export const deleteComment = async (req, res) => {
   }
 };
 
-export const getArticleComments = async (req, res) => {
+export const getCommentsByArticle = async (req, res) => {
   try {
     const { article_id } = req.params;
     const comments = await ArticleModel.getArticleComments(article_id);

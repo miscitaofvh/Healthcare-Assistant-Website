@@ -1,60 +1,90 @@
 .container {
-    max-width: 800px;
-    margin: auto;
-    padding: 60px 20px;
-  }
-  
-  .image {
-    width: 100%;
-    height: auto;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    object-fit: cover;
-  }
-  
-  .title {
-    font-size: 28px;
-    color: #4a148c;
-    margin-bottom: 10px;
-  }
-  
-  .meta {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 30px;
-  }
-  
-  .author {
-    font-weight: bold;
-  }
-  
-  .date {
-    margin-left: 10px;
-  }
-  
-  .content {
-    font-size: 16px;
-    line-height: 1.6;
-    color: #444;
-  }
-  
-  .backButton {
-    background: none;
-    border: none;
-    color: #4a148c;
-    font-size: 16px;
-    cursor: pointer;
-    margin-bottom: 20px;
-  }
-  
-  .backButton:hover {
-    text-decoration: underline;
-  }
-  
-  .loading {
-    text-align: center;
-    font-size: 18px;
-    color: #aaa;
-    padding: 100px 0;
-  }
-  
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #0077cc;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.image {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin-top: 0;
+}
+
+.meta {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.content {
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Comments */
+.commentsSection {
+  border-top: 1px solid #ddd;
+  padding-top: 1.5rem;
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.submitButton {
+  align-self: flex-end;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.commentList {
+  list-style: none;
+  padding: 0;
+}
+
+.commentItem {
+  border-bottom: 1px solid #eee;
+  padding: 0.75rem 0;
+}
+
+.commentHeader {
+  font-size: 0.85rem;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.commentDate {
+  color: #999;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.commentContent {
+  margin: 0;
+}
+
+.noComments {
+  color: #666;
+  font-style: italic;
+}
