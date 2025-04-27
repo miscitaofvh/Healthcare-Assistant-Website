@@ -46,10 +46,14 @@ export const getTagsByArticle = async (articleId) => {
 };
 
 export const getArticles = async (page = 1) => {
-
     const offset = (page - 1) * FIXED_LIMIT;
         
-    const [articles] = await pool.query(`SELECT * FROM articles ORDER BY publication_date DESC LIMIT ?, ?`, 
+    const [articles] = await pool.query(`SELECT a.*, u.full_name AS author_name
+                                         FROM articles AS a
+                                         LEFT JOIN users AS u
+                                         ON a.author_id = u.user_id
+                                         ORDER BY a.last_updated DESC 
+                                         LIMIT ?, ?`, 
         [offset, FIXED_LIMIT]);
     
     return articles;

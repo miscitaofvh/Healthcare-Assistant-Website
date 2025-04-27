@@ -30,4 +30,8 @@ router.delete("/articles/:id",
     asyncHandler(articleCtrl.deleteArticle)
 );
 
+router.get("/articles/:id/comments", asyncHandler(articleCtrl.getCommentsByArticle));
+router.post("/articles/:id/comments", asyncHandler(articleCtrl.createComment));
+router.delete("/articles/:id/comments/:commentId", asyncHandler(articleCtrl.deleteComment));
+
 export default router;
