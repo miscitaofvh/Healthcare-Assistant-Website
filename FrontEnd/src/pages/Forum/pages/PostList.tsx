@@ -1,0 +1,1 @@
+// This component fetches and displays the posts in a specific thread.

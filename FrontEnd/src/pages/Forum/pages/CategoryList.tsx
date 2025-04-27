@@ -1,0 +1,1 @@
+// This component fetches categories from the API and displays them.

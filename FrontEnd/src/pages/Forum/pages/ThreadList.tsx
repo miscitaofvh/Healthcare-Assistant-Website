@@ -1,0 +1,1 @@
+// This component displays the threads in a selected category.

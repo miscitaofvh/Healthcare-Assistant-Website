@@ -1,0 +1,1 @@
+// This page will display a category and allow users to navigate to the associated threads.
