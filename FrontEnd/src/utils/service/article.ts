@@ -1,5 +1,5 @@
 import { requestAPI } from "../api/request";
-const BASE_URL = "http://192.168.137.1:5000/api/article";
+const BASE_URL = "http://localhost:5000/api/article";
 
 export async function getCategories() {
     const response = await requestAPI(BASE_URL, "/categories", "GET");

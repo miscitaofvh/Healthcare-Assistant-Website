@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import styles from "./Forum.module.css";
 import { useNavigate } from "react-router-dom";
@@ -31,19 +32,22 @@ const Forum: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [location]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       setError("");
       const response = await getPosts();
-
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch posts");
+      }
       const forumPostsWithTags = await Promise.all(
-        response.data.map(async (forumPost: Post) => {
+        response.data.data.map(async (forumPost: any) => {
           try {
             const tagRes = await getTagByForumPost(forumPost.post_id.toString());
             return {
@@ -63,7 +67,7 @@ const Forum: React.FC = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <div>
       <div className={styles.main_navbar}>

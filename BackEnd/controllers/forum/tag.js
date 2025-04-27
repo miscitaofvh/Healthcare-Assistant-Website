@@ -323,7 +323,8 @@ export const getAllTagsByPost = async (req, res) => {
 
 export const getTagsOfPost = async (req, res) => {
     try {
-        const tags = await getTagsOfPostDB();
+        const { id } = req.params; // post_id
+        const tags = await getTagsOfPostDB(id);
         res.status(200).json(tags);
     } catch (error) {
         console.error(error);

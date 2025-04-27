@@ -429,10 +429,10 @@ export const getTagsOfPostDB = async (postId) => {
                 t.tag_name,
                 t.description,
                 t.created_at,
-                t.updated_at,
+                t.last_updated,
                 COUNT(DISTINCT pt.post_id) as usage_count
             FROM forum_tags t
-            INNER JOIN forum_post_tags pt ON t.tag_id = pt.tag_id
+            INNER JOIN forum_tags_mapping pt ON t.tag_id = pt.tag_id
             WHERE pt.post_id = ?
             GROUP BY t.tag_id
             ORDER BY t.tag_name ASC

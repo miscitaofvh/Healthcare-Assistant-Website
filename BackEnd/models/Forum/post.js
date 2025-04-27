@@ -236,8 +236,8 @@ export const createPostDB = async (user_id, category_name, thread_name, content,
                     tag_id = tagResult[0].tag_id;
                 } else {
                     const [insertTagResult] = await conn.execute(
-                        "INSERT INTO forum_tags (tag_name) VALUES (?)",
-                        [tag]
+                        "INSERT INTO forum_tags (tag_name, user_id) VALUES (?, ?)",
+                        [tag, user_id]
                     );
                     tag_id = insertTagResult.insertId;
                 }
