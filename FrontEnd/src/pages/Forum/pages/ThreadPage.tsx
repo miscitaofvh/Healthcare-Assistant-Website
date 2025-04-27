@@ -1,0 +1,1 @@
+// This page will display a thread and allow users to view and create posts.

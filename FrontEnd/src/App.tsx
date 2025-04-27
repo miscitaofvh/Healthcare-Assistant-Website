@@ -2,9 +2,6 @@ import './App.css'
 import { Route, Routes } from "react-router-dom";
 import Home from './pages/Home';
 import About from './pages/About';
-import Forum from './pages/Forum';
-import ForumDetail from './pages/Forum/[id]';
-import CreatePost from './pages/Forum/CreatePost';
 import Contact from './pages/Contact';
 import Test from './pages/Test';
 import VerifyPending from './pages/VerifyPending';
@@ -15,6 +12,7 @@ import ArticleDetail from './pages/Article/[id]';
 import { UserProvider } from "./contexts/UserContext";
 import { ModalProvider } from './contexts/ModalContext';
 import ChatBot from './components/ChatBot';
+import { forumRoutes } from './pages/Forum/forumRoutes'; // import Forum routes
 import UserProfile from './pages/UserProfile';
 
 function App() {
@@ -26,9 +24,7 @@ function App() {
                     <Route path="/home" element={<Home />} />
                     <Route path="/article" element={<Article />} />
                     <Route path="/article/:id" element={<ArticleDetail />} />
-                    <Route path="/forum" element={<Forum />} />
-                    <Route path="/forum/:id" element={<ForumDetail />} />
-                    <Route path="/forum/create" element={<CreatePost />} />
+                    {forumRoutes}
                     <Route path="/about" element={<About />} />
                     {/* <Route path="/login" element={<Login />} /> */}
                     {/* <Route path="/sign-up" element={<SignUp />} /> */}
@@ -40,11 +36,10 @@ function App() {
                     <Route path="/user/profile" element={<UserProfile />} />
                     <Route path="*" element={<h1>Page Not Found</h1>} />
                 </Routes>
-            <ChatBot />
+                <ChatBot />
             </ModalProvider>
         </UserProvider>
     );
 }
 
 export default App;
-
