@@ -241,12 +241,12 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
             SELECT category_id
             FROM forum_categories
             WHERE user_id = ? AND category_id = ?
-        `; 
+        `;
 
         const [isValidUser] = await conn.execute(validUserSql, [author_id, categoryId]);
-        if(isValidUser.length === 0){
+        if (isValidUser.length === 0) {
             throw new Error("Unauthorized")
-        }        
+        }
 
         if (category_name) {
             const checkNameSql = `
@@ -260,7 +260,7 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
             }
         }
 
-        if(!category_name && !description) {
+        if (!category_name && !description) {
             throw new Error("No fields to update provided");
         }
 
@@ -310,10 +310,10 @@ export const deleteCategoryDB = async (author_id, categoryId) => {
             SELECT category_id
             FROM forum_categories
             WHERE user_id = ? AND category_id = ?
-        `; 
+        `;
 
         const [isValidUser] = await conn.execute(validUserSql, [author_id, categoryId]);
-        if(isValidUser.length === 0){
+        if (isValidUser.length === 0) {
             throw new Error("Unauthorized")
         }
 

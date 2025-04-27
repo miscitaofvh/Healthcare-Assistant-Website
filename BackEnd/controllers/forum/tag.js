@@ -346,7 +346,7 @@ export const getTagOfPostById  = async (req, res) => {
 export const addTagsToPost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const { tagIds } = req.body;
+        const { ids } = req.body;
         const author_id = req.user.user_id;
 
         if (!author_id) {
@@ -356,14 +356,14 @@ export const addTagsToPost = async (req, res) => {
             });
         }
 
-        if (!postId || !tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+        if (!postId || !ids || !Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: "Post ID and tag IDs are required"
             });
         }
 
-        const result = await addTagsToPostDB(postId, tagIds, author_id);
+        const result = await addTagsToPostDB(postId, ids, author_id);
         res.status(201).json({
             success: true,
             data: result
@@ -386,7 +386,7 @@ export const addTagsToPost = async (req, res) => {
 
 export const removeTagFromPost = async (req, res) => {
     try {
-        const { postId, tagId } = req.params;
+        const { postId, id } = req.params;
         const author_id = req.user.user_id;
 
         if (!author_id) {
@@ -396,14 +396,14 @@ export const removeTagFromPost = async (req, res) => {
             });
         }
 
-        if (!postId || !tagId) {
+        if (!postId || !id) {
             return res.status(400).json({
                 success: false,
                 message: "Post ID and tag ID are required"
             });
         }
 
-        const result = await removeTagFromPostDB(postId, tagId, author_id);
+        const result = await removeTagFromPostDB(postId, id, author_id);
         res.status(200).json({
             success: true,
             data: result

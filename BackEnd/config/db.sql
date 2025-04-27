@@ -24,6 +24,10 @@ CREATE TABLE users (
 CREATE INDEX idx_email ON users(email);
 CREATE INDEX idx_username ON users(username);
 
+-- Insert default admin user
+INSERT INTO users (user_id, username, password_hash, email, full_name, role, is_active) VALUES
+('admin-uuid', 'admin', '$2y$10$e0c5a1f3b4d8c9e7a8b8Oe1Q6Z5v5g5g5g5g5g5g5g5g5g5g5g5', 'healthcare.service.amh@gmail.com', 'Admin User', 'Admin', TRUE);
+
 -- ========== DOCTORS ==========
 CREATE TABLE doctors (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -224,16 +228,6 @@ CREATE TABLE forum_threads (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- ========== FORUM THREADS RELATION ==========
--- CREATE TABLE forum_threads_relation (
---     relation_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
---     thread_id INT UNSIGNED NOT NULL,
---     category_id INT UNSIGNED NOT NULL,
---     FOREIGN KEY (thread_id) REFERENCES forum_threads(thread_id) ON DELETE CASCADE,
---     FOREIGN KEY (category_id) REFERENCES forum_categories(category_id) ON DELETE CASCADE,
---     UNIQUE (thread_id, category_id)
--- );
-
 CREATE INDEX idx_thread_category ON forum_threads(category_id);
 CREATE INDEX idx_thread_user ON forum_threads(user_id);
 
@@ -375,3 +369,18 @@ CREATE TABLE forum (
 CREATE INDEX idx_forum_user ON forum(user_id);
 CREATE INDEX idx_forum_category ON forum(category_id);
 CREATE INDEX idx_forum_thread ON forum(thread_id);
+
+-- ========== FORUM ACTIVITY ==========
+CREATE TABLE forum_activities (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    activity_type ENUM('post', 'comment', 'like', 'report') NOT NULL,
+    target_type ENUM('post', 'comment') NOT NULL,
+    target_id INT UNSIGNED NOT NULL,
+    activity_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE INDEX idx_activity_user ON forum_activities(user_id);
+CREATE INDEX idx_activity_type ON forum_activities(activity_type);
+CREATE INDEX idx_activity_target ON forum_activities(target_type, target_id);

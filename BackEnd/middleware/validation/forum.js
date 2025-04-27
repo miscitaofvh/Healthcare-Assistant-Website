@@ -1,4 +1,4 @@
-import { param, body, validationResult } from "express-validator";
+import { param, body, validationResult, query } from "express-validator";
 import { isTagandCategoryValid } from "../../utils/format/article.js";
 
 // Category
@@ -479,363 +479,100 @@ export const validateForumPostReportDelete = [
     }
 ];
 
-// ===================================================================================================
+// Activity
+export const validateActivity = [
+    body("type")
+        .notEmpty()
+        .withMessage("Activity type is required")
+        .isIn(["post", "comment", "like", "report"])
+        .withMessage("Invalid activity type. Must be one of: post, comment, like, report"),
 
-// export const validateComment = [
-//     body("content")
-//         .notEmpty()
-//         .withMessage("Nội dung là bắt buộc")
-//         .isLength({ min: 1 })
-//         .withMessage("Nội dung phải có ít nhất 1 ký tự")
-//         .trim(),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    body("targetType")
+        .notEmpty()
+        .withMessage("Target type is required")
+        .isIn(["post", "comment"])
+        .withMessage("Invalid target type. Must be one of: post, comment"),
 
+    body("targetId")
+        .notEmpty()
+        .withMessage("Target ID is required")
+        .isInt({ min: 1 })
+        .withMessage("Target ID must be a positive integer"),
 
-// export const validateForumPostLikeUser = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array().map(error => ({
+                    field: error.param,
+                    message: error.msg
+                }))
+            });
+        }
+        next();
+    }
+];
 
-// export const validateReportStatus = [
-//     body("status")
-//         .notEmpty()
-//         .withMessage("Trạng thái là bắt buộc")
-//         .isIn(["pending", "resolved", "rejected"])
-//         .withMessage("Trạng thái không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+// Activity Query Validation
+export const validateActivityQuery = [
+    query("type")
+        .optional()
+        .isIn(["post", "comment", "like", "report"])
+        .withMessage("Invalid activity type. Must be one of: post, comment, like, report"),
 
-// export const validateForumActivity = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    query("targetType")
+        .optional()
+        .isIn(["post", "comment"])
+        .withMessage("Invalid target type. Must be one of: post, comment"),
 
-// export const validateTagAndCategory = [
-//     body("tag")
-//         .notEmpty()
-//         .withMessage("Tag là bắt buộc")
-//         .isLength({ min: 3, max: 50 })
-//         .withMessage("Tag phải từ 3-50 ký tự")
-//         .trim()
-//         .custom((value) => {
-//             if (!isTagandCategoryValid(value)) {
-//                 throw new Error("Tag không hợp lệ");
-//             }
-//             return true;
-//         }),
-//     body("category")
-//         .notEmpty()
-//         .withMessage("Danh mục là bắt buộc")
-//         .isLength({ min: 3, max: 50 })
-//         .withMessage("Danh mục phải từ 3-50 ký tự")
-//         .trim()
-//         .custom((value) => {
-//             if (!isTagandCategoryValid(value)) {
-//                 throw new Error("Danh mục không hợp lệ");
-//             }
-//             return true;
-//         }),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    query("limit")
+        .optional()
+        .isInt({ min: 1, max: 100 })
+        .withMessage("Limit must be between 1 and 100"),
 
-// export const validateForumPostDelete = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    query("offset")
+        .optional()
+        .isInt({ min: 0 })
+        .withMessage("Offset must be a non-negative integer"),
 
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array().map(error => ({
+                    field: error.param,
+                    message: error.msg
+                }))
+            });
+        }
+        next();
+    }
+];
 
+// Activity ID Validation
+export const validateActivityId = [
+    param("activityId")
+        .notEmpty()
+        .withMessage("Activity ID is required")
+        .isInt({ min: 1 })
+        .withMessage("Activity ID must be a positive integer"),
 
-// export const validateForumPostReport = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     body("reason")
-//         .notEmpty()
-//         .withMessage("Lý do là bắt buộc")
-//         .isLength({ min: 10, max: 200 })
-//         .withMessage("Lý do phải từ 10-200 ký tự")
-//         .trim(),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostCommentReportUnmap = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     body("commentId")
-//         .notEmpty()
-//         .withMessage("ID bình luận là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bình luận không hợp lệ"),
-//     body("reportId")
-//         .notEmpty()
-//         .withMessage("ID báo cáo là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID báo cáo không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostCommentActivity = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     body("commentId")
-//         .notEmpty()
-//         .withMessage("ID bình luận là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bình luận không hợp lệ"),
-//     body("activity")
-//         .notEmpty()
-//         .withMessage("Hoạt động là bắt buộc")
-//         .isString()
-//         .withMessage("Hoạt động phải là chuỗi"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostReportUnmap = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostReportUpdate = [
-//     body("postId")
-//         .notEmpty()
-//         .withMessage("ID bài viết là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID bài viết không hợp lệ"),
-//     body("reportId")
-//         .notEmpty()
-//         .withMessage("ID báo cáo là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID báo cáo không hợp lệ"),
-//     body("status")
-//         .notEmpty()
-//         .withMessage("Trạng thái là bắt buộc")
-//         .isIn(["pending", "resolved", "rejected"])
-//         .withMessage("Trạng thái không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostActivity = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostActivityUnmap = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostActivityDelete = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     body("activityId")
-//         .notEmpty()
-//         .withMessage("ID hoạt động là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID hoạt động không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
-
-// export const validateForumPostActivityUpdate = [
-//     body("userId")
-//         .notEmpty()
-//         .withMessage("ID người dùng là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID người dùng không hợp lệ"),
-//     body("activityId")
-//         .notEmpty()
-//         .withMessage("ID hoạt động là bắt buộc")
-//         .isMongoId()
-//         .withMessage("ID hoạt động không hợp lệ"),
-//     body("status")
-//         .notEmpty()
-//         .withMessage("Trạng thái là bắt buộc")
-//         .isIn(["pending", "resolved", "rejected"])
-//         .withMessage("Trạng thái không hợp lệ"),
-//     (req, res, next) => {
-//         const errors = validationResult(req);
-//         if (!errors.isEmpty()) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Dữ liệu không hợp lệ",
-//                 errors: errors.array()
-//             });
-//         }
-//         next();
-//     }
-// ];
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array().map(error => ({
+                    field: error.param,
+                    message: error.msg
+                }))
+            });
+        }
+        next();
+    }
+];
