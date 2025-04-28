@@ -67,7 +67,7 @@ const Forum: React.FC = () => {
                     <div
                       key={post.post_id}
                       className={styles.list_group_item}
-                      onClick={() => navigate(`/forum/${post.post_id}`)}
+                      onClick={() => navigate(`/forum/post/${post.post_id}`)}
                     >
                       <h5 className={styles.mb_1}>{post.thread_name}</h5>
                       <p className={styles.mb_1}>{post.content.substring(0, 150)}...</p>

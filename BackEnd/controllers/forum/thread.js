@@ -6,7 +6,7 @@ import {
     getSummaryThreadsDB,
     getThreadByIdDB,
     getThreadNameDB,
-    getAllThreadsByPostDB,
+    getPostsByThreadDB,
     getAllThreadsByUserDB,
     createThreadDB,
     updateThreadDB,
@@ -68,8 +68,8 @@ export const getThreadName = async (req, res) => {
 
 export const getPostsByThread = async (req, res) => {
     try {
-        const { post_id } = req.params;
-        const threads = await getAllThreadsByPostDB(post_id);
+        const { id } = req.params;
+        const threads = await getPostsByThreadDB(id);
         res.status(200).json(threads);
     } catch (error) {
         console.error(error);

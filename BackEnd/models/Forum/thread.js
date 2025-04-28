@@ -1,5 +1,17 @@
 import connection from '../../config/connection.js';
 
+const validateThreadOwnership = async (conn, threadId, userId) => {
+    const sql = `
+        SELECT thread_id
+        FROM forum_threads
+        WHERE thread_id = ? AND user_id = ?
+    `;
+    const [result] = await conn.execute(sql, [threadId, userId]);
+    if (result.length === 0) {
+        throw new Error("Thread not found or unauthorized");
+    }
+};
+
 export const getAllThreadsDB = async () => {
     let conn;
     try {
@@ -133,6 +145,30 @@ export const getAllThreadsByPostDB = async (postId) => {
         if (conn) await conn.rollback();
         console.error("Error getting threads by post:", error);
         throw new Error("Failed to get threads by post");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const getPostsByThreadDB = async (threadId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+
+        if (!threadId || isNaN(threadId)) {
+            throw new Error("Invalid thread ID");
+        }
+
+        const sql = `
+            SELECT p.*
+            FROM forum_posts p
+            WHERE p.thread_id = ?
+        `;
+        const [posts] = await conn.execute(sql, [threadId]);
+        return posts;
+    } catch (error) {
+        console.error("Error getting posts by thread:", error);
+        throw new Error("Failed to get posts by thread");
     } finally {
         if (conn) conn.release();
     }

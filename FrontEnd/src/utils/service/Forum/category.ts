@@ -3,7 +3,8 @@ import {
     createCategory,
     updateCategory,
     deleteCategory,
-    getCategoryById
+    getCategoryById,
+    getThreadsByCategory
 } from "../../../utils/api/Forum/category";
 import { Category, CategoryResponse } from "../../../types/forum";
 import { json } from "stream/consumers";
@@ -140,6 +141,25 @@ export const loadSingleCategory = async (
         }
         const data = response.data.data;
         setCategory(data);
+    } catch (err: any) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadThreadsByCategory = async (
+    id: string,
+    setLoading: (loading: boolean) => void,
+    setThreads: (threads: any[]) => void,
+    setError: (error: string) => void
+) => {
+    try {
+        setLoading(true);
+        const response = await getThreadsByCategory(Number(id));
+        if (response.status !== 200) throw new Error("Failed to load threads");
+        const data = response.data.data; // no need for await here
+        setThreads(data);
     } catch (err: any) {
         setError(err.message);
     } finally {
