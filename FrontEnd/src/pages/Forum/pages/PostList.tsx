@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../../../components/Navbar";
 import styles from "../styles/Forum.module.css";
-import { PostResponse } from "../../../types/forum";
+import { PostSummary } from "../../../types/forum";
 import { loadPosts } from "../../../utils/service/Forum/post";
 
 const PostList: React.FC = () => {
-  const [posts, setPosts] = useState<PostResponse[]>([]);
+  const [posts, setPosts] = useState<PostSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
@@ -27,7 +27,7 @@ const PostList: React.FC = () => {
           <div className={styles.grid}>
             {posts.map((post) => (
               <div key={post.post_id} className={styles.card}>
-                <h3>{post.thread.thread_name}</h3>
+                <h3>{post.title}</h3>
                 <p>{post.content}</p>
                 {post.image_url && (
                   <img
@@ -37,11 +37,13 @@ const PostList: React.FC = () => {
                   />
                 )}
                 <div style={{ marginTop: "10px" }}>
-                  <small>By {post.user.username}</small>
+                  <small>By {post.author}</small>
                   <br />
                   <small>Posted at {new Date(post.created_at).toLocaleString()}</small>
+                  <br />
+                  <small>Last updated at {new Date(post.last_updated).toLocaleString()}</small>
                   <div style={{ marginTop: "5px" }}>
-                    <small>Likes: {post.likes} | Comments: {post.comments}</small>
+                    <small>Likes: {post.like_count}</small>
                   </div>
                 </div>
               </div>

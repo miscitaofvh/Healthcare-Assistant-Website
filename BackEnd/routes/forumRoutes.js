@@ -80,7 +80,7 @@ router.delete("/threads/:id", asyncHandler(deleteThread));
 router.get("/posts", asyncHandler(getAllPosts));
 router.get("/posts/summary", asyncHandler(getSummaryPosts));
 router.get("/posts/:id", asyncHandler(getPostById));
-router.get("/users/:id/posts", asyncHandler(getPostsByUser));
+router.get("/users/:username/posts", asyncHandler(getPostsByUser));
 router.post("/posts", validateForumPost, asyncHandler(createPost));
 router.put("/posts/:id", validateForumPostUpdate, asyncHandler(updatePost));
 router.delete("/posts/:id", validateForumPostComment, asyncHandler(deletePost));

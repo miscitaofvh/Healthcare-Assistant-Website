@@ -6,6 +6,16 @@ export async function getPosts() {
     return response;
 }   
 
+export async function getPostsSummary() {
+    const response = await requestAPI(BASE_URL, "/posts/summary", "GET");
+    return response;
+}
+
+export async function getPostsByUser(username: string) {
+    const response = await requestAPI(BASE_URL, `/user/${username}/posts`, "GET");
+    return response;
+}   
+
 export async function getPostById(id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${id}`, "GET");
     return response;

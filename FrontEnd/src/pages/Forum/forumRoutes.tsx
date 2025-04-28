@@ -14,7 +14,7 @@ export const forumRoutes = (
     <Route index element={<Forum />} />
     <Route path="create" element={<CreatePost />} />
     <Route path="posts" element={<PostList />} />
-    <Route path="post/:id" element={<PostDetail />} />
+    <Route path="posts/:id" element={<PostDetail />} />
     <Route path="categories" element={<CategoryList />} />
     <Route path="categories/:id" element={<CategoryPage />} />
     <Route path="threads" element={<ThreadList />} />

@@ -7,25 +7,42 @@ export const getAllPostsDB = async () => {
         await conn.beginTransaction();
         const sql = `
             SELECT 
-                p.post_id, p.content, p.image_url, p.created_at, p.last_updated,
-                u.username AS author, u.username,
-                t.thread_name, t.thread_id,
-                c.category_name, c.category_id,
-                COUNT(DISTINCT l.like_id) AS like_count,
-                GROUP_CONCAT(DISTINCT ft.tag_name) AS tags
+                u.username AS author, 
+                c.category_id, c.category_name,
+                t.thread_id, t.thread_name,
+                p.post_id, p.content,  p.title, p.image_url, p.created_at, p.last_updated,
+                IFNULL(l.like_count, 0) AS like_count,
+                JSON_ARRAYAGG(
+                    CASE 
+                        WHEN ft.tag_id IS NOT NULL THEN JSON_OBJECT('tag_id', ft.tag_id, 'tag_name', ft.tag_name)
+                        ELSE NULL
+                    END
+                ) AS tags
             FROM forum_posts p
             JOIN users u ON p.user_id = u.user_id
             JOIN forum_threads t ON p.thread_id = t.thread_id
             JOIN forum_categories c ON t.category_id = c.category_id
-            LEFT JOIN forum_likes l ON p.post_id = l.post_id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS like_count
+                FROM forum_likes
+                GROUP BY post_id
+            ) l ON p.post_id = l.post_id
             LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
             LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
-            GROUP BY p.post_id
+            GROUP BY p.post_id, u.username, u.user_id, t.thread_name, t.thread_id, c.category_name, c.category_id, l.like_count
             ORDER BY p.created_at DESC
         `;
         const [posts] = await conn.execute(sql);
         await conn.commit();
-        return posts;
+
+        const cleanPosts = posts.map(post => {
+            if (!post.tags || (post.tags.length === 1 && post.tags[0] === null)) {
+                post.tags = [];
+            }
+            return post;
+        });
+
+        return cleanPosts;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error getting posts:", error);
@@ -43,20 +60,34 @@ export const getSummaryPostsDB = async () => {
 
         const sql = `
             SELECT 
-                p.post_id, 
+                u.username AS author,
+                p.post_id, p.title,
                 LEFT(p.content, 100) AS content,  -- Truncate content to 100 characters
-                u.username AS author, 
-                COUNT(DISTINCT l.like_id) AS like_count
+                p.image_url,
+                p.created_at, p.last_updated,
+                COUNT(DISTINCT l.like_id) AS like_count,
+                GROUP_CONCAT(DISTINCT ft.tag_name) AS tags  -- Add tags as a concatenated string
             FROM forum_posts p
             JOIN users u ON p.user_id = u.user_id
             LEFT JOIN forum_likes l ON p.post_id = l.post_id
+            LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
+            LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
             GROUP BY p.post_id
-            ORDER BY p.created_at DESC
+            ORDER BY p.created_at DESC;
         `;
-        
+
         const [posts] = await conn.execute(sql);
         await conn.commit();
-        return posts;
+
+        // Process the posts to return tags as an array
+        const postsWithTags = posts.map(post => {
+            return {
+                ...post,
+                tags: post.tags ? post.tags.split(',') : []  // Split the tags string into an array
+            };
+        });
+
+        return postsWithTags;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error getting summary of posts:", error);
@@ -66,22 +97,18 @@ export const getSummaryPostsDB = async () => {
     }
 };
 
-
 export const getPostByIdDB = async (postId) => {
     let conn;
     try {
-        if (!postId) {
-            throw new Error("Post ID is required");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
         const sql = `
             SELECT 
-                p.post_id, p.content, p.image_url, p.created_at, p.last_updated,
-                u.username AS author, u.user_id,
-                t.thread_name, t.thread_id,
-                c.category_name, c.category_id,
+                u.username AS author,
+                p.post_id, p.title, p.content, 
+                p.image_url, p.created_at, p.last_updated,
+                t.thread_id, t.thread_name, 
+                c.category_id, c.category_name, 
                 COUNT(DISTINCT l.like_id) AS like_count,
                 GROUP_CONCAT(DISTINCT ft.tag_name) AS tags
             FROM forum_posts p
@@ -92,16 +119,45 @@ export const getPostByIdDB = async (postId) => {
             LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
             LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
             WHERE p.post_id = ?
-            GROUP BY p.post_id
+            GROUP BY p.post_id;
         `;
+
         const [post] = await conn.execute(sql, [postId]);
-        await conn.commit();
-        
+
         if (!post[0]) {
             throw new Error("Post not found");
         }
-        
-        return post[0];
+
+        // Get comments separately to avoid duplication
+        const commentsSql = `
+            SELECT 
+                c.post_id, c.comment_id, c.content, 
+                c.created_at, c.last_updated,
+                u.username
+            FROM forum_comments c
+            JOIN users u ON c.user_id = u.user_id
+            WHERE c.post_id = ?
+            ORDER BY c.created_at;
+        `;
+        const [comments] = await conn.execute(commentsSql, [postId]);
+
+        await conn.commit();
+
+        const postWithTagsAndComments = {
+            ...post[0],
+            tags: post[0].tags ? post[0].tags.split(',') : [],
+            comments: comments.map(comment => ({
+                post_id: comment.post_id,
+                comment_id: comment.comment_id,
+                username: comment.username,
+                content: comment.content,
+                created_at: comment.created_at,
+                last_updated: comment.last_updated,
+                user_id: comment.user_id
+            }))
+        };
+
+        return postWithTagsAndComments;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error getting post:", error);
@@ -111,22 +167,18 @@ export const getPostByIdDB = async (postId) => {
     }
 };
 
-export const getPostsByUserDB = async (userId) => {
+export const getPostsByUserDB = async (username) => {
     let conn;
     try {
-        if (!userId) {
-            throw new Error("User ID is required");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
         const sql = `
             SELECT 
+                u.username AS author,
                 p.post_id, p.content, p.image_url, p.created_at, p.last_updated,
-                u.username AS author, u.user_id,
-                t.thread_name, t.thread_id,
-                c.category_name, c.category_id,
+                c.category_id, c.category_name, 
+                t.thread_id, t.thread_name, 
                 COUNT(DISTINCT l.like_id) AS like_count,
                 GROUP_CONCAT(DISTINCT ft.tag_name) AS tags
             FROM forum_posts p
@@ -136,14 +188,22 @@ export const getPostsByUserDB = async (userId) => {
             LEFT JOIN forum_likes l ON p.post_id = l.post_id
             LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
             LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
-            WHERE p.user_id = ?
+            WHERE u.username = ?
             GROUP BY p.post_id
             ORDER BY p.created_at DESC
         `;
 
-        const [posts] = await conn.execute(sql, [userId]);
+        const [posts] = await conn.execute(sql, [username]);
         await conn.commit();
-        return posts;
+
+        const postsWithTags = posts.map(post => {
+            return {
+                ...post,
+                tags: post.tags ? post.tags.split(',') : []  // Split the tags string into an array
+            };
+        });
+
+        return postsWithTags;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error getting user's posts:", error);
@@ -167,7 +227,7 @@ export const createPostDB = async (user_id, category_name, thread_name, content,
 
         conn = await connection.getConnection();
         await conn.beginTransaction();
-        
+
         // Get or create category
         const [categoryResult] = await conn.execute(
             "SELECT category_id FROM forum_categories WHERE category_name = ?",
@@ -340,7 +400,7 @@ export const deletePostDB = async (postId, user_id) => {
         await conn.execute("DELETE FROM forum_tags_mapping WHERE post_id = ?", [postId]);
         await conn.execute("DELETE FROM forum_likes WHERE post_id = ?", [postId]);
         await conn.execute("DELETE FROM forum_posts WHERE post_id = ?", [postId]);
-        
+
         await conn.commit();
         return "Post deleted successfully";
     } catch (error) {

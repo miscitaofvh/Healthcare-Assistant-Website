@@ -1,3 +1,42 @@
+// Comment Interfaces
+export interface PostComment {
+    post_id: number;
+    comment_id: number;
+    username: string;
+    content: string;
+    created_at: string;
+    last_updated: string;
+}
+
+// Post Interfaces
+export interface PostSummary {
+    author: string;
+    post_id: number;
+    title: string;
+    content: string;
+    image_url: string | null;
+    created_at: string;
+    last_updated: string;
+    like_count: number;
+    tags: string[];
+}
+
+export interface Post {
+    author: string;
+    post_id: number;
+    title: string;
+    content: string;
+    image_url: string | null;
+    created_at: string;
+    last_updated: string;
+    thread_id: number;
+    thread_name: string;
+    category_id: number;
+    category_name: string;
+    like_count: number;
+    tags: string[];
+    comments: PostComment[];
+}
 // Category Interfaces
 export interface Category {
     category_id?: number;
@@ -27,29 +66,6 @@ export interface Tag {
     description: string | null;
     usage_count: number;
     last_used_at: string;
-    created_at: string;
-    last_updated: string;
-}
-
-// Post Interfaces
-export interface Post {
-    post_id: number;
-    thread_id: number;
-    thread_name: string;
-    username: string;
-    content: string;
-    image_url: string | null;
-    created_at: string;
-    last_updated: string;
-    tag_name: string[];
-}
-
-// Comment Interfaces
-export interface Comment {
-    comment_id: number;
-    post_id: number;
-    user_id: string;
-    content: string;
     created_at: string;
     last_updated: string;
 }
@@ -147,24 +163,7 @@ export interface ThreadResponse {
     };
 }
 
-export interface PostResponse {
-    post_id: number;
-    content: string;
-    image_url: string | null;
-    created_at: string;
-    last_updated: string;
-    thread: {
-        thread_id: number;
-        thread_name: string;
-    };
-    user: {
-        user_id: string;
-        username: string;
-    };
-    tags: string[];
-    likes: number;
-    comments: number;
-}
+
 
 export interface CommentResponse {
     comment_id: number;

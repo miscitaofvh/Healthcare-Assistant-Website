@@ -80,8 +80,14 @@ export const getPostById = async (req, res) => {
 
 export const getPostsByUser = async (req, res) => {
     try {
-        const { user_id } = req.params;
-        const posts = await getPostsByUserDB(user_id);
+        const { username } = req.params;
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: "Username is required"
+            });
+        }
+        const posts = await getPostsByUserDB(username);
         res.status(200).json(posts);
     } catch (error) {
         console.error(error);
