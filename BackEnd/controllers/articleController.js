@@ -17,8 +17,8 @@ export const getCategories = async (req, res) => {
 
 export const getCategoryById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const category = await ArticleModel.getCategoryById(id);
+    const { article_id } = req.params;
+    const category = await ArticleModel.getCategoryById(article_id);
     if (!category) return res.status(404).json({ message: "Category not found" });
     res.status(200).json(category);
   } catch (error) {
@@ -40,8 +40,8 @@ export const getTags = async (req, res) => {
 
 export const getTagById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const tag = await ArticleModel.getTagById(id);
+    const { article_id } = req.params;
+    const tag = await ArticleModel.getTagById(article_id);
     if (!tag) return res.status(404).json({ message: "Tag not found" });
     res.status(200).json(tag);
   } catch (error) {
@@ -52,8 +52,8 @@ export const getTagById = async (req, res) => {
 
 export const getTagsByArticle = async (req, res) => {
   try {
-    const { id } = req.params;
-    const tags = await ArticleModel.getTagsByArticle(id);
+    const { article_id } = req.params;
+    const tags = await ArticleModel.getTagsByArticle(article_id);
     res.status(200).json(tags);
   } catch (error) {
     console.error("getTagsByArticle error:", error);
@@ -75,8 +75,8 @@ export const getArticles = async (req, res) => {
 
 export const getArticleById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const article = await ArticleModel.getArticleById(id);
+    const { article_id } = req.params;
+    const article = await ArticleModel.getArticleById(article_id);
     if (!article) return res.status(404).json({ message: "Article not found" });
     res.status(200).json(article);
   } catch (error) {
@@ -111,10 +111,10 @@ export const createArticle = async (req, res) => {
 
 export const updateArticle = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { article_id } = req.params;
     const { title, content, category_name, image_url } = req.body;
     const updated = await ArticleModel.updateArticle(
-      id,
+      article_id,
       title,
       content,
       category_name,
@@ -130,8 +130,8 @@ export const updateArticle = async (req, res) => {
 
 export const deleteArticle = async (req, res) => {
   try {
-    const { id } = req.params;
-    const deleted = await ArticleModel.deleteArticle(id);
+    const { article_id } = req.params;
+    const deleted = await ArticleModel.deleteArticle(article_id);
     if (!deleted) return res.status(404).json({ message: "Article not found" });
     res.status(200).json({ message: "Article deleted successfully" });
   } catch (error) {
@@ -142,8 +142,8 @@ export const deleteArticle = async (req, res) => {
 // ----- Comments -----
 export const createComment = async (req, res) => {
   try {
-    const { article_id, user_id, comment_content } = req.body;
-    await ArticleModel.addComment(article_id, user_id, comment_content);
+    const { article_id, user_id, comment_content, parent_id} = req.body;
+    await ArticleModel.addComment(article_id, user_id, comment_content, parent_id);
     res.status(201).json({ message: "Comment added" });
   } catch (error) {
     console.error("addComment error:", error);

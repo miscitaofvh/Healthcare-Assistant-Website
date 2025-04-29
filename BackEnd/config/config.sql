@@ -1,3 +1,4 @@
+USE healthcare_service_db;
 -- inital user data
 INSERT INTO users (user_id, username, password_hash, email, verified_at, full_name, role) 
     VALUES ('00000000-0000-0000-0000-000000000000', 'miscitaofvh', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 
@@ -4215,5 +4216,5 @@ INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_articl
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bệnh viện'));
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bác sĩ'));
 
-UPDATE articles
-  SET last_updated = publication_date;
+-- UPDATE articles
+--   SET last_updated = publication_date;

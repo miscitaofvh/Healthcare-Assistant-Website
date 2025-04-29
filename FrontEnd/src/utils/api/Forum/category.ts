@@ -1,5 +1,5 @@
 import { requestAPI } from "../request";
-import { Category } from "../../../types/forum";
+import { Category, NewCategory } from "../../../types/forum";
 const BASE_URL = "http://localhost:5000/api/forum";
 
 export async function getAllCategories() {
@@ -37,7 +37,7 @@ export async function getCategoriesByUser(userId: number) {
     return response;
 }
 
-export async function createCategory(category: Category) {
+export async function createCategory(category: NewCategory) {
     const response = await requestAPI(BASE_URL, "/categories", "POST", category);
     return response;
 }

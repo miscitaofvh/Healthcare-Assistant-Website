@@ -1,6 +1,6 @@
 import express from "express";
 import {
-        getAllCategories, getSummaryCategories, getCategoryName, getCategoryById, getThreadsByCategory,
+        getAllCategories, getSummaryCategories, getCategoryByName, getCategoryById, getThreadsByCategory,
         getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
 } from "../controllers/forum/category.js"
 import {
@@ -13,7 +13,7 @@ import {
         likeComment, unlikeComment, reportComment, getReportsForComment, updateReportStatusForComment
 } from "../controllers/forum/comment.js";
 import {
-        getAllTags, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
+        getAllTags, getSummaryTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
         getTagOfPostById, getTagsOfPost, addTagsToPost, createTag, updateTagById, deleteTagById,
         removeTagFromPost
 } from "../controllers/forum/tag.js";
@@ -56,11 +56,11 @@ const asyncHandler = (fn) => (req, res, next) => {
 // Category Routes
 router.get("/categories", asyncHandler(getAllCategories)); // get all information in categories table
 router.get("/categories/summary", asyncHandler(getSummaryCategories)); // get all categories with id and name
-router.get("/categories/:id/name", asyncHandler(getCategoryName)); // get name of categories by id
+router.get("/categories/name/:name", asyncHandler(getCategoryByName));
 router.get("/categories/:id", asyncHandler(getCategoryById));
 router.get("/categories/:id/threads", asyncHandler(getThreadsByCategory)); // Get all threads in a category
 router.get("/categories/:id/posts", asyncHandler(getPostsByCategory)); // Get all posts in a category
-router.get("/users/:id/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with
+router.get("/users/:username/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with
 router.post("/categories", validateCategory, asyncHandler(createCategory));
 router.put("/categories/:id", validateCategory, asyncHandler(updateCategory));
 router.delete("/categories/:id", asyncHandler(deleteCategory));
@@ -80,7 +80,7 @@ router.delete("/threads/:id", asyncHandler(deleteThread));
 router.get("/posts", asyncHandler(getAllPosts));
 router.get("/posts/summary", asyncHandler(getSummaryPosts));
 router.get("/posts/:id", asyncHandler(getPostById));
-router.get("/users/:id/posts", asyncHandler(getPostsByUser));
+router.get("/users/:username/posts", asyncHandler(getPostsByUser));
 router.post("/posts", validateForumPost, asyncHandler(createPost));
 router.put("/posts/:id", validateForumPostUpdate, asyncHandler(updatePost));
 router.delete("/posts/:id", validateForumPostComment, asyncHandler(deletePost));
@@ -99,6 +99,8 @@ router.put("/posts/:id/comments/:id/reports/:id", asyncHandler(updateReportStatu
 
 // Tag Routes
 router.get("/tags", asyncHandler(getAllTags));
+router.get("/tags/summary", asyncHandler(getSummaryTags));
+router.get("/tags/summary/:id", asyncHandler(getSummaryTagById));
 router.get("/tags/:id", asyncHandler(getTagById));
 router.get("/tags/search", asyncHandler(getTagByName));
 router.get("/tags/:id/posts", asyncHandler(getPostsByTag));

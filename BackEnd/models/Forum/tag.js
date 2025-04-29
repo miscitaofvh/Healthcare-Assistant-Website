@@ -11,7 +11,7 @@ export const getAllTagsDB = async () => {
                 t.tag_id, t.tag_name, t.description,
                 t.usage_count, t.last_used_at,
                 t.created_at, t.last_updated,
-                u.username AS creator,
+                u.username AS created_by,
                 COUNT(DISTINCT tm.post_id) AS post_count
             FROM forum_tags t
             LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
@@ -20,6 +20,53 @@ export const getAllTagsDB = async () => {
             ORDER BY t.usage_count DESC, t.last_used_at DESC
         `;
         const [tags] = await conn.execute(sql);
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting tags:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const getSummaryTagsDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = `
+            SELECT 
+                t.tag_id, t.tag_name, t.description
+            FROM forum_tags t
+        `;
+        const [tags] = await conn.execute(sql);
+        await conn.commit();
+        return tags;
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error getting tags:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const getSummaryTagByIdDB = async (id) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+        
+        const sql = `
+            SELECT 
+                t.tag_id, t.tag_name, t.description
+            FROM forum_tags t
+            WHERE t.tag_id = ?
+        `;
+        const [tags] = await conn.execute(sql, [id]);
         await conn.commit();
         return tags;
     } catch (error) {
@@ -114,7 +161,7 @@ export const getPostsByTagDB = async (tagId) => {
             SELECT 
                 p.post_id, p.content, p.created_at, p.last_updated,
                 u.username AS author, u.user_id,
-                t.thread_name, c.category_name,
+                th.thread_name, c.category_name,
                 COUNT(DISTINCT l.like_id) AS like_count,
                 COUNT(DISTINCT r.report_id) AS report_count
             FROM forum_posts p

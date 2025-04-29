@@ -1,59 +1,113 @@
-// Category Interfaces
-export interface Category {
-    category_id?: number;
-    category_name: string;
-    user_id?: string;
-    description?: string;
-    created_at?: string;
-    last_updated?: string;
-}
-
-// Thread Interfaces
-export interface Thread {
-    thread_id: number;
-    thread_name: string;
-    category_id: number;
-    user_id: string;
-    description: string | null;
-    created_at: string;
-    last_updated: string;
-}
-
 // Tag Interfaces
+
+export interface TagMapping {
+    relation_id: number;
+    post_id: number;
+    tag_id: number;
+}
+
+export interface NewTag {
+    tag_name: string;
+    description?: string;
+}
+
+export interface TagSummary {
+    tag_id: number;
+    tag_name: string;
+    created_by: string;
+    description: string | null;
+    usage_count: number;
+    last_used_at: string | null;
+}
 export interface Tag {
     tag_id: number;
     tag_name: string;
-    user_id: string;
+    created_by: string;
     description: string | null;
     usage_count: number;
     last_used_at: string;
     created_at: string;
     last_updated: string;
+    post_count: number;
+}
+
+// Thread Interfaces
+export interface NewThread {
+    thread_name: string;
+    description?: string;
+}
+export interface ThreadSummary {
+    thread_id: number;
+    thread_name: string;
+    category_id: number;
+}
+export interface Thread {
+    thread_id: number;
+    author: string;
+    thread_name: string;
+    description: string | null;
+    created_at: string;
+    last_updated: string;
+}
+
+// Category Interfaces
+export interface NewCategory {
+    category_name: string;
+    description?: string;
+}
+export interface CategorySummary {
+    category_id?: number;
+    category_name: string;
+}
+
+export interface Category {
+    category_id: number;
+    created_by: string;
+    category_name: string;
+    description: string | null;
+    created_at: string;
+    last_updated: string;
+}
+
+// Comment Interfaces
+export interface PostComment {
+    post_id: number;
+    comment_id: number;
+    username: string;
+    content: string;
+    created_at: string;
+    last_updated: string;
 }
 
 // Post Interfaces
-export interface Post {
+export interface PostSummary {
+    author: string;
     post_id: number;
-    thread_id: number;
-    thread_name: string;
-    username: string;
+    title: string;
     content: string;
     image_url: string | null;
     created_at: string;
     last_updated: string;
-    tag_name: string[];
+    like_count: number;
+    tags: string[];
 }
 
-// Comment Interfaces
-export interface Comment {
-    comment_id: number;
+export interface Post {
+    author: string;
     post_id: number;
-    user_id: string;
+    title: string;
     content: string;
+    image_url: string | null;
     created_at: string;
     last_updated: string;
+    thread_id: number;
+    thread_name: string;
+    category_id: number;
+    category_name: string;
+    like_count: number;
+    tags: string[];
+    comments: PostComment[];
 }
-
 // Like Interfaces
 export interface PostLike {
     like_id: number;
@@ -101,13 +155,6 @@ export interface ForumActivity {
     activity_timestamp: string;
 }
 
-// Tag Mapping Interface
-export interface TagMapping {
-    relation_id: number;
-    post_id: number;
-    tag_id: number;
-}
-
 // Forum Interface
 export interface Forum {
     id: number;
@@ -118,53 +165,11 @@ export interface Forum {
     created_at: string;
 }
 
-// Response Interfaces
-export interface CategoryResponse {
-    category_id: number;
-    category_name: string;
-    description: string | null;
-    created_at: string;
-    last_updated: string;
-    user: {
-        // user_id: string;
-        username: string;
-    };
-}
 
-export interface ThreadResponse {
-    thread_id: number;
-    thread_name: string;
-    description: string | null;
-    created_at: string;
-    last_updated: string;
-    category: {
-        category_id: number;
-        category_name: string;
-    };
-    user: {
-        user_id: string;
-        username: string;
-    };
-}
 
-export interface PostResponse {
-    post_id: number;
-    content: string;
-    image_url: string | null;
-    created_at: string;
-    last_updated: string;
-    thread: {
-        thread_id: number;
-        thread_name: string;
-    };
-    user: {
-        user_id: string;
-        username: string;
-    };
-    tags: string[];
-    likes: number;
-    comments: number;
-}
+
+
+
 
 export interface CommentResponse {
     comment_id: number;

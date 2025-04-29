@@ -6,18 +6,18 @@ import {
   loadCategories, handleCreateCategory, handleUpdateCategory,
   handleDeleteCategory, handleInputChange
 } from "../../../utils/service/Forum/category";
-import { Category, CategoryResponse } from "../../../types/forum";
+import { Category, NewCategory } from "../../../types/forum";
 
 const CategoryList: React.FC = () => {
-  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
-  const [newCategory, setNewCategory] = useState<Category>({
+  const [newCategory, setNewCategory] = useState<NewCategory>({
     category_name: "",
     description: "",
   });
-  const [editingCategory, setEditingCategory] = useState<CategoryResponse | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formLoading, setFormLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
@@ -39,7 +39,11 @@ const CategoryList: React.FC = () => {
         {/* Create Category Form */}
         <div className={styles.card}>
           <h2>Create New Category</h2>
-          <form onSubmit={(e) => handleCreateCategory(newCategory, setFormLoading, setError, setSuccess, () => loadCategories(setLoading, setCategories, setError, setSuccess))}>
+          <form onSubmit={(e) => {
+            e.preventDefault(); 
+            handleCreateCategory(newCategory, setFormLoading, setError, setSuccess, () =>
+              loadCategories(setLoading, setCategories, setError, setSuccess))
+          }}>
             <div className={styles.formGroup}>
               <label htmlFor="categoryName">Category Name</label>
               <input

@@ -1,7 +1,6 @@
 DROP DATABASE IF EXISTS healthcare_service_db;
 CREATE DATABASE IF NOT EXISTS healthcare_service_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE healthcare_service_db;
-
 -- ========== USERS ==========
 CREATE TABLE users (
     user_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -27,7 +26,6 @@ CREATE INDEX idx_username ON users(username);
 -- Insert default admin user
 INSERT INTO users (user_id, username, password_hash, email, full_name, role, is_active) VALUES
 ('admin-uuid', 'admin', '$2y$10$e0c5a1f3b4d8c9e7a8b8Oe1Q6Z5v5g5g5g5g5g5g5g5g5g5g5g5', 'healthcare.service.amh@gmail.com', 'Admin User', 'Admin', TRUE);
-
 -- ========== DOCTORS ==========
 CREATE TABLE doctors (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -128,11 +126,11 @@ CREATE TABLE article_tag_mapping (
     FOREIGN KEY (tag_id)     REFERENCES article_tags(tag_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-
 -- ========== ARTICLE COMMENTS ==========
 CREATE TABLE article_comments (
     comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     article_id INT UNSIGNED NOT NULL,
+    parent_id INT DEFAULT NULL,
     user_id CHAR(36) NOT NULL,
     comment_content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -236,8 +234,8 @@ CREATE INDEX idx_tag_popularity ON forum_tags(usage_count DESC, last_used_at DES
 CREATE TABLE forum_posts (
     post_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     thread_id INT UNSIGNED NOT NULL,
-    thread_name VARCHAR(100) NOT NULL,
     user_id CHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

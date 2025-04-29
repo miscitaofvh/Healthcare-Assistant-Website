@@ -3,30 +3,25 @@ import {
     createCategory,
     updateCategory,
     deleteCategory,
-    getCategoryById
+    getCategoryById,
+    getThreadsByCategory,
 } from "../../../utils/api/Forum/category";
-import { Category, CategoryResponse } from "../../../types/forum";
-import { json } from "stream/consumers";
+import { Category, NewCategory } from "../../../types/forum";
 
 export const loadCategories = async (
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setCategories: React.Dispatch<React.SetStateAction<CategoryResponse[]>>,
+    setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
         const response = await getAllCategories();
-        if (!response) {
-            setError("Failed to load categories. Please try again later.");
-            return;
-        }
-        if (response && response.data) {
-            setCategories(response.data);
+        if (response?.data) {
+            setCategories(response.data.data);
         } else {
-            setError("No data returned.");
+            setError("No categories found.");
         }
-        setCategories(response.data.data);
     } catch (error) {
         setError("Failed to load categories. Please try again later.");
         console.error("Error loading categories:", error);
@@ -36,7 +31,7 @@ export const loadCategories = async (
 };
 
 export const handleCreateCategory = async (
-    newCategory: Category,
+    newCategory: NewCategory,
     setFormLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
@@ -49,9 +44,11 @@ export const handleCreateCategory = async (
     try {
         setFormLoading(true);
         const response = await createCategory(newCategory);
-        if (response && response.data) {
+        if (response?.data) {
             setSuccess("Category created successfully!");
             loadCategories(); // Reload categories after creation
+        } else {
+            setError("Failed to create category.");
         }
     } catch (error) {
         setError("Failed to create category. Please try again later.");
@@ -62,7 +59,7 @@ export const handleCreateCategory = async (
 };
 
 export const handleUpdateCategory = async (
-    editingCategory: CategoryResponse,
+    editingCategory: Category,
     setFormLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
@@ -70,13 +67,16 @@ export const handleUpdateCategory = async (
 ) => {
     try {
         setFormLoading(true);
-        const response = await updateCategory(editingCategory.category_id, {
-            category_name: editingCategory.category_name,
-            description: editingCategory.description || "",
-        });
-        if (response && response.data) {
+        if (!editingCategory.category_name || editingCategory.category_name.trim().length < 3) {
+            setError("Category name must be at least 3 characters long.");
+            return;
+        }
+        const response = await updateCategory(editingCategory.category_id, editingCategory);
+        if (response?.data) {
             setSuccess("Category updated successfully!");
-            loadCategories(); // Reload categories after update
+            loadCategories(); 
+        } else {
+            setError("Failed to update category.");
         }
     } catch (error) {
         setError("Failed to update category. Please try again later.");
@@ -96,9 +96,11 @@ export const handleDeleteCategory = async (
     try {
         setFormLoading(true);
         const response = await deleteCategory(id);
-        if (response && response.data) {
+        if (response?.data) {
             setSuccess("Category deleted successfully!");
             loadCategories(); // Reload categories after deletion
+        } else {
+            setError("Failed to delete category.");
         }
     } catch (error) {
         setError("Failed to delete category. Please try again later.");
@@ -118,30 +120,46 @@ export const handleInputChange = (
 
 export const loadSingleCategory = async (
     id: string,
-    setLoading: (loading: boolean) => void,
-    setCategory: (category: any) => void,
-    setError: (error: string) => void
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setCategory: React.Dispatch<React.SetStateAction<Category | null>>,
+    setError: React.Dispatch<React.SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
         const response = await getCategoryById(Number(id));
-        if (!response) {
-            setError("Server error. Please try again later.");
-            return;
-        }
-        if (response && response.status !== 200) {
-            setError(response.data.message || "Failed to load category. Please try again later.");
-            return;
-        }
-        if (response && response.data) {
-            setCategory(response.data);
+        if (response?.data) {
+            setCategory(response.data.data);
         } else {
-            setError("No data returned.");
+            setError("Failed to load category.");
         }
-        const data = response.data.data;
-        setCategory(data);
-    } catch (err: any) {
-        setError(err.message);
+    } catch (error) {
+        setError("Failed to load category. Please try again later.");
+        console.error("Error loading category:", error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadThreadsByCategory = async (
+    id: string,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setCategory: React.Dispatch<React.SetStateAction<Category | null>>,
+    setThreads: React.Dispatch<React.SetStateAction<any[]>>,
+    setError: React.Dispatch<React.SetStateAction<string>>
+) => {
+    try {
+        setLoading(true);
+        const response = await getThreadsByCategory(Number(id));
+        // alert(JSON.stringify(response.data.threads));
+        if (response?.data) {
+            setCategory(response.data.data);
+            setThreads(response.data.threads);
+        } else {
+            setError("Failed to load threads.");
+        }
+    } catch (error) {
+        setError("Failed to load threads. Please try again later.");
+        console.error("Error loading threads:", error);
     } finally {
         setLoading(false);
     }

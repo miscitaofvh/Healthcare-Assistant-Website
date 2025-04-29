@@ -1,7 +1,6 @@
 import { createContext, useState, ReactNode, useEffect } from "react";
 import { requestAPI } from "../utils/api/request";
 import { useContext } from "react";
-import Cookies from 'js-cookie';
 
 const BASE_URL = "http://localhost:5000/api";
 interface User {

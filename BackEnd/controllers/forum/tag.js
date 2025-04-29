@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 
 import {
     getAllTagsDB,
+    getSummaryTagsDB,
+    getSummaryTagByIdDB,
     getTagByIdDB,
     getTagByNameDB,
     getPostsByTagDB,
@@ -38,6 +40,48 @@ export const getAllTags = async (req, res) => {
     }
 };
 
+export const getSummaryTags = async (req, res) => {
+    try {
+        const tags = await getSummaryTagsDB();
+        res.status(200).json({
+            success: true,
+            data: tags
+        });
+    } catch (error) {
+        console.error("Error getting all tags:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching tags",
+            error: error.message
+        });
+    }
+};
+
+export const getSummaryTagById = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Tag ID is required"
+            });
+        }
+
+        const tags = await getSummaryTagByIdDB(id);
+        res.status(200).json({
+            success: true,
+            data: tags
+        });
+    } catch (error) {
+        console.error("Error getting all tags:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching tags",
+            error: error.message
+        });
+    }
+};
 export const getTagById = async (req, res) => {
     try {
         const { id } = req.params;
