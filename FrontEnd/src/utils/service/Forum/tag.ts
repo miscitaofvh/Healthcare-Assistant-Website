@@ -8,30 +8,38 @@ import {
 } from "../../../utils/api/Forum/tag";
 import { Tag, NewTag } from "../../../types/forum";
 
-export const loadTagById = async (
-    id: string,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setTag: React.Dispatch<React.SetStateAction<Tag | null>>,
-    setError: React.Dispatch<React.SetStateAction<string>>
+export const loadTags = async (
+    setLoading: (loading: boolean) => void,
+    setTags: (tags: any[]) => void,
+    setError: (msg: string) => void,
+    setSuccess: (msg: string) => void
 ) => {
     try {
         setLoading(true);
-        const response = await getTagById(Number(id));
-        if (response?.data) {
-            setTag(response.data.data);
-        } else {
-            setError("Failed to load tag.");
+
+        const response = await getAllTags();
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message || "Unknown error occurred while loading tags.";
+            setError(`Không thể tải tags: ${errorMsg}`);
+            return;
         }
-    } catch (error) {
-        setError("Failed to load tag. Please try again later.");
-        console.error("Error loading tag:", error);
+
+        setTags(data?.data?.tags || []);
+        setSuccess("Tải danh sách tag thành công");
+    } catch (err: any) {
+        const errorMsg =
+            err?.response?.data?.message ||
+            err.message ||
+            "Đã xảy ra lỗi khi tải danh sách tag";
+        setError(errorMsg);
     } finally {
         setLoading(false);
     }
 };
 
-// Load posts by tag ID
-export const loadPostsByTag = async (
+export const loadTagandPostsByTag = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setTag: React.Dispatch<React.SetStateAction<Tag | null>>,
@@ -41,11 +49,30 @@ export const loadPostsByTag = async (
     try {
         setLoading(true);
         const response = await getPostsByTag(Number(id));
-        if (response?.data) {
-            // setTag(response.data.data);
-            setPosts(response.data.data);
-        } else {
-            setError("Failed to load posts.");
+        const { status, data } = response;
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message || "Không thể tải dữ liệu thẻ và bài viết.";
+            setError(errorMsg);
+            return;
+        }
+        if (!data.tag) {
+            setError("Không tìm thấy tag tương ứng.");
+            setTag(null);
+            setPosts([]);
+            return;
+        } 
+
+        if (!data.posts) {
+            setError("Không tìm thấy posts tương ứng.");
+            setTag(null);
+            setPosts([]);
+            return;
+        } 
+        setTag(data.tag);
+        setPosts(data.posts || []);
+
+        if (response.data.posts) {
+            setPosts(response.data.posts);
         }
     } catch (error) {
         setError("Failed to load posts. Please try again later.");
@@ -55,31 +82,13 @@ export const loadPostsByTag = async (
     }
 };
 
-export async function loadTags(
-    setLoading: any,
-    setTags: any,
-    setError: any,
-    setSuccess: any
-) {
-    try {
-        setLoading(true);
-        const res = await getAllTags();
-        setTags(res.data.data || []);
-        setSuccess("Tags loaded successfully");
-    } catch (err: any) {
-        setError(err.message || "Failed to load tags");
-    } finally {
-        setLoading(false);
-    }
-}
-
-export async function handleCreateTag(
+export const handleCreateTag = async (
     tag: NewTag,
     setFormLoading: any,
     setError: any,
     setSuccess: any,
     callback: () => void
-) {
+) => {
     try {
         setFormLoading(true);
         await createTag(tag);
@@ -92,25 +101,38 @@ export async function handleCreateTag(
     }
 }
 
-export async function handleUpdateTag(
+export const handleUpdateTag = async (
     id: number,
     tag: NewTag,
-    setFormLoading: any,
-    setError: any,
-    setSuccess: any,
+    setFormLoading: (loading: boolean) => void,
+    setError: (msg: string) => void,
+    setSuccess: (msg: string) => void,
     callback: () => void
-) {
+) => {
     try {
         setFormLoading(true);
-        await updateTag(id, tag);
-        setSuccess("Tag updated successfully");
+
+        const response = await updateTag(id, tag);
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMessages = data?.errors?.map((e: any) => e.msg).join("; ") || "Unknown error";
+            setError(`Cập nhật thất bại: ${errorMessages}`);
+            return;
+        }
+
+        setSuccess(data.message || "Tag updated successfully");
         callback();
     } catch (err: any) {
-        setError(err.message || "Failed to update tag");
+        const errorMsg =
+            err?.response?.data?.message ||
+            err.message ||
+            "Đã xảy ra lỗi trong quá trình cập nhật";
+        setError(errorMsg);
     } finally {
         setFormLoading(false);
     }
-}
+};
 
 export async function handleDeleteTag(
     id: number,

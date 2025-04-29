@@ -14,7 +14,7 @@ import {
 } from "../controllers/forum/comment.js";
 import {
         getAllTags, getSummaryTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
-        getTagOfPostById, getTagsOfPost, addTagsToPost, createTag, updateTagById, deleteTagById,
+        getTagOfPostById, getTagsForPost, addTagsToPost, createTag, updateTagById, deleteTagById,
         removeTagFromPost
 } from "../controllers/forum/tag.js";
 import { likePost, unlikePost, getLikesOfPost } from "../controllers/forum/like.js";
@@ -101,17 +101,17 @@ router.put("/posts/:id/comments/:id/reports/:id", asyncHandler(updateReportStatu
 router.get("/tags", asyncHandler(getAllTags));
 router.get("/tags/summary", asyncHandler(getSummaryTags));
 router.get("/tags/summary/:id", asyncHandler(getSummaryTagById));
+router.get("/tags/popular", asyncHandler(getPopularTags));
 router.get("/tags/:id", asyncHandler(getTagById));
 router.get("/tags/search", asyncHandler(getTagByName));
 router.get("/tags/:id/posts", asyncHandler(getPostsByTag));
-router.get("/tags/popular", asyncHandler(getPopularTags));
 router.get("/users/:id/tags", asyncHandler(getTagsByUser));
 router.post("/tags", validateTag, asyncHandler(createTag));
 router.put("/tags/:id", validateTag, asyncHandler(updateTagById));
 router.delete("/tags/:id", asyncHandler(deleteTagById));
 
 
-router.get("/posts/:id/tags", asyncHandler(getTagsOfPost));
+router.get("/posts/:id/tags", asyncHandler(getTagsForPost));
 router.get("/posts/:id/tags/:id", validateForumPostTag, asyncHandler(getTagOfPostById));
 router.post("/posts/:id/tags", validatePostTag, asyncHandler(addTagsToPost));
 router.delete("/posts/:id/tags/:id", validateForumPostTagUnmap, asyncHandler(removeTagFromPost));  // unmap
