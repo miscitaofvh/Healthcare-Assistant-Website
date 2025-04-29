@@ -4,7 +4,7 @@ import Navbar from "../../../components/Navbar";
 import styles from "../styles/Forum.module.css";
 import { useNavigate } from "react-router-dom";
 import { fetchPosts } from "../../../utils/service/Forum/main";
-import { Post, Tag } from "../../../types/forum"; 
+import { Post, Tag } from "../../../types/forum";
 
 const Forum: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -27,7 +27,7 @@ const Forum: React.FC = () => {
         setLoading(false);
       }
     };
-  
+
     loadPosts();
   }, [location]);
 
@@ -38,7 +38,7 @@ const Forum: React.FC = () => {
       </div>
       <div className={styles.container}>
         <Outlet />
-        {location.pathname === '/forum' && (
+        {location.pathname === "/forum" && (
           <>
             <h1 className={styles.text_center}>Forum Discussions</h1>
 
@@ -67,23 +67,22 @@ const Forum: React.FC = () => {
                     <div
                       key={post.post_id}
                       className={styles.list_group_item}
-                      onClick={() => navigate(`/forum/post/${post.post_id}`)}
+                      onClick={() => navigate(`/forum/posts/${post.post_id}`)}
                     >
                       <h5 className={styles.mb_1}>{post.thread_name}</h5>
                       <p className={styles.mb_1}>{post.content.substring(0, 150)}...</p>
 
-                      {post.tag_name.length > 0 && (
+                      {Array.isArray(post.tags) && post.tags.length > 0 && (
                         <div className={styles.tags}>
-                          {post.tag_name.map((tag, index) => (
+                          {post.tags.map((tag: Tag | string, index: number) => (
                             <span key={index} className={styles.tag}>
-                              #{tag}
+                              {typeof tag === "string" ? `#${tag}` : `#${tag.tag_name}`}
                             </span>
                           ))}
                         </div>
                       )}
-
                       <small>
-                        Đăng bởi {post.username} vào{" "}
+                        Đăng bởi {post.author} vào{" "}
                         {new Date(post.created_at).toLocaleDateString()}
                       </small>
                     </div>

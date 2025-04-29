@@ -1,6 +1,6 @@
 import express from "express";
 import {
-        getAllCategories, getSummaryCategories, getCategoryName, getCategoryById, getThreadsByCategory,
+        getAllCategories, getSummaryCategories, getCategoryByName, getCategoryById, getThreadsByCategory,
         getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
 } from "../controllers/forum/category.js"
 import {
@@ -56,11 +56,11 @@ const asyncHandler = (fn) => (req, res, next) => {
 // Category Routes
 router.get("/categories", asyncHandler(getAllCategories)); // get all information in categories table
 router.get("/categories/summary", asyncHandler(getSummaryCategories)); // get all categories with id and name
-router.get("/categories/:id/name", asyncHandler(getCategoryName)); // get name of categories by id
+router.get("/categories/name/:name", asyncHandler(getCategoryByName));
 router.get("/categories/:id", asyncHandler(getCategoryById));
 router.get("/categories/:id/threads", asyncHandler(getThreadsByCategory)); // Get all threads in a category
 router.get("/categories/:id/posts", asyncHandler(getPostsByCategory)); // Get all posts in a category
-router.get("/users/:id/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with
+router.get("/users/:username/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with
 router.post("/categories", validateCategory, asyncHandler(createCategory));
 router.put("/categories/:id", validateCategory, asyncHandler(updateCategory));
 router.delete("/categories/:id", asyncHandler(deleteCategory));

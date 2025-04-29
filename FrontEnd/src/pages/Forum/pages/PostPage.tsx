@@ -38,60 +38,64 @@ const ForumPostDetail: React.FC = () => {
       await handleCommentSubmit(id, commentText, setCommentText, () =>
         fetchComments(id, setLoading, setComments, setError)
       );
+    }else { 
+      setError("Invalid post ID.");
     }
   };
 
   const onDeletePost = async () => {
     if (id) {
-      await deletePostFE(id, setLoading, setError);
+      deletePostFE(id, setLoading, setError);
+    } else {
+      setError("Invalid post ID.");
     }
   };
 
-  return (
-    <div>
-      <Navbar />
-      <div className={styles.container}>
-        <h2 className={styles.text_center}>{post.title}</h2>
-        <p className={styles.text_center}>
-          Đăng bởi {post.author} vào {new Date(post.created_at).toLocaleDateString()}
-        </p>
-        <div className={styles.post_content}>{post.content}</div>
+    return (
+      <div>
+        <Navbar />
+        <div className={styles.container}>
+          <h2 className={styles.text_center}>{post.title}</h2>
+          <p className={styles.text_center}>
+            Đăng bởi {post.author} vào {new Date(post.created_at).toLocaleDateString()}
+          </p>
+          <div className={styles.post_content}>{post.content}</div>
 
-        <div className={styles.text_center}>
-          <button className={styles.btnDelete} onClick={onDeletePost}>
-            🗑 Xoá bài viết
-          </button>
-        </div>
+          <div className={styles.text_center}>
+            <button className={styles.btnDelete} onClick={onDeletePost}>
+              🗑 Xoá bài viết
+            </button>
+          </div>
 
-        <hr />
-        <h4>Bình luận</h4>
-        {comments.length === 0 ? (
-          <p>Chưa có bình luận nào.</p>
-        ) : (
-          <ul>
-            {comments.map((comment) => (
-              <li key={comment.comment_id}>
-                <strong>{comment.username}</strong> ({new Date(comment.created_at).toLocaleDateString()}):<br />
-                {comment.content}
-              </li>
-            ))}
-          </ul>
-        )}
+          <hr />
+          <h4>Bình luận</h4>
+          {comments.length === 0 ? (
+            <p>Chưa có bình luận nào.</p>
+          ) : (
+            <ul>
+              {comments.map((comment) => (
+                <li key={comment.comment_id}>
+                  <strong>{comment.username}</strong> ({new Date(comment.created_at).toLocaleDateString()}):<br />
+                  {comment.content}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <div className={styles.commentBox}>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập bình luận..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-          />
-          <button className={styles.btn} onClick={onCommentSubmit}>
-            Gửi bình luận
-          </button>
+          <div className={styles.commentBox}>
+            <textarea
+              className={styles.textarea}
+              placeholder="Nhập bình luận..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <button className={styles.btn} onClick={onCommentSubmit}>
+              Gửi bình luận
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default ForumPostDetail;
+  export default ForumPostDetail;

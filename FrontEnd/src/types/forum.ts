@@ -1,3 +1,22 @@
+// Category Interfaces
+export interface NewCategory {
+    category_name: string;
+    description?: string;
+  }
+export interface CategorySummary {
+    category_id?: number;
+    category_name: string;
+}
+
+export interface Category {
+    category_id: number;
+    created_by: string;
+    category_name: string;
+    description: string | null;
+    created_at: string;
+    last_updated: string;
+}
+
 // Comment Interfaces
 export interface PostComment {
     post_id: number;
@@ -36,15 +55,6 @@ export interface Post {
     like_count: number;
     tags: string[];
     comments: PostComment[];
-}
-// Category Interfaces
-export interface Category {
-    category_id?: number;
-    category_name: string;
-    user_id?: string;
-    description?: string;
-    created_at?: string;
-    last_updated?: string;
 }
 
 // Thread Interfaces
@@ -134,18 +144,7 @@ export interface Forum {
     created_at: string;
 }
 
-// Response Interfaces
-export interface CategoryResponse {
-    category_id: number;
-    category_name: string;
-    description: string | null;
-    created_at: string;
-    last_updated: string;
-    user: {
-        // user_id: string;
-        username: string;
-    };
-}
+
 
 export interface ThreadResponse {
     thread_id: number;
