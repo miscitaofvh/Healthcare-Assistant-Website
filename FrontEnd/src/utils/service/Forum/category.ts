@@ -10,7 +10,7 @@ import { Category, NewCategory, CategoryMain } from "../../../types/forum";
 
 export const loadCategories = async (
     setLoading: (loading: boolean) => void,
-    setCategories: (tags: CategoryMain) => void,
+    setCategories: (categories: CategoryMain[]) => void,
     setError: (msg: string) => void,
     setSuccess: (msg: string) => void
 ) => {
