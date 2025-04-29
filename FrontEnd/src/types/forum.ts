@@ -1,3 +1,36 @@
+// Tag Interfaces
+
+export interface TagMapping {
+    relation_id: number;
+    post_id: number;
+    tag_id: number;
+}
+
+export interface NewTag {
+    tag_name: string;
+    description?: string;
+}
+
+export interface TagSummary {
+    tag_id: number;
+    tag_name: string;
+    created_by: string;
+    description: string | null;
+    usage_count: number;
+    last_used_at: string | null;
+}
+export interface Tag {
+    tag_id: number;
+    tag_name: string;
+    created_by: string;
+    description: string | null;
+    usage_count: number;
+    last_used_at: string;
+    created_at: string;
+    last_updated: string;
+    post_count: number;
+}
+
 // Thread Interfaces
 export interface NewThread {
     thread_name: string;
@@ -75,18 +108,6 @@ export interface Post {
     tags: string[];
     comments: PostComment[];
 }
-// Tag Interfaces
-export interface Tag {
-    tag_id: number;
-    tag_name: string;
-    user_id: string;
-    description: string | null;
-    usage_count: number;
-    last_used_at: string;
-    created_at: string;
-    last_updated: string;
-}
-
 // Like Interfaces
 export interface PostLike {
     like_id: number;
@@ -132,13 +153,6 @@ export interface ForumActivity {
     target_type: 'post' | 'comment';
     target_id: number;
     activity_timestamp: string;
-}
-
-// Tag Mapping Interface
-export interface TagMapping {
-    relation_id: number;
-    post_id: number;
-    tag_id: number;
 }
 
 // Forum Interface
