@@ -1,7 +1,6 @@
 DROP DATABASE IF EXISTS healthcare_service_db;
 CREATE DATABASE IF NOT EXISTS healthcare_service_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE healthcare_service_db;
-
 -- ========== USERS ==========
 CREATE TABLE users (
     user_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -127,11 +126,11 @@ CREATE TABLE article_tag_mapping (
     FOREIGN KEY (tag_id)     REFERENCES article_tags(tag_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-
 -- ========== ARTICLE COMMENTS ==========
 CREATE TABLE article_comments (
     comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     article_id INT UNSIGNED NOT NULL,
+    parent_id INT DEFAULT NULL,
     user_id CHAR(36) NOT NULL,
     comment_content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

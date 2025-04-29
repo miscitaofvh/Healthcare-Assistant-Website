@@ -1,90 +1,140 @@
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 1rem;
-}
-
-.backButton {
-  background: none;
-  border: none;
-  color: #0077cc;
-  cursor: pointer;
-  margin-bottom: 1rem;
+  padding: 16px;
 }
 
 .image {
   width: 100%;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .title {
-  margin-top: 0;
+  font-size: 2rem;
+  margin-bottom: 8px;
 }
 
 .meta {
-  color: #666;
+  color: #65676b;
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
+}
+
+.author {
+  font-weight: 500;
+}
+
+.date {
+  font-style: italic;
 }
 
 .content {
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-bottom: 32px;
+  white-space: pre-line;
 }
 
-/* Comments */
 .commentsSection {
-  border-top: 1px solid #ddd;
-  padding-top: 1.5rem;
+  margin-top: 32px;
 }
 
 .commentForm {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 1.5rem;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .textarea {
-  resize: vertical;
-  min-height: 80px;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
+  flex: 1;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #ccd0d5;
+  border-radius: 18px;
+  resize: none;
+  font-size: 14px;
+  outline: none;
+}
+
+.textarea:focus {
+  border-color: #1877f2;
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
 }
 
 .submitButton {
-  align-self: flex-end;
-  padding: 0.5rem 1rem;
+  background-color: #1877f2;
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  padding: 8px 16px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submitButton:disabled {
+  background-color: #a1b1c4;
+  cursor: not-allowed;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #165ec9;
 }
 
 .commentList {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .commentItem {
-  border-bottom: 1px solid #eee;
-  padding: 0.75rem 0;
+  padding: 12px;
+  border-bottom: 1px solid #dadde1;
 }
 
 .commentHeader {
-  font-size: 0.85rem;
-  color: #333;
-  margin-bottom: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .commentDate {
-  color: #999;
-  font-size: 0.75rem;
-  margin-left: 0.5rem;
+  color: #90949c;
+  font-size: 0.8rem;
 }
 
 .commentContent {
   margin: 0;
+  line-height: 1.4;
+}
+
+.replyButton {
+  background: none;
+  border: none;
+  color: #1877f2;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 4px;
+  padding: 0;
+}
+
+.replyForm {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
 }
 
 .noComments {
+  text-align: center;
+  color: #65676b;
+  padding: 12px;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px 0;
+  font-size: 1.2rem;
   color: #666;
-  font-style: italic;
 }
