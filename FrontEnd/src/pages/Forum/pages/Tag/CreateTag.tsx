@@ -96,11 +96,11 @@ const CreateTag: React.FC = () => {
                                     setNewTag({ ...newTag, tag_name: e.target.value })
                                 }
                                 required
-                                maxLength={100}
+                                maxLength={50}
                                 placeholder="Enter tag name (required)"
                             />
                             <small className={styles.characterCount}>
-                                {newTag.tag_name.length}/100 characters
+                                {newTag.tag_name.length}/50 characters
                             </small>
 
                             <label htmlFor="tagDescription" className={styles.metaLabel}>
@@ -113,12 +113,12 @@ const CreateTag: React.FC = () => {
                                 onChange={(e) => 
                                     setNewTag({ ...newTag, description: e.target.value })
                                 }
-                                maxLength={1000}
+                                maxLength={200}
                                 placeholder="Enter tag description (optional)"
                                 rows={4}
                             />
                             <small className={styles.characterCount}>
-                                {newTag.description?.length || 0}/1000 characters
+                                {newTag.description?.length || 0}/200 characters
                             </small>
                         </div>
                         
