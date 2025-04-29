@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../../../components/Navbar";
-import styles from "../styles/Forum.module.css";
-import { Category, Thread } from "../../../types/forum";
-import { loadSingleCategory, loadThreadsByCategory } from "../../../utils/service/Forum/category";
+import Navbar from "../../../../components/Navbar";
+import styles from "../../styles/Forum.module.css";
+import { Category, Thread } from "../../../../types/forum";
+import { loadSingleCategory, loadThreadsByCategory } from "../../../../utils/service/Forum/category";
 
 const CategoryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

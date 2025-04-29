@@ -25,7 +25,8 @@ export const getAllCategories = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: [],
-                message: "No categories found"
+                message: "No categories found",
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -33,7 +34,8 @@ export const getAllCategories = async (req, res) => {
             success: true,
             count: categories.length,
             data: categories,
-            message: "Categories retrieved successfully"
+            message: "Categories retrieved successfully",
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {
@@ -51,6 +53,7 @@ export const getAllCategories = async (req, res) => {
         });
     }
 };
+
 
 export const getSummaryCategories = async (req, res) => {
     try {

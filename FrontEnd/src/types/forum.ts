@@ -69,6 +69,18 @@ export interface Category {
     last_updated: string;
 }
 
+export interface CategoryMain {
+    category_id: number;
+    created_by: string;
+    category_name: string;
+    description: string | null;
+    created_at: string;
+    last_updated: string;
+    thread_count: number;
+    post_count: number;
+    last_post_date: string | null;
+}
+
 // Comment Interfaces
 export interface PostComment {
     post_id: number;

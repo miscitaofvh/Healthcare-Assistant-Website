@@ -6,25 +6,34 @@ import {
     getCategoryById,
     getThreadsByCategory,
 } from "../../../utils/api/Forum/category";
-import { Category, NewCategory } from "../../../types/forum";
+import { Category, NewCategory, CategoryMain } from "../../../types/forum";
 
 export const loadCategories = async (
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>
+    setLoading: (loading: boolean) => void,
+    setCategories: (tags: CategoryMain) => void,
+    setError: (msg: string) => void,
+    setSuccess: (msg: string) => void
 ) => {
     try {
         setLoading(true);
+
         const response = await getAllCategories();
-        if (response?.data) {
-            setCategories(response.data.data);
-        } else {
-            setError("No categories found.");
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message || "Unknown error occurred while loading categories.";
+            setError(`Không thể tải categories: ${errorMsg}`);
+            return;
         }
-    } catch (error) {
-        setError("Failed to load categories. Please try again later.");
-        console.error("Error loading categories:", error);
+
+        setCategories(data.data);
+        setSuccess("Tải danh sách categories thành công");
+    } catch (err: any) {
+        const errorMsg =
+            err?.response?.data?.message ||
+            err.message ||
+            "Đã xảy ra lỗi khi tải danh sách category";
+        setError(errorMsg);
     } finally {
         setLoading(false);
     }
@@ -74,7 +83,7 @@ export const handleUpdateCategory = async (
         const response = await updateCategory(editingCategory.category_id, editingCategory);
         if (response?.data) {
             setSuccess("Category updated successfully!");
-            loadCategories(); 
+            loadCategories();
         } else {
             setError("Failed to update category.");
         }

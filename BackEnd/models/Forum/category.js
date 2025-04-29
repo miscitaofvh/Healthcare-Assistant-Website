@@ -8,20 +8,40 @@ export const getAllCategoriesDB = async () => {
 
         const sql = `
             SELECT 
-                f.category_id, u.username as created_by, 
-                f.category_name, f.description, 
-                f.created_at, f.last_updated
-            FROM forum_categories f
-            JOIN users u ON u.user_id = f.user_id
-            ORDER BY f.created_at DESC
+                fc.category_id, 
+                fc.category_name, 
+                fc.description,
+                u.username AS created_by,
+                fc.created_at,
+                fc.last_updated,
+                COUNT(DISTINCT ft.thread_id) AS thread_count,
+                COUNT(DISTINCT fp.post_id) AS post_count,
+                (
+                    SELECT MAX(fp3.created_at)
+                    FROM forum_posts fp3
+                    JOIN forum_threads ft3 ON fp3.thread_id = ft3.thread_id
+                    WHERE ft3.category_id = fc.category_id
+                ) AS last_post_date
+            FROM forum_categories fc
+            LEFT JOIN users u ON u.user_id = fc.user_id
+            LEFT JOIN forum_threads ft ON ft.category_id = fc.category_id
+            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
+            GROUP BY fc.category_id
+            ORDER BY fc.category_name ASC
         `;
+
         const [categories] = await conn.execute(sql);
         await conn.commit();
-        return categories;
+        
+        return categories.map(category => ({
+            ...category,
+            thread_count: Number(category.thread_count),
+            post_count: Number(category.post_count)
+        }));
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Error getting categories:", error);
-        throw new Error("Failed to get categories");
+        console.error("Database error in getAllCategoriesDB:", error);
+        throw new Error("Failed to retrieve categories from database");
     } finally {
         if (conn) conn.release();
     }

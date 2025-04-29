@@ -1,8 +1,8 @@
 import { Route } from "react-router-dom";
 import Forum from "./pages";
 import CreatePost from "./pages/CreatePostPage";
-import CategoryList from "./pages/CategoryList";
-import CategoryPage from "./pages/CategoryPage";
+import CategoryList from "./pages/Category/CategoryList";
+import CategoryPage from "./pages/Category/CategoryPage";
 import ThreadList from "./pages/ThreadList";
 import ThreadPage from "./pages/ThreadPage";
 import PostList from "./pages/PostList";

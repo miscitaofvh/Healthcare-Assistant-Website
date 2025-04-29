@@ -242,6 +242,21 @@
   vertical-align: middle;
 }
 
+.alertSuccess {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.successIcon {
+  font-weight: bold;
+}
+
 /* Here... */
 .container {
   max-width: 800px;
