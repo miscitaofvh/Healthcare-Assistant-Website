@@ -1,60 +1,101 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ import here
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { loadTags } from "../../../../utils/service/Forum/tag";
 import { Tag } from "../../../../types/forum";
+import { formatDate } from "../../../../utils/helpers/dateFormatter"; // Assume you have a date formatter
 
 const TagList: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-
-  const navigate = useNavigate(); // ✅ called here, not inside handleClick
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadTags(setLoading, setTags, setError, () => { });
+    loadTags(setLoading, setTags, setError, () => {});
   }, []);
 
-  const handleClick = (tagId: number) => {
+  const handleTagClick = (tagId: number) => {
     navigate(`/forum/tags/${tagId}`);
   };
 
+  const handleCreateClick = () => {
+    navigate(`/forum/tags/create`);
+  };
+
   return (
-    <div>
-      <div className={styles.main_navbar}>
-        <Navbar />
-      </div>
-      <div className={styles.container}>
-        <h1 className={styles.text_center}>All Tags</h1>
+    <div className={styles.forumContainer}>
+      <Navbar />
+      
+      <div className={styles.tagListContainer}>
+        <div className={styles.headerSection}>
+          <h1 className={styles.pageTitle}>Forum Tags</h1>
+          <p className={styles.pageSubtitle}>Browse all available discussion tags</p>
+          
+          <button
+            className={`${styles.primaryButton} ${styles.createButton}`}
+            onClick={handleCreateClick}
+          >
+            + Create New Tag
+          </button>
+        </div>
 
-        <button
-          className={styles.btnSecondary}
-          onClick={() => navigate(`/forum/tags/create`)}
-        >
-          Create New Tag
-        </button>
+        {error && (
+          <div className={styles.errorAlert}>
+            <span className={styles.errorIcon}>⚠️</span>
+            {error}
+          </div>
+        )}
 
-        {error && <div className={styles.alert}>{error}</div>}
-
-        <div className={styles.card}>
+        <div className={styles.contentCard}>
           {loading ? (
-            <p className={styles.text_center}>Loading tags...</p>
+            <div className={styles.loadingState}>
+              <div className={styles.spinner}></div>
+              <p>Loading tags...</p>
+            </div>
           ) : tags.length > 0 ? (
-            <ul className={styles.listGroup}>
+            <div className={styles.tagGrid}>
               {tags.map((tag) => (
-                <li
+                <div 
                   key={tag.tag_id}
-                  className={styles.listGroupItem}
-                  onClick={() => handleClick(tag.tag_id)}
-                  style={{ cursor: "pointer" }}
+                  className={styles.tagCard}
+                  onClick={() => handleTagClick(tag.tag_id)}
                 >
-                  <h3>{tag.tag_name}</h3>
-                </li>
+                  <div className={styles.tagHeader}>
+                    <h3 className={styles.tagName}>#{tag.tag_name}</h3>
+                    {tag.description && (
+                      <p className={styles.tagDescription}>{tag.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className={styles.tagMeta}>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Created by:</span>
+                      <span className={styles.metaValue}>{tag.created_by}</span>
+                    </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Created:</span>
+                      <span className={styles.metaValue}>{formatDate(tag.created_at)}</span>
+                    </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Updated:</span>
+                      <span className={styles.metaValue}>{formatDate(tag.last_updated)}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p>No tags available.</p>
+            <div className={styles.emptyState}>
+              <p className={styles.emptyMessage}>No tags available yet.</p>
+              <button
+                className={styles.primaryButton}
+                onClick={handleCreateClick}
+              >
+                Create First Tag
+              </button>
+            </div>
           )}
         </div>
       </div>

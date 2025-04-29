@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { PostSummary, Tag } from "../../../../types/forum";
-import { loadPostsByTag, loadTagById } from "../../../../utils/service/Forum/tag";
+import { loadTagandPostsByTag } from "../../../../utils/service/Forum/tag";
 
 const TagPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -23,8 +23,7 @@ const TagPage: React.FC = () => {
 
             try {
                 setLoading(true);
-                loadTagById(id, setLoading, setTag, setError);
-                loadPostsByTag(id, setLoading, setTag, setPosts, setError);
+                loadTagandPostsByTag(id, setLoading, setTag, setPosts, setError);
             } catch (err: any) {
                 console.error("Error fetching tag data:", err);
                 setError("Failed to load tag data.");
@@ -37,58 +36,89 @@ const TagPage: React.FC = () => {
     }, [id]);
 
     return (
-        <div>
+        <div className={styles.forumContainer}>
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
-            <div className={styles.container}>
+
+            <div className={styles.tagListContainer}>
                 {loading ? (
-                    <p>Loading tag...</p>
+                    <div className={styles.loadingState}>
+                        <div className={styles.spinner}></div>
+                        <p>Loading tag...</p>
+                    </div>
                 ) : error ? (
-                    <div className={styles.alert}>{error}</div>
+                    <div className={styles.errorAlert}>
+                        <span className={styles.errorIcon}>!</span>
+                        {error}
+                    </div>
                 ) : tag ? (
                     <div>
-                        <div className={styles.card}>
-                            <h1>#{tag.tag_name}</h1>
-                            <p>{tag.description}</p>
-                            <p>Used in {tag.usage_count} posts</p>
+                        {/* Tag Header Section */}
+                        <div className={styles.headerSection}>
+                            <h1 className={styles.pageTitle}>#{tag.tag_name}</h1>
+                            <p className={styles.pageSubtitle}>{tag.description}</p>
+                        </div>
+
+                        {/* Tag Info Card */}
+                        <div className={styles.tagCard}>
+                            <div className={styles.tagMeta}>
+                                <div className={styles.metaItem}>
+                                    <span className={styles.metaLabel}>Usage:</span>
+                                    <span className={styles.metaValue}>{tag.usage_count} posts</span>
+                                </div>
+                            </div>
 
                             <button
-                                className={styles.btnSecondary}
+                                className={`${styles.primaryButton} ${styles.createButton}`}
                                 onClick={() => navigate(`/forum/tags/update/${tag.tag_id}`)}
                             >
                                 Update Tag
                             </button>
                         </div>
 
-
                         {/* Posts List */}
-                        <div className={styles.card}>
-                            <h2>Posts with this Tag</h2>
-                            {posts.length > 0 ? (
-                                <ul className={styles.listGroup}>
-                                    {posts.map((post) => (
-                                        <li key={post.post_id} className={styles.listGroupItem}>
-                                            <h3>{post.title}</h3>
-                                            <p>{post.content.slice(0, 100)}...</p>
-                                            <p>By: {post.author}</p>
-                                            <p>Likes: {post.like_count}</p>
-                                            <button
-                                                className={styles.btnPrimary}
-                                                onClick={() => navigate(`/forum/posts/${post.post_id}`)}
-                                            >
-                                                View Post
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p>No posts available for this tag.</p>
-                            )}
+                        <div className={styles.headerSection}>
+                            <h2 className={styles.pageTitle}>Posts with this Tag</h2>
                         </div>
+
+                        {posts.length > 0 ? (
+                            <div className={styles.tagGrid}>
+                                {posts.map((post) => (
+                                    <div key={post.post_id} className={styles.tagCard}>
+                                        <h3 className={styles.tagName}>{post.title}</h3>
+                                        <p className={styles.tagDescription}>{post.content.slice(0, 100)}...</p>
+
+                                        <div className={styles.tagMeta}>
+                                            <div className={styles.metaItem}>
+                                                <span className={styles.metaLabel}>Author:</span>
+                                                <span className={styles.metaValue}>{post.author}</span>
+                                            </div>
+                                            <div className={styles.metaItem}>
+                                                <span className={styles.metaLabel}>Likes:</span>
+                                                <span className={styles.metaValue}>{post.like_count}</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            className={styles.primaryButton}
+                                            onClick={() => navigate(`/forum/posts/${post.post_id}`)}
+                                        >
+                                            View Post
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={styles.emptyState}>
+                                <p className={styles.emptyMessage}>No posts available for this tag.</p>
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    <p>Tag not found.</p>
+                    <div className={styles.emptyState}>
+                        <p className={styles.emptyMessage}>Tag not found.</p>
+                    </div>
                 )}
             </div>
         </div>

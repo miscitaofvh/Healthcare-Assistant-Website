@@ -333,13 +333,12 @@ export const validateForumPostCommentReport = [
     }
 ];
 
-// Tag
+
 export const validateTag = [
-    body("name")
+    body("tag_name")
         .notEmpty()
-        .withMessage("Tên tag là bắt buộc")
-        .isLength({ min: 3, max: 50 })
-        .withMessage("Tên tag phải từ 3-50 ký tự")
+        .isLength({ min: 2, max: 50 })
+        .withMessage("Tên tag phải từ 2-50 ký tự")
         .trim(),
     body("description")
         .optional()
