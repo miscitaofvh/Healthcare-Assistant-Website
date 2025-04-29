@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../../../components/Navbar";
-import styles from "../styles/Forum.module.css";
-import { PostSummary, Tag } from "../../../types/forum";
-import { loadPostsByTag, loadTagById } from "../../../utils/service/Forum/tag";
+import Navbar from "../../../../components/Navbar";
+import styles from "../../styles/Forum.module.css";
+import { PostSummary, Tag } from "../../../../types/forum";
+import { loadPostsByTag, loadTagById } from "../../../../utils/service/Forum/tag";
 
 const TagPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ const TagPage: React.FC = () => {
                 console.error("Error fetching tag data:", err);
                 setError("Failed to load tag data.");
             } finally {
-                setLoading(false); // Ensure loading is set to false after all calls
+                setLoading(false);
             }
         };
 
@@ -52,7 +52,15 @@ const TagPage: React.FC = () => {
                             <h1>#{tag.tag_name}</h1>
                             <p>{tag.description}</p>
                             <p>Used in {tag.usage_count} posts</p>
+
+                            <button
+                                className={styles.btnSecondary}
+                                onClick={() => navigate(`/forum/tags/update/${tag.tag_id}`)}
+                            >
+                                Update Tag
+                            </button>
                         </div>
+
 
                         {/* Posts List */}
                         <div className={styles.card}>
