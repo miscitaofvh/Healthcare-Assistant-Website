@@ -2,21 +2,21 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../components/Navbar";
 import styles from "../styles/Forum.module.css";
-import { CategoryResponse, ThreadResponse } from "../../../types/forum";
+import { Category, Thread } from "../../../types/forum";
 import { loadSingleCategory, loadThreadsByCategory } from "../../../utils/service/Forum/category";
 
 const CategoryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [category, setCategory] = useState<CategoryResponse | null>(null);
-  const [threads, setThreads] = useState<ThreadResponse[]>([]);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (id) {
-      loadSingleCategory(id, setLoading, setCategory, setError);
-      loadThreadsByCategory(id, setLoading, setThreads, setError);
+      // loadSingleCategory(id, setLoading, setCategory, setError);
+      loadThreadsByCategory(id, setLoading, setCategory, setThreads, setError);
     }
   }, [id]);
   return (

@@ -128,7 +128,7 @@ export const loadSingleCategory = async (
         setLoading(true);
         const response = await getCategoryById(Number(id));
         if (response?.data) {
-            setCategory(response.data);
+            setCategory(response.data.data);
         } else {
             setError("Failed to load category.");
         }
@@ -143,14 +143,17 @@ export const loadSingleCategory = async (
 export const loadThreadsByCategory = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setCategory: React.Dispatch<React.SetStateAction<Category | null>>,
     setThreads: React.Dispatch<React.SetStateAction<any[]>>,
     setError: React.Dispatch<React.SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
         const response = await getThreadsByCategory(Number(id));
+        // alert(JSON.stringify(response.data.threads));
         if (response?.data) {
-            setThreads(response.data);
+            setCategory(response.data.data);
+            setThreads(response.data.threads);
         } else {
             setError("Failed to load threads.");
         }

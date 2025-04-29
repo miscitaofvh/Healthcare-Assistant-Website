@@ -126,12 +126,12 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
 
         const sqlCategory =
             `SELECT 
-                fc.category_id AS categoryId, 
-                fc.category_name AS categoryName,
+                fc.category_id, 
+                fc.category_name,
                 fc.description,
-                fc.created_at AS createdAt,
-                fc.last_updated AS lastUpdated,
-                u.username AS createdBy
+                fc.created_at,
+                fc.last_updated,
+                u.username AS created_by
             FROM forum_categories fc
             JOIN users u ON fc.user_id = u.user_id
             WHERE fc.category_id = ?`;
@@ -145,12 +145,12 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
 
         const sqlThreads =
             `SELECT 
-                ft.thread_id AS threadId,
-                ft.thread_name AS threadName,
+                ft.thread_id,
+                ft.thread_name,
                 ft.description,
-                ft.created_at AS createdAt,
-                ft.last_updated AS lastUpdated,
-                u.username AS author
+                ft.created_at,
+                ft.last_updated,
+                u.username AS created_by
             FROM forum_threads ft
             JOIN users u ON ft.user_id = u.user_id
             WHERE ft.category_id = ?
