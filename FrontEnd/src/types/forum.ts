@@ -43,11 +43,16 @@ export interface ThreadSummary {
 }
 export interface Thread {
     thread_id: number;
-    author: string;
+    created_by: string;
     thread_name: string;
     description: string | null;
     created_at: string;
     last_updated: string;
+    last_post_date: string | null;
+    last_post_author: string | null;
+    post_count: number;
+    category_id: number;
+    category_name: string;
 }
 
 // Category Interfaces
@@ -67,6 +72,8 @@ export interface Category {
     description: string | null;
     created_at: string;
     last_updated: string;
+    thread_count: number;
+    post_count: number;
 }
 
 export interface CategoryMain {

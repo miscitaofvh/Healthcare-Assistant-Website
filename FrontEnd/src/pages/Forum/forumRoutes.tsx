@@ -3,6 +3,8 @@ import Forum from "./pages";
 import CreatePost from "./pages/CreatePostPage";
 import CategoryList from "./pages/Category/CategoryList";
 import CategoryPage from "./pages/Category/CategoryPage";
+import CreateCategory from "./pages/Category/CreateCategory";
+import UpdateCategory from "./pages/Category/UpdateCategory";
 import ThreadList from "./pages/ThreadList";
 import ThreadPage from "./pages/ThreadPage";
 import PostList from "./pages/PostList";
@@ -15,16 +17,38 @@ import UpdateTag from "./pages/Tag/UpdateTag";
 export const forumRoutes = (
   <Route path="/forum">
     <Route index element={<Forum />} />
-    <Route path="tags" element={<TagList />} />
-    <Route path="tags/:id" element={<TagPage />} />
-    <Route path="tags/create" element={<CreateTag />} />
-    <Route path="tags/update/:id" element={<UpdateTag />} />
-    <Route path="create" element={<CreatePost />} />
-    <Route path="posts" element={<PostList />} />
-    <Route path="posts/:id" element={<PostDetail />} />
-    <Route path="categories" element={<CategoryList />} />
-    <Route path="categories/:id" element={<CategoryPage />} />
-    <Route path="threads" element={<ThreadList />} />
-    <Route path="threads/:id" element={<ThreadPage />} />
+    
+    {/* Posts routes */}
+    <Route path="create-post" element={<CreatePost />} />
+    <Route path="posts">
+      <Route index element={<PostList />} />
+      <Route path=":id" element={<PostDetail />} />
+    </Route>
+    
+    {/* Threads routes */}
+    <Route path="threads">
+      <Route index element={<ThreadList />} />
+      <Route path=":id" element={<ThreadPage />} />
+    </Route>
+    
+    {/* Categories routes */}
+    <Route path="categories">
+      <Route index element={<CategoryList />} />
+      <Route path="create" element={<CreateCategory />} />
+      <Route path=":id">
+        <Route index element={<CategoryPage />} />
+        <Route path="update" element={<UpdateCategory />} />
+      </Route>
+    </Route>
+    
+    {/* Tags routes */}
+    <Route path="tags">
+      <Route index element={<TagList />} />
+      <Route path="create" element={<CreateTag />} />
+      <Route path=":id">
+        <Route index element={<TagPage />} />
+        <Route path="update" element={<UpdateTag />} />
+      </Route>
+    </Route>
   </Route>
 );

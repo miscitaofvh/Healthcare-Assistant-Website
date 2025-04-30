@@ -71,7 +71,7 @@ const TagPage: React.FC = () => {
 
                             <button
                                 className={`${styles.primaryButton} ${styles.createButton}`}
-                                onClick={() => navigate(`/forum/tags/update/${tag.tag_id}`)}
+                                onClick={() => navigate(`/forum/tags/${tag.tag_id}/update`)}
                             >
                                 Update Tag
                             </button>

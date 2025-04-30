@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { Category, Thread } from "../../../../types/forum";
-import { loadSingleCategory, loadThreadsByCategory } from "../../../../utils/service/Forum/category";
+import { loadThreadsandCategoryByCategory } from "../../../../utils/service/Forum/category";
 
 const CategoryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,52 +15,104 @@ const CategoryDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      // loadSingleCategory(id, setLoading, setCategory, setError);
-      loadThreadsByCategory(id, setLoading, setCategory, setThreads, setError);
+      loadThreadsandCategoryByCategory(id, setLoading, setCategory, setThreads, setError);
     }
   }, [id]);
+
   return (
-    <div>
+    <div className={styles.forumContainer}>
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
-      <div className={styles.container}>
+
+      <div className={styles.tagListContainer}>
         {loading ? (
-          <p>Loading category...</p>
+          <div className={styles.loadingState}>
+            <div className={styles.spinner}></div>
+            <p>Loading category...</p>
+          </div>
         ) : error ? (
-          <div className={styles.alert}>{error}</div>
+          <div className={styles.errorAlert}>
+            <span className={styles.errorIcon}>!</span>
+            {error}
+          </div>
         ) : category ? (
           <div>
-            <div className={styles.card}>
-              <h1>{category.category_name}</h1>
-              <p>{category.description}</p>
+            {/* Category Header Section */}
+            <div className={styles.headerSection}>
+              <h1 className={styles.pageTitle}>{category.category_name}</h1>
+              <p className={styles.pageSubtitle}>{category.description}</p>
+            </div>
+
+            {/* Category Info Card */}
+            <div className={styles.tagCard}>
+              <div className={styles.tagMeta}>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Usage:</span>
+                  <span className={styles.metaValue}>{category.thread_count} threads</span>
+                </div>
+              </div>
+              <button
+                className={`${styles.primaryButton} ${styles.createButton}`}
+                onClick={() => navigate(`/forum/categories/${category.category_id}/update`)}
+              >
+                Update Category
+              </button>
             </div>
 
             {/* Threads List */}
-            <div className={styles.card}>
-              <h2>Threads in this Category</h2>
-              {threads.length > 0 ? (
-                <ul className={styles.listGroup}>
-                  {threads.map((thread) => (
-                    <li key={thread.thread_id} className={styles.listGroupItem}>
-                      <h3>{thread.thread_name}</h3>
-                      <p>{thread.description}</p>
-                      <button
-                        className={styles.btnPrimary}
-                        onClick={() => navigate(`/forum/threads/${thread.thread_id}`)}
-                      >
-                        View Thread
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No threads available in this category.</p>
-              )}
+            <div className={styles.headerSection}>
+              <h2 className={styles.pageTitle}>Threads in this Category</h2>
             </div>
+
+            {threads.length > 0 ? (
+              <div className={styles.tagGrid}>
+                {threads.map((thread) => (
+                  <div
+                    key={thread.thread_id}
+                    className={styles.tagCard}
+                    onClick={() => navigate(`/forum/threads/${thread.thread_id}`)}
+                  >
+                    <h3 className={styles.tagName}>{thread.thread_name}</h3>
+                    <p className={styles.tagDescription}>{thread.description}</p>
+
+                    <div className={styles.tagMeta}>
+                      <div className={styles.metaItem}>
+                        <span className={styles.metaLabel}>Posts:</span>
+                        <span className={styles.metaValue}>{thread.post_count}</span>
+                      </div>
+                      {thread.last_post_date && (
+                        <div className={styles.metaItem}>
+                          <span className={styles.metaLabel}>Last post:</span>
+                          <span className={styles.metaValue}>
+                            {new Date(thread.last_post_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      className={styles.primaryButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/forum/threads/${thread.thread_id}`);
+                      }}
+                    >
+                      View Thread
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyMessage}>No threads available in this category.</p>
+              </div>
+            )}
           </div>
         ) : (
-          <p>Category not found.</p>
+          <div className={styles.emptyState}>
+            <p className={styles.emptyMessage}>Category not found.</p>
+          </div>
         )}
       </div>
     </div>

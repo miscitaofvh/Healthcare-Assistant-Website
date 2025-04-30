@@ -32,7 +32,7 @@ export const getAllCategoriesDB = async () => {
 
         const [categories] = await conn.execute(sql);
         await conn.commit();
-        
+
         return categories.map(category => ({
             ...category,
             thread_count: Number(category.thread_count),
@@ -133,25 +133,39 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
 
-        if (isNaN(categoryIdNum) || categoryIdNum <= 0) {
+        if (isNaN(categoryIdNum)) {
             throw new Error("Invalid category ID");
         }
-        if (isNaN(pageNum) || pageNum < 1 || isNaN(limitNum) || limitNum < 1) {
-            throw new Error("Invalid pagination values");
+        if (isNaN(pageNum)) {
+            throw new Error("Invalid page number");
+        }
+        if (isNaN(limitNum)) {
+            throw new Error("Invalid limit value");
         }
 
         const offset = (pageNum - 1) * limitNum;
 
         conn = await connection.getConnection();
 
-        const sqlCategory =
-            `SELECT 
+        const sqlCategory = `
+            SELECT 
                 fc.category_id, 
                 fc.category_name,
                 fc.description,
                 fc.created_at,
                 fc.last_updated,
-                u.username AS created_by
+                u.username AS created_by,
+                (
+                    SELECT COUNT(*) 
+                    FROM forum_threads 
+                    WHERE category_id = fc.category_id
+                ) AS thread_count,
+                (
+                    SELECT COUNT(*)
+                    FROM forum_posts fp
+                    JOIN forum_threads ft ON fp.thread_id = ft.thread_id
+                    WHERE ft.category_id = fc.category_id
+                ) AS post_count
             FROM forum_categories fc
             JOIN users u ON fc.user_id = u.user_id
             WHERE fc.category_id = ?`;
@@ -163,21 +177,37 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
 
         const category = categoryResult[0];
 
-        const sqlThreads =
-            `SELECT 
+        const sqlThreads = `
+            SELECT 
                 ft.thread_id,
                 ft.thread_name,
                 ft.description,
                 ft.created_at,
                 ft.last_updated,
-                u.username AS created_by
+                u.username AS created_by,
+                COUNT(fp.post_id) AS post_count,
+                MAX(fp.created_at) AS last_post_date,
+                (
+                    SELECT username
+                    FROM users
+                    WHERE user_id = (
+                        SELECT user_id
+                        FROM forum_posts
+                        WHERE thread_id = ft.thread_id
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    )
+                ) AS last_post_author
             FROM forum_threads ft
             JOIN users u ON ft.user_id = u.user_id
+            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
             WHERE ft.category_id = ?
-            ORDER BY ft.created_at DESC
+            GROUP BY ft.thread_id
+            ORDER BY IFNULL(last_post_date, 0) DESC, ft.created_at DESC
             LIMIT ? OFFSET ?`;
         const [threads] = await conn.execute(sqlThreads, [categoryIdNum, limitNum.toString(), offset.toString()]);
 
+        // Get total thread count for pagination
         const [countResult] = await conn.execute(
             `SELECT COUNT(*) AS totalCount FROM forum_threads WHERE category_id = ?`,
             [categoryIdNum]
@@ -185,12 +215,21 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
         const totalCount = countResult[0].totalCount || 0;
 
         return {
-            category,
-            threads,
-            totalCount,
-            currentPage: pageNum,
-            totalPages: Math.ceil(totalCount / limitNum),
-            itemsPerPage: limitNum
+            category: {
+                ...category,
+                thread_count: Number(category.thread_count),
+                post_count: Number(category.post_count)
+            },
+            threads: threads.map(thread => ({
+                ...thread,
+                post_count: Number(thread.post_count)
+            })),
+            pagination: {
+                totalItems: totalCount,
+                currentPage: pageNum,
+                totalPages: Math.ceil(totalCount / limitNum),
+                itemsPerPage: limitNum
+            }
         };
 
     } catch (error) {

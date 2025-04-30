@@ -43,7 +43,7 @@ const CategoryList: React.FC = () => {
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
-      
+
       <div className={styles.tagListContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Forum Categories</h1>
@@ -65,7 +65,7 @@ const CategoryList: React.FC = () => {
         )}
 
         <div className={styles.buttonGroup} style={{ justifyContent: 'flex-end' }}>
-        <button
+          <button
             className={`${styles.primaryButton} ${styles.createButton}`}
             onClick={handleCreateClick}
           >
@@ -81,7 +81,7 @@ const CategoryList: React.FC = () => {
         ) : categories.length > 0 ? (
           <div className={styles.tagGrid}>
             {categories.map((category) => (
-              <div 
+              <div
                 key={category.category_id}
                 className={styles.tagCard}
                 onClick={() => handleCategoryClick(category.category_id)}

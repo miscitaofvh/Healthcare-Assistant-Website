@@ -13,35 +13,33 @@ const UpdateTag: React.FC = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const [initialLoad, setInitialLoad] = useState(true);
-
   useEffect(() => {
     const fetchTag = async () => {
+      setInitialLoad(true);
+      setError("");
       try {
-        setInitialLoad(true);
         await loadTags(
-          () => {},
+          () => {}, 
           (tags: Tag[]) => {
             const found = tags.find((t) => t.tag_id === parseInt(id || ""));
             if (found) {
-              setTag(found);
+              setTag(found); 
             } else {
-              setError("Tag not found");
+              setError("Tag not found"); 
             }
           },
-          (err: string) => {
-            setError(err || "Failed to load tag");
-          },
+          setError,
           () => setInitialLoad(false)
         );
       } catch (err) {
-        setError("An unexpected error occurred");
-        setInitialLoad(false);
+        setError("An unexpected error occurred"); 
+        setInitialLoad(false); 
       }
     };
-
+  
     fetchTag();
-  }, [id]);
-
+  }, [id]); 
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag?.tag_id) return;
@@ -101,7 +99,7 @@ const UpdateTag: React.FC = () => {
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
-      
+
       <div className={styles.tagListContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Update Tag</h1>
@@ -159,7 +157,7 @@ const UpdateTag: React.FC = () => {
                   {(tag.description?.length || 0)}/200 characters
                 </small>
               </div>
-              
+
               <div className={styles.buttonGroup}>
                 <button
                   type="button"

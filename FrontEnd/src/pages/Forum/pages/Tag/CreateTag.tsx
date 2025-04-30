@@ -6,9 +6,9 @@ import { NewTag } from "../../../../types/forum";
 import { useNavigate } from "react-router-dom";
 
 const CreateTag: React.FC = () => {
-    const [newTag, setNewTag] = useState<NewTag>({ 
-        tag_name: "", 
-        description: "" 
+    const [newTag, setNewTag] = useState<NewTag>({
+        tag_name: "",
+        description: ""
     });
     const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState("");
@@ -17,21 +17,21 @@ const CreateTag: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!newTag.tag_name) {
             setError("Tag name is required");
             return;
-          }
-      
-          if (newTag.tag_name.length > 50 || newTag.tag_name.length < 1) {
+        }
+
+        if (newTag.tag_name.length > 50 || newTag.tag_name.length < 1) {
             setError("Tag name must be from 2 to 50 characters long");
             return;
-          }
-      
-          if (newTag.description && (newTag.description.length > 200 || newTag.description.length < 10)) {
+        }
+
+        if (newTag.description && (newTag.description.length > 200 || newTag.description.length < 10)) {
             setError("Description must be from 10 to 200 characters long");
             return;
-          }
+        }
 
         setError("");
         setFormLoading(true);
@@ -41,10 +41,10 @@ const CreateTag: React.FC = () => {
                 {
                     tag_name: newTag.tag_name.trim(),
                     description: newTag.description?.trim() || undefined
-                }, 
-                setFormLoading, 
-                setError, 
-                setSuccess, 
+                },
+                setFormLoading,
+                setError,
+                setSuccess,
                 () => navigate("/forum/tags")
             );
         } catch (err) {
@@ -60,7 +60,7 @@ const CreateTag: React.FC = () => {
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
-            
+
             <div className={styles.tagListContainer}>
                 <div className={styles.headerSection}>
                     <h1 className={styles.pageTitle}>Create New Tag</h1>
@@ -92,7 +92,7 @@ const CreateTag: React.FC = () => {
                                 id="tagName"
                                 className={styles.formInput}
                                 value={newTag.tag_name}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                     setNewTag({ ...newTag, tag_name: e.target.value })
                                 }
                                 required
@@ -110,7 +110,7 @@ const CreateTag: React.FC = () => {
                                 id="tagDescription"
                                 className={styles.formTextarea}
                                 value={newTag.description}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                     setNewTag({ ...newTag, description: e.target.value })
                                 }
                                 maxLength={200}
@@ -121,7 +121,7 @@ const CreateTag: React.FC = () => {
                                 {newTag.description?.length || 0}/200 characters
                             </small>
                         </div>
-                        
+
                         <div className={styles.buttonGroup}>
                             <button
                                 type="button"

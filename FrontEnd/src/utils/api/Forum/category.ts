@@ -42,7 +42,7 @@ export async function createCategory(category: NewCategory) {
     return response;
 }
 
-export async function updateCategory(id: number, category: Category) {
+export async function updateCategory(id: number, category: NewCategory) {
     const response = await requestAPI(BASE_URL, `/categories/${id}`, "PUT", category);
     return response;
 }

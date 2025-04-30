@@ -33,7 +33,7 @@ export const getAllCategories = async (req, res) => {
         res.status(200).json({
             success: true,
             count: categories.length,
-            data: categories,
+            categories: categories,
             message: "Categories retrieved successfully",
             timestamp: new Date().toISOString()
         });
@@ -212,21 +212,22 @@ export const getThreadsByCategory = async (req, res) => {
 
         const { category, threads, totalCount } = await getThreadsByCategoryDB(id, page, limit);
 
-        if (!threads || threads.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No threads found for this category",
-                errorCode: "NO_THREADS_FOUND",
-                metadata: {
-                    categoryId: id,
-                    searchedAt: new Date().toISOString()
-                }
-            });
-        }
+        // if (!threads || threads.length === 0) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: "No threads found for this category",
+        //         errorCode: "NO_THREADS_FOUND",
+        //         metadata: {
+        //             categoryId: id,
+        //             searchedAt: new Date().toISOString()
+        //         }
+        //     });
+        // }
 
         res.status(200).json({
             success: true,
-            data: category, threads,
+            category: category, 
+            threads: threads,
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalCount / limit),
