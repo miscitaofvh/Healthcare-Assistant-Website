@@ -7,6 +7,7 @@ export interface TagMapping {
 }
 
 export interface NewTag {
+    tag_id?: number;
     tag_name: string;
     description?: string;
 }
@@ -101,7 +102,27 @@ export interface PostComment {
     last_updated: string;
 }
 
-// Post Interfaces
+export interface PostTag {
+    tag_id: number;
+    tag_name: string;
+}
+
+export interface PostListResponse {
+    author: string;
+    category_id: number;
+    category_name: string;
+    thread_id: number;
+    thread_name: string;
+    post_id: number;
+    title: string;
+    content: string;
+    image_url: string | null;
+    created_at: string;
+    last_updated: string;
+    like_count: number;
+    tags: PostTag[];
+}
+
 export interface PostSummary {
     author: string;
     post_id: number;
@@ -113,7 +134,6 @@ export interface PostSummary {
     like_count: number;
     tags: string[];
 }
-
 export interface Post {
     author: string;
     post_id: number;
@@ -127,7 +147,7 @@ export interface Post {
     category_id: number;
     category_name: string;
     like_count: number;
-    tags: string[];
+    tags: PostTag[];
     comments: PostComment[];
 }
 // Like Interfaces

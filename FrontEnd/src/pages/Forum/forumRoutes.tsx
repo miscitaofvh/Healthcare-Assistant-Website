@@ -1,6 +1,8 @@
 import { Route } from "react-router-dom";
 import Forum from "./pages";
-import CreatePost from "./pages/CreatePostPage";
+import PostList from "./pages/Post/PostList";
+import PostDetail from "./pages/Post/PostPage";
+import CreatePost from "./pages/Post/CreatePost";
 import CategoryList from "./pages/Category/CategoryList";
 import CategoryPage from "./pages/Category/CategoryPage";
 import CreateCategory from "./pages/Category/CreateCategory";
@@ -9,8 +11,6 @@ import ThreadList from "./pages/Thread/ThreadList";
 import ThreadPage from "./pages/Thread/ThreadPage";
 import CreateThread from "./pages/Thread/CreateThread";
 import UpdateThread from "./pages/Thread/UpdateThread";
-import PostList from "./pages/PostList";
-import PostDetail from "./pages/PostPage";
 import TagList from "./pages/Tag/TagList";
 import TagPage from "./pages/Tag/TagPage";
 import CreateTag from "./pages/Tag/CreateTag";
@@ -19,14 +19,17 @@ import UpdateTag from "./pages/Tag/UpdateTag";
 export const forumRoutes = (
   <Route path="/forum">
     <Route index element={<Forum />} />
-    
+
     {/* Posts routes */}
-    <Route path="create-post" element={<CreatePost />} />
     <Route path="posts">
       <Route index element={<PostList />} />
-      <Route path=":id" element={<PostDetail />} />
+      <Route path="create" element={<CreatePost />} />
+      <Route path=":id">
+        <Route index element={<PostDetail />} />
+        {/* <Route path="update" element={<UpdatePost />} /> */}
+      </Route>
     </Route>
-    
+
     {/* Threads routes */}
     <Route path="threads">
       <Route index element={<ThreadList />} />
@@ -36,7 +39,7 @@ export const forumRoutes = (
         <Route path="update" element={<UpdateThread />} />
       </Route>
     </Route>
-    
+
     {/* Categories routes */}
     <Route path="categories">
       <Route index element={<CategoryList />} />
@@ -46,7 +49,7 @@ export const forumRoutes = (
         <Route path="update" element={<UpdateCategory />} />
       </Route>
     </Route>
-    
+
     {/* Tags routes */}
     <Route path="tags">
       <Route index element={<TagList />} />

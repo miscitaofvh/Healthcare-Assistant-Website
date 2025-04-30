@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../../components/Navbar";
-import styles from "../styles/Forum.module.css";
-import { createPost } from "../../../utils/api/Forum/main";
+import Navbar from "../../../../components/Navbar";
+import styles from "../../styles/Forum1.module.css";
+import { createPost } from "../../../../utils/api/Forum/main";
 
 interface PostData {
   category_name: string;

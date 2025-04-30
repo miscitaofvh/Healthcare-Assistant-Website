@@ -1,16 +1,55 @@
 import connection from '../../config/connection.js';
 
-export const getAllPostsDB = async () => {
+export const getAllPostsDB = async (
+    page = 1,
+    limit = 20,
+    search = '',
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+    categoryId = null,
+    tagId = null
+) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
+
+        const offset = (page - 1) * limit;
+
+        const conditions = [];
+        const params = [];
+
+        if (search) {
+            conditions.push(`(p.title LIKE ? OR p.content LIKE ?)`);
+            params.push(`%${search}%`, `%${search}%`).toString();
+        }
+
+        if (categoryId) {
+            conditions.push(`c.category_id = ?`);
+            params.push(categoryId).toString();
+        }
+
+        if (tagId) {
+            conditions.push(`ft.tag_id = ?`);
+            params.push(tagId).toString();
+        }
+
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : '';
+
         const sql = `
             SELECT 
+                SQL_CALC_FOUND_ROWS
                 u.username AS author, 
-                c.category_id, c.category_name,
-                t.thread_id, t.thread_name,
-                p.post_id, p.content,  p.title, p.image_url, p.created_at, p.last_updated,
+                c.category_id, 
+                c.category_name,
+                t.thread_id, 
+                t.thread_name,
+                p.post_id, 
+                p.content,  
+                p.title, 
+                p.image_url, 
+                p.created_at, 
+                p.last_updated,
                 IFNULL(l.like_count, 0) AS like_count,
                 JSON_ARRAYAGG(
                     CASE 
@@ -29,24 +68,38 @@ export const getAllPostsDB = async () => {
             ) l ON p.post_id = l.post_id
             LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
             LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
-            GROUP BY p.post_id, u.username, u.user_id, t.thread_name, t.thread_id, c.category_name, c.category_id, l.like_count
-            ORDER BY p.created_at DESC
+            ${whereClause}
+            GROUP BY 
+                p.post_id, p.content, p.title, p.image_url, p.created_at, p.last_updated,
+                u.username,
+                c.category_id, c.category_name,
+                t.thread_id, t.thread_name,
+                l.like_count
+            ORDER BY p.${sortBy} ${sortOrder}
+            LIMIT ? OFFSET ?
         `;
-        const [posts] = await conn.execute(sql);
+
+        params.push(limit.toString(), offset.toString());
+
+        const [posts] = await conn.execute(sql, params);
+        const [[{ 'FOUND_ROWS()': totalPosts }]] = await conn.query('SELECT FOUND_ROWS()');
+
         await conn.commit();
 
-        const cleanPosts = posts.map(post => {
-            if (!post.tags || (post.tags.length === 1 && post.tags[0] === null)) {
-                post.tags = [];
-            }
-            return post;
-        });
+        const cleanPosts = posts.map(post => ({
+            ...post,
+            like_count: Number(post.like_count),
+            tags: (!post.tags || (post.tags.length === 1 && post.tags[0] === null)) ? [] : post.tags
+        }));
 
-        return cleanPosts;
+        return {
+            posts: cleanPosts,
+            totalPosts
+        };
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Error getting posts:", error);
-        throw new Error("Failed to get posts");
+        console.error("Database error in getAllPostsDB:", error);
+        throw new Error("Failed to retrieve posts from database");
     } finally {
         if (conn) conn.release();
     }
@@ -97,71 +150,88 @@ export const getSummaryPostsDB = async () => {
     }
 };
 
-export const getPostByIdDB = async (postId) => {
+export const getPostByIdDB = async (postId, options = {}) => {
+    const {
+        includeComments = false,
+        includeAuthor = true,
+        includeStats = false
+    } = options;
+
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-        const sql = `
-            SELECT 
-                u.username AS author,
-                p.post_id, p.title, p.content, 
-                p.image_url, p.created_at, p.last_updated,
-                t.thread_id, t.thread_name, 
-                c.category_id, c.category_name, 
-                COUNT(DISTINCT l.like_id) AS like_count,
-                GROUP_CONCAT(DISTINCT ft.tag_name) AS tags
-            FROM forum_posts p
-            JOIN users u ON p.user_id = u.user_id
-            JOIN forum_threads t ON p.thread_id = t.thread_id
-            JOIN forum_categories c ON t.category_id = c.category_id
-            LEFT JOIN forum_likes l ON p.post_id = l.post_id
-            LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
-            LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
-            WHERE p.post_id = ?
-            GROUP BY p.post_id;
-        `;
 
-        const [post] = await conn.execute(sql, [postId]);
+        const postSql = `
+        SELECT 
+            p.post_id, p.title, p.content, p.image_url, 
+            p.created_at, p.last_updated,
+            t.thread_id, t.thread_name, 
+            c.category_id, c.category_name,
+            ${includeAuthor ? 'u.username AS author,' : ''}
+            ${includeStats ? 'COUNT(DISTINCT l.like_id) AS like_count,' : '0 AS like_count,'}
+            GROUP_CONCAT(DISTINCT CONCAT(ft.tag_id, ':', ft.tag_name)) AS tags
+        FROM forum_posts p
+        JOIN forum_threads t ON p.thread_id = t.thread_id
+        JOIN forum_categories c ON t.category_id = c.category_id
+        ${includeAuthor ? 'JOIN users u ON p.user_id = u.user_id' : ''}
+        ${includeStats ? 'LEFT JOIN forum_likes l ON p.post_id = l.post_id' : ''}
+        LEFT JOIN forum_tags_mapping ftm ON p.post_id = ftm.post_id
+        LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
+        WHERE p.post_id = ?
+        GROUP BY p.post_id;
+    `;
 
-        if (!post[0]) {
+
+        const [postRows] = await conn.execute(postSql, [postId]);
+
+        if (!postRows[0]) {
             throw new Error("Post not found");
         }
 
-        // Get comments separately to avoid duplication
-        const commentsSql = `
-            SELECT 
-                c.post_id, c.comment_id, c.content, 
-                c.created_at, c.last_updated,
-                u.username
-            FROM forum_comments c
-            JOIN users u ON c.user_id = u.user_id
-            WHERE c.post_id = ?
-            ORDER BY c.created_at;
-        `;
-        const [comments] = await conn.execute(commentsSql, [postId]);
+        const post = postRows[0];
+
+        post.tags = post.tags
+            ? post.tags.split(',').map(tag => {
+                const [tag_id, tag_name] = tag.split(':');
+                return { tag_id: parseInt(tag_id), tag_name };
+            })
+            : [];
+
+        let comments = [];
+        if (includeComments) {
+            const commentSql = `
+                SELECT 
+                    c.post_id,
+                    c.comment_id, c.content, 
+                    c.created_at, c.last_updated,
+                    u.username
+                FROM forum_comments c
+                JOIN users u ON c.user_id = u.user_id
+                WHERE c.post_id = ?
+                ORDER BY c.created_at;
+            `;
+            const [commentRows] = await conn.execute(commentSql, [postId]);
+            comments = commentRows.map(c => ({
+                post_id: c.post_id,
+                comment_id: c.comment_id,
+                username: c.username,
+                content: c.content,
+                created_at: c.created_at,
+                last_updated: c.last_updated
+            }));
+        }
 
         await conn.commit();
 
-        const postWithTagsAndComments = {
-            ...post[0],
-            tags: post[0].tags ? post[0].tags.split(',') : [],
-            comments: comments.map(comment => ({
-                post_id: comment.post_id,
-                comment_id: comment.comment_id,
-                username: comment.username,
-                content: comment.content,
-                created_at: comment.created_at,
-                last_updated: comment.last_updated,
-                user_id: comment.user_id
-            }))
+        return {
+            ...post,
+            comments
         };
-
-        return postWithTagsAndComments;
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Error getting post:", error);
-        throw error;
+        console.error("Error in getPostByIdDB:", error.message);
+        throw new Error(error.message || "Failed to get post");
     } finally {
         if (conn) conn.release();
     }

@@ -45,6 +45,7 @@ const UpdateTag: React.FC = () => {
     if (!tag?.tag_id) return;
 
     const updatedTag: NewTag = {
+      tag_id: tag.tag_id,
       tag_name: tag.tag_name.trim(),
       description: tag.description?.trim() || undefined,
     };

@@ -9,62 +9,96 @@ import {
     createComment,
     deleteComment,
 } from "../../../utils/api/Forum/post";
-
-import { PostSummary, Post } from "../../../types/forum";
+import { Dispatch, SetStateAction } from "react";
+import { PostListResponse, Post } from "../../../types/forum";
 import { PostComment } from "../../../types/forum";
+import { on } from "events";
 
 // Posts list functions
 export const loadPosts = async (
-    setLoading: (loading: boolean) => void,
-    setPosts: (posts: PostSummary[]) => void,
-    setError: (error: string) => void
-) => {
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setPosts: (posts: PostListResponse[]) => void,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+): Promise<void> => {
+    const handleError = (message: string) => {
+        setError(`Không thể tải posts: ${message}`);
+        setSuccess("");
+    };
     try {
         setLoading(true);
-        const res = await getPosts();
-        if (res.status !== 200) {
-            throw new Error("Failed to load posts");
+        const response = await getPosts();
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
+            return handleError(errorMsg);
         }
-        setPosts(res.data.data);
+        setPosts(data.data.posts ?? []);
+        setSuccess("Tải danh sách posts thành công");
     } catch (err: any) {
-        console.error("Error loading posts:", err);
-        setError(err.message || "Something went wrong while loading posts.");
+        const errorMsg =
+            err?.response?.data?.message ??
+            err?.message ??
+            "Đã xảy ra lỗi khi tải danh sách category";
+        handleError(errorMsg);
     } finally {
         setLoading(false);
     }
 };
 
 // Post detail functions
-export const fetchPost = async (
+export const loadPostPageById = async (
     id: string,
-    setLoading: (loading: boolean) => void,
-    setPost: (post: Post) => void,
-    setError: (error: string) => void
-) => {
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setPost: (post: Post | null) => void,
+    setComments: (comments: PostComment[]) => void,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    onSuccess?: () => void
+): Promise<void> => {
+    const handleError = (message: string) => {
+        setError(`Không thể tải posts: ${message}`);
+        setSuccess("");
+    };
     try {
         setLoading(true);
-        const response = await getPostById(id);
-        setPost(response.data.data);
-    } catch (error) {
-        console.error("Error loading post:", error);
-        setError("Không thể tải bài viết.");
-    } finally {
-        setLoading(false);
-    }
-};
+        setError('');
+        setSuccess('');
 
-export const fetchComments = async (
-    id: string,
-    setLoading: (loading: boolean) => void,
-    setComments: (comments: PostComment[]) => void, // Set state with an array of PostComment
-    setError: (error: string) => void
-) => {
-    try {
-        const response = await getComments(id);
-        setComments(response.data); // Ensure response.data is an array of PostComment
-    } catch (error) {
-        console.error("Error loading comments:", error);
-        setError("Không thể tải bình luận.");
+        const response = await getPostById(`${id}?includeComments=true`);
+
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
+            return handleError(errorMsg);
+        }
+        const post = data.post;
+        if (!post) {
+          throw new Error("Post not found");
+        }
+    
+        const comments = Array.isArray(post.comments) ? post.comments : [];
+        setPost(post);
+        setComments(comments);
+        setSuccess('Post loaded successfully');
+
+        if (onSuccess) {
+            onSuccess();
+        }
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to load post';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+        setPost(null);
+        setComments([]);
     } finally {
         setLoading(false);
     }
@@ -72,42 +106,85 @@ export const fetchComments = async (
 
 export const deletePostFE = async (
     id: string,
-    setLoading: (loading: boolean) => void,
-    setError: (error: string) => void
-) => {
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    onSuccess?: () => void
+): Promise<void> => {
     try {
-        const response = await deletePost(id); // Ensure you're calling the correct API method here.
-        if (response.status !== 200) {
-            throw new Error("Failed to delete post");
-        }
         setLoading(true);
-        alert("Bài viết đã được xoá.");
-        window.location.href = "/forum"; // Redirect to forum list after deleting.
-    } catch (error) {
-        console.error("Lỗi khi xoá bài viết:", error);
-        setError("Không thể xoá bài viết.");
-        alert("Không thể xoá bài viết.");
+        setError('');
+        setSuccess('');
+
+        const response = await deletePost(id);
+
+        if (response.status !== 200 || !response.data?.success) {
+            throw new Error(response.data?.message || 'Failed to delete post: Server error');
+        }
+
+        setSuccess('Post deleted successfully');
+
+        if (onSuccess) {
+            setTimeout(onSuccess, 2000); // Delay redirect to show success message
+        }
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to delete post';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+    } finally {
+        setLoading(false);
     }
 };
 
 
 export const handleCommentSubmit = async (
-    id: string,
+    postId: string,
     commentText: string,
     setCommentText: (text: string) => void,
-    fetchComments: () => void
-) => {
-    if (!commentText.trim()) return;
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    fetchComments: () => Promise<void>
+): Promise<void> => {
     try {
-        const response = await createComment(id, { content: commentText });
-        if (response.status !== 200) {
-            throw new Error("Failed to create comment");
+        if (!postId) {
+            throw new Error('Invalid post ID');
         }
-        alert("Bình luận đã được gửi.");
-        setCommentText("");
-        fetchComments();
-    } catch (error) {
-        console.error("Lỗi khi đăng bình luận:", error);
-        alert("Không thể đăng bình luận.");
+
+        const trimmedComment = commentText.trim();
+        if (!trimmedComment) {
+            throw new Error('Comment cannot be empty');
+        }
+
+        setError('');
+        setSuccess('');
+
+        const response = await createComment(postId, { content: trimmedComment });
+
+        if (response.status !== 200 || !response.data?.success) {
+            throw new Error(response.data?.message || 'Failed to create comment');
+        }
+
+        setCommentText('');
+        setSuccess('Comment posted successfully');
+
+        await fetchComments();
+
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to post comment';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+        setSuccess('');
     }
 };
