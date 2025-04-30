@@ -5,8 +5,10 @@ import CategoryList from "./pages/Category/CategoryList";
 import CategoryPage from "./pages/Category/CategoryPage";
 import CreateCategory from "./pages/Category/CreateCategory";
 import UpdateCategory from "./pages/Category/UpdateCategory";
-import ThreadList from "./pages/ThreadList";
-import ThreadPage from "./pages/ThreadPage";
+import ThreadList from "./pages/Thread/ThreadList";
+import ThreadPage from "./pages/Thread/ThreadPage";
+import CreateThread from "./pages/Thread/CreateThread";
+import UpdateThread from "./pages/Thread/UpdateThread";
 import PostList from "./pages/PostList";
 import PostDetail from "./pages/PostPage";
 import TagList from "./pages/Tag/TagList";
@@ -28,7 +30,11 @@ export const forumRoutes = (
     {/* Threads routes */}
     <Route path="threads">
       <Route index element={<ThreadList />} />
-      <Route path=":id" element={<ThreadPage />} />
+      <Route path="create" element={<CreateThread />} />
+      <Route path=":id">
+        <Route index element={<ThreadPage />} />
+        <Route path="update" element={<UpdateThread />} />
+      </Route>
     </Route>
     
     {/* Categories routes */}

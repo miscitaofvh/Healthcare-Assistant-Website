@@ -33,11 +33,14 @@ export interface Tag {
 
 // Thread Interfaces
 export interface NewThread {
+    thread_id: number;
     thread_name: string;
-    description?: string;
+    description: string;
+    category_id: number;
 }
 export interface ThreadSummary {
     thread_id: number;
+    description: string;
     thread_name: string;
     category_id: number;
 }
@@ -45,7 +48,7 @@ export interface Thread {
     thread_id: number;
     created_by: string;
     thread_name: string;
-    description: string | null;
+    description?: string;
     created_at: string;
     last_updated: string;
     last_post_date: string | null;

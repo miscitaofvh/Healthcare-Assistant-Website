@@ -21,7 +21,7 @@ export const getAllThreadsDB = async () => {
         const sql = `
             SELECT 
                 t.thread_id, t.thread_name, t.description, t.created_at, t.last_updated,
-                u.username AS author, u.user_id,
+                u.username AS created_by,
                 c.category_name, c.category_id,
                 COUNT(DISTINCT p.post_id) AS post_count
             FROM forum_threads t
@@ -49,7 +49,7 @@ export const getSummaryThreadsDB = async () => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
         const sql = `
-            SELECT thread_id, thread_name, category_id
+            SELECT thread_id, thread_name, category_id, description
             FROM forum_threads
             ORDER BY created_at DESC
         `;
@@ -153,22 +153,67 @@ export const getAllThreadsByPostDB = async (postId) => {
 export const getPostsByThreadDB = async (threadId) => {
     let conn;
     try {
-        conn = await connection.getConnection();
-
-        if (!threadId || isNaN(threadId)) {
+        const threadIdNum = parseInt(threadId, 10);
+        
+        if (isNaN(threadIdNum)) {
             throw new Error("Invalid thread ID");
         }
 
-        const sql = `
-            SELECT p.*
-            FROM forum_posts p
-            WHERE p.thread_id = ?
+        conn = await connection.getConnection();
+
+        const threadSql = `
+            SELECT 
+                ft.thread_id,
+                ft.thread_name,
+                ft.description,
+                ft.created_at,
+                ft.last_updated,
+                u.username AS created_by,
+                fc.category_id,
+                fc.category_name,
+                COUNT(fp.post_id) AS post_count
+            FROM forum_threads ft
+            JOIN users u ON ft.user_id = u.user_id
+            JOIN forum_categories fc ON ft.category_id = fc.category_id
+            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
+            WHERE ft.thread_id = ?
+            GROUP BY ft.thread_id
         `;
-        const [posts] = await conn.execute(sql, [threadId]);
-        return posts;
+        const [threadResult] = await conn.execute(threadSql, [threadIdNum]);
+
+        if (threadResult.length === 0) {
+            throw new Error("Thread not found");
+        }
+
+        const thread = threadResult[0];
+
+        const postsSql = `
+            SELECT 
+                p.post_id,
+                p.title,
+                p.content,
+                p.image_url,
+                p.created_at,
+                p.last_updated,
+                u.username AS author
+            FROM forum_posts p
+            JOIN users u ON p.user_id = u.user_id
+            WHERE p.thread_id = ?
+            ORDER BY p.created_at ASC
+        `;
+        const [posts] = await conn.execute(postsSql, [threadIdNum]);
+
+        return {
+            thread: {
+                ...thread,
+                post_count: Number(thread.post_count)
+            },
+            posts
+        };
+
     } catch (error) {
-        console.error("Error getting posts by thread:", error);
-        throw new Error("Failed to get posts by thread");
+        console.error("Error in getPostsByThreadDB:", error);
+        throw new Error(error.message.includes("Thread not found") ? error.message : "Failed to get thread and posts");
     } finally {
         if (conn) conn.release();
     }

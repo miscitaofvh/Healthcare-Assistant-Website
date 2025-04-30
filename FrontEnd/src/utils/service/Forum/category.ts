@@ -1,12 +1,13 @@
 import {
     getAllCategories,
+    getSummaryCategories,
     createCategory,
     updateCategory,
     deleteCategory,
     getCategoryById,
     getThreadsByCategory,
 } from "../../../utils/api/Forum/category";
-import { Category, NewCategory, CategoryMain } from "../../../types/forum";
+import { Category, NewCategory, CategoryMain, CategorySummary } from "../../../types/forum";
 import { Dispatch, SetStateAction } from "react";
 
 export const loadCategories = async (
@@ -23,6 +24,42 @@ export const loadCategories = async (
     try {
         setLoading(true);
         const response = await getAllCategories();
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
+            return handleError(errorMsg);
+        }
+
+        setCategories(data.categories ?? []);
+        setSuccess("Tải danh sách categories thành công");
+        setError("");
+    } catch (err: any) {
+        const errorMsg =
+            err?.response?.data?.message ??
+            err?.message ??
+            "Đã xảy ra lỗi khi tải danh sách category";
+        handleError(errorMsg);
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+export const loadCategoriesSummary = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setCategories: (categories: CategorySummary[]) => void,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+): Promise<void> => {
+    const handleError = (message: string) => {
+        setError(`Không thể tải categories: ${message}`);
+        setSuccess("");
+    };
+
+    try {
+        setLoading(true);
+        const response = await getSummaryCategories();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

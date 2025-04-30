@@ -8,7 +8,7 @@ export async function getAllCategories() {
 }
 
 export async function getSummaryCategories() {
-    const response = await requestAPI(BASE_URL, "/categories/summary", "GET");
+    const response = await requestAPI(BASE_URL, "/categories/summary/", "GET");
     return response;
 }
 

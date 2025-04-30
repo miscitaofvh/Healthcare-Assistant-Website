@@ -52,12 +52,21 @@ const CategoryDetailPage: React.FC = () => {
                   <span className={styles.metaValue}>{category.thread_count} threads</span>
                 </div>
               </div>
-              <button
-                className={`${styles.primaryButton} ${styles.createButton}`}
-                onClick={() => navigate(`/forum/categories/${category.category_id}/update`)}
-              >
-                Update Category
-              </button>
+              <div className={styles.buttonGroup}>
+                <button
+                  className={`${styles.primaryButton} ${styles.createButton}`}
+                  onClick={() => navigate(`/forum/categories/${category.category_id}/update`)}
+                >
+                  Update Category
+                </button>
+                <button
+                  className={styles.secondaryButton}
+                  onClick={() => navigate(`/forum/threads/create`)}
+                  disabled={loading}
+                >
+                  Add New Thread
+                </button>
+              </div>
             </div>
 
             {/* Threads List */}

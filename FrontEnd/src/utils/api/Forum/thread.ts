@@ -1,5 +1,5 @@
 import { requestAPI } from "../request";
-import { Thread } from "../../../types/forum";
+import { Thread, NewThread } from "../../../types/forum";
 
 const BASE_URL = "http://localhost:5000/api/forum";
 
@@ -33,12 +33,12 @@ export async function getThreadsByUser(userId: number) {
     return response;
 }
 
-export async function createThread(threadData: Partial<Thread>) {
+export async function createThread(threadData: NewThread) {
     const response = await requestAPI(BASE_URL, "/threads", "POST", threadData);
     return response;
 }
 
-export async function updateThread(threadId: number, threadData: Partial<Thread>) {
+export async function updateThread(threadId: number, threadData: NewThread) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}`, "PUT", threadData);
     return response;
 }

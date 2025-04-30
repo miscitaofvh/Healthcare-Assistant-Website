@@ -72,7 +72,7 @@ export const getSummaryCategories = async (req, res) => {
         res.status(200).json({
             success: true,
             count: categories.length,
-            data: categories,
+            categories: categories,
             message: "Category summaries retrieved successfully",
             metadata: {
                 source: "database",
@@ -473,25 +473,6 @@ export const createCategory = async (req, res) => {
 
         const { category_name, description } = req.body;
 
-        if (!category_name || typeof category_name !== "string" || !category_name.trim()) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Category name is required and must be a non-empty string"
-            });
-        }
-        if (category_name.length > 100) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Category name must be less than 100 characters"
-            });
-        }
-        if (description && description.length > 1000) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Description must be less than 1000 characters"
-            });
-        }
-
         const categoryId = await createCategoryDB(author_id, category_name.trim(), description?.trim());
         return res.status(StatusCodes.CREATED).json({
             success: true,
@@ -531,6 +512,13 @@ export const createCategory = async (req, res) => {
 
 export const updateCategory = async (req, res) => {
     try {
+        if (!id || isNaN(id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Invalid category ID"
+            });
+        }
+        
         const token = req.cookies?.auth_token;
         if (!token) {
             return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -559,42 +547,6 @@ export const updateCategory = async (req, res) => {
 
         const { id } = req.params;
         const { category_name, description } = req.body;
-
-        if (!id || isNaN(id)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid category ID"
-            });
-        }
-
-        if (!category_name && !description) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "No fields to update provided"
-            });
-        }
-
-        if (category_name !== undefined) {
-            if (typeof category_name !== "string" || !category_name.trim()) {
-                return res.status(StatusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: "Category name must be a non-empty string"
-                });
-            }
-            if (category_name.length > 100) {
-                return res.status(StatusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: "Category name must be less than 100 characters"
-                });
-            }
-        }
-
-        if (description !== undefined && description.length > 1000) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Description must be less than 1000 characters"
-            });
-        }
 
         const result = await updateCategoryDB(
             author_id,
