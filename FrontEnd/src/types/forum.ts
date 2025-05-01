@@ -39,6 +39,12 @@ export interface NewThread {
     description: string;
     category_id: number;
 }
+
+export interface ThreadDropdown {
+    thread_id: number;
+    thread_name: string;
+    category_id: number;
+}
 export interface ThreadSummary {
     thread_id: number;
     description: string;
@@ -134,6 +140,14 @@ export interface PostSummary {
     like_count: number;
     tags: string[];
 }
+
+export interface PostNew {
+    thread_id: number;
+    content: string;
+    image_url?: string | null;
+    tag_name: string[];
+}
+
 export interface Post {
     author: string;
     post_id: number;

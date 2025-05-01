@@ -182,7 +182,6 @@ export const getPostByIdDB = async (postId, options = {}) => {
         GROUP BY p.post_id;
     `;
 
-
         const [postRows] = await conn.execute(postSql, [postId]);
 
         if (!postRows[0]) {

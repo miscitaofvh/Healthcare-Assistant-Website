@@ -1,65 +1,71 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum1.module.css";
 import { createPost } from "../../../../utils/api/Forum/main";
-
-interface PostData {
-  category_name: string;
-  thread_name: string;
-  content: string;
-  image_url?: string | null;
-  tag_name: string[]; // NEW: tag_name as an array of strings
-}
+import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
+import { loadThreadsByCategory } from "../../../../utils/service/Forum/thread";
+import { CategorySummary, ThreadDropdown, PostNew } from "../../../../types/forum";
 
 const CreatePost: React.FC = () => {
-  const [new_forum_post, setNewForumPost] = useState<PostData>({
-    category_name: "",
-    thread_name: "",
+  const [categoryId, setCategoryId] = useState<number>(0);
+  const [post, setPost] = useState<PostNew>({
+    thread_id: 0,
     content: "",
     image_url: null,
-    tag_name: [], // Initialize tag_name as an empty array
+    tag_name: [],
   });
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [threads, setThreads] = useState<ThreadDropdown[]>([]);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    loadCategoriesSummary(() => {}, setCategories, setError, () => {});
+  }, []);
 
-    try {
-      const response = await createPost(new_forum_post);
-      alert(response.data.message);
-      navigate("/forum");
-    } catch (err) {
-      console.error("Lỗi khi tạo bài viết:", err);
-      setError("Không thể tạo bài viết. Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (categoryId > 0) {
+      loadThreadsByCategory(categoryId, setThreads, setError);
+    } else {
+      setThreads([]);
     }
-  };
+  }, [categoryId]);
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const input = e.currentTarget.value.trim();
-      if (input && !new_forum_post.tag_name.includes(input)) {
-        setNewForumPost((prev) => ({
-          ...prev,
-          tag_name: [...prev.tag_name, input],
-        }));
+      if (input && !post.tag_name.includes(input)) {
+        setPost((prev) => ({ ...prev, tag_name: [...prev.tag_name, input] }));
       }
       e.currentTarget.value = "";
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setNewForumPost((prev) => ({
+    setPost((prev) => ({
       ...prev,
       tag_name: prev.tag_name.filter((tag) => tag !== tagToRemove),
     }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await createPost(post);
+      alert(response.data.message);
+      navigate("/forum");
+    } catch (err) {
+      console.error("Error creating post:", err);
+      setError("Failed to create post. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,91 +73,79 @@ const CreatePost: React.FC = () => {
       <Navbar />
       <div className={styles.container}>
         <div className={styles.card}>
-          <h2 className={styles.title}>📝 Tạo Bài Viết Mới</h2>
-
+          <h2 className={styles.title}>📝 Create New Post</h2>
           {error && <div className={styles.alert}>{error}</div>}
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
-              <label htmlFor="categoryName">Chuyên mục</label>
-              <input
-                type="text"
-                id="categoryName"
-                value={new_forum_post.category_name}
-                onChange={(e) =>
-                  setNewForumPost((prev) => ({
-                    ...prev,
-                    category_name: e.target.value,
-                  }))
-                }
+              <label>Category</label>
+              <select
+                value={categoryId}
+                onChange={(e) => {
+                  const selected = parseInt(e.target.value);
+                  setCategoryId(selected);
+                  setPost({ ...post, thread_id: 0 });
+                }}
                 required
-              />
+              >
+                <option value={0}>Select category</option>
+                {categories.map((cat) => (
+                  <option key={cat.category_id} value={cat.category_id}>
+                    {cat.category_name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="threadName">Tiêu đề</label>
-              <input
-                type="text"
-                id="threadName"
-                value={new_forum_post.thread_name}
+              <label>Thread</label>
+              <select
+                value={post.thread_id}
                 onChange={(e) =>
-                  setNewForumPost((prev) => ({
-                    ...prev,
-                    thread_name: e.target.value,
-                  }))
+                  setPost({ ...post, thread_id: parseInt(e.target.value) })
                 }
                 required
-              />
+                disabled={!categoryId}
+              >
+                <option value={0}>Select thread</option>
+                {threads.map((th) => (
+                  <option key={th.thread_id} value={th.thread_id}>
+                    {th.thread_name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="content">Nội dung</label>
+              <label>Content</label>
               <textarea
-                id="content"
-                value={new_forum_post.content}
+                value={post.content}
                 onChange={(e) =>
-                  setNewForumPost((prev) => ({
-                    ...prev,
-                    content: e.target.value,
-                  }))
+                  setPost({ ...post, content: e.target.value })
                 }
                 required
               />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="imageUrl">Image URL (optional)</label>
+              <label>Image URL (optional)</label>
               <input
                 type="text"
-                id="imageUrl"
-                value={new_forum_post.image_url || ""}
-                placeholder="https://example.com/image.jpg"
+                value={post.image_url || ""}
                 onChange={(e) =>
-                  setNewForumPost((prev) => ({
-                    ...prev,
-                    image_url: e.target.value,
-                  }))
+                  setPost({ ...post, image_url: e.target.value })
                 }
               />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="tags">Tags (nhấn Enter để thêm)</label>
-              <input
-                type="text"
-                id="tags"
-                placeholder="Thêm tag"
-                onKeyDown={handleAddTag}
-              />
+              <label>Tags (press Enter to add)</label>
+              <input type="text" onKeyDown={handleAddTag} />
               <div className={styles.tagList}>
-                {new_forum_post.tag_name.map((tag) => (
+                {post.tag_name.map((tag) => (
                   <span key={tag} className={styles.tag}>
                     {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className={styles.removeTagBtn}
-                    >
+                    <button type="button" onClick={() => removeTag(tag)}>
                       &times;
                     </button>
                   </span>
@@ -160,7 +154,7 @@ const CreatePost: React.FC = () => {
             </div>
 
             <button type="submit" className={styles.btnPrimary} disabled={loading}>
-              {loading ? "Đang tạo..." : "Tạo Bài Viết"}
+              {loading ? "Creating..." : "Create Post"}
             </button>
           </form>
         </div>

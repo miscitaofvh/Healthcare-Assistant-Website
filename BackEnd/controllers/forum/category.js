@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import {
     getAllCategoriesDB,
     getSummaryCategoriesDB,
+    getThreadsSummaryByCategoryDB,
     getCategoryByNameDB,
     getCategoryByIdDB,
     getThreadsByCategoryDB,
@@ -233,6 +234,62 @@ export const getThreadsByCategory = async (req, res) => {
                 totalPages: Math.ceil(totalCount / limit),
                 totalItems: totalCount,
                 itemsPerPage: limit
+            },
+            metadata: {
+                categoryId: id,
+                retrievedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error(`[${req.requestId}] Error in getThreadsByCategory:`, error);
+
+        const statusCode = error.message.includes("Invalid") ? 400 : 500;
+
+        res.status(statusCode).json({
+            success: false,
+            message: statusCode === 400 ? error.message : "Failed to retrieve threads",
+            error: process.env.NODE_ENV === 'development' ? {
+                message: error.message,
+                stack: error.stack
+            } : undefined,
+            errorCode: statusCode === 400 ? "CLIENT_ERROR" : "SERVER_ERROR",
+            timestamp: new Date().toISOString()
+        });
+    }
+};
+
+export const getThreadsSummaryByCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || !Number.isInteger(Number(id))) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid category ID format",
+                errorCode: "INVALID_CATEGORY_ID"
+            });
+        }
+        const { category, threads, totalCount } = await getThreadsSummaryByCategoryDB(id);
+
+        // if (!threads || threads.length === 0) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: "No threads found for this category",
+        //         errorCode: "NO_THREADS_FOUND",
+        //         metadata: {
+        //             categoryId: id,
+        //             searchedAt: new Date().toISOString()
+        //         }
+        //     });
+        // }
+
+        res.status(200).json({
+            success: true,
+            category: category, 
+            threads: threads,
+            pagination: {
+                totalItems: totalCount,
             },
             metadata: {
                 categoryId: id,

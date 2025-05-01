@@ -1,7 +1,7 @@
 import express from "express";
 import {
         getAllCategories, getSummaryCategories, getCategoryByName, getCategoryById, getThreadsByCategory,
-        getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
+        getThreadsSummaryByCategory, getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
 } from "../controllers/forum/category.js"
 import {
         getAllThreads, getSummaryThreads, getThreadById, getThreadName, getPostsByThread,
@@ -58,6 +58,7 @@ router.get("/categories", asyncHandler(getAllCategories)); // get all informatio
 router.get("/categories/summary", asyncHandler(getSummaryCategories)); // get all categories with id and name
 router.get("/categories/name/:name", asyncHandler(getCategoryByName));
 router.get("/categories/:id/threads", asyncHandler(getThreadsByCategory)); // Get all threads in a category
+router.get("/categories/:id/threads/summary", asyncHandler(getThreadsSummaryByCategory)); // Get all threads in a category
 router.get("/categories/:id/posts", asyncHandler(getPostsByCategory)); // Get all posts in a category
 router.get("/categories/:id", asyncHandler(getCategoryById));
 router.get("/users/:username/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with

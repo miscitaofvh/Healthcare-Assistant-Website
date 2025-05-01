@@ -240,6 +240,58 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
     }
 };
 
+export const getThreadsSummaryByCategoryDB = async (categoryId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+
+        const sqlCategory = `
+            SELECT 
+                fc.category_id, 
+                fc.category_name
+            FROM forum_categories fc
+            WHERE fc.category_id = ?`;
+        const [categoryResult] = await conn.execute(sqlCategory, [categoryId]);
+
+        if (categoryResult.length === 0) {
+            throw new Error("Category not found");
+        }
+
+        const category = categoryResult[0];
+
+        const sqlThreads = `
+            SELECT 
+                ft.thread_id,
+                ft.thread_name,
+                ft.category_id
+            FROM forum_threads ft
+            WHERE ft.category_id = ?`;
+        const [threads] = await conn.execute(sqlThreads, [categoryId]);
+
+        const [countResult] = await conn.execute(
+            `SELECT COUNT(*) AS totalCount FROM forum_threads WHERE category_id = ?`,
+            [categoryId]
+        );
+        const totalCount = countResult[0].totalCount || 0;
+
+        return {
+            category: category,
+            threads: threads.map(thread => ({
+                ...thread,
+            })),
+            pagination: {
+                totalItems: totalCount,
+            }
+        };
+
+    } catch (error) {
+        console.error("Error in getThreadsByCategoryDB:", error);
+        throw new Error(error.message.includes("Category not found") ? error.message : "Failed to get threads by category");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 export const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'newest') => {
     let conn;
     try {

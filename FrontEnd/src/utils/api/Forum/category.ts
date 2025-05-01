@@ -27,6 +27,11 @@ export async function getThreadsByCategory(id: number) {
     return response;
 }
 
+export async function getThreadsSummaryByCategory(id: number) {
+    const response = await requestAPI(BASE_URL, `/categories/${id}/threads/summary`, "GET");
+    return response;
+}
+
 export async function getPostsByCategory(id: number) {
     const response = await requestAPI(BASE_URL, `/categories/${id}/posts`, "GET");
     return response;
