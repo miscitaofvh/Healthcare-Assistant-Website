@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import './UserProfile.css';
+import styles from './UserProfile.module.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -207,9 +207,9 @@ const UserProfile = () => {
     return (
       <>
         <Navbar />
-        <div className="profile-page">
-          <div className="profile-loading">
-            <div className="loading-spinner"></div>
+        <div className={styles.profile_page}>
+          <div className={styles.profile_loading}>
+            <div className={styles.loading_spinner}></div>
             <p>Đang tải thông tin...</p>
           </div>
         </div>
@@ -221,70 +221,70 @@ const UserProfile = () => {
     <>
       <Navbar />
       <ToastContainer />
-      <div className="profile-page">
-        <div className="profile-container">
-          <div className="profile-sidebar">
-            <div className="profile-avatar">
+      <div className={styles.profile_page}>
+        <div className={styles.profile_container}>
+          <div className={styles.profile_sidebar}>
+            <div className={styles.profile_avatar}>
               <img 
                 src={formValues.profile_picture_url || `https://ui-avatars.com/api/?name=${profile?.username || 'User'}&background=2c5282&color=fff`} 
                 alt="Profile" 
               />
-              <div className="update-avatar">
-                <label htmlFor="avatar-upload" className="avatar-upload-label">
+              <div className={styles.update_avatar}>
+                <label htmlFor="avatar-upload" className={styles.avatar_upload_label}>
                   <FaCamera />
                 </label>
                 <input 
                   type="file" 
                   id="avatar-upload" 
-                  className="avatar-upload-input" 
+                  className={styles.avatar_upload_input} 
                   accept="image/*" 
                   onChange={handleFileUpload}
                 />
               </div>
             </div>
             
-            <h2 className="profile-name">{profile?.username}</h2>
-            <p className="profile-email">{profile?.email}</p>
+            <h2 className={styles.profile_name}>{profile?.username}</h2>
+            <p className={styles.profile_email}>{profile?.email}</p>
             
-            <div className="profile-nav">
+            <div className={styles.profile_nav}>
               <button 
-                className={`profile-nav-item ${activeTab === 'info' ? 'active' : ''}`}
+                className={`${styles.profile_nav_item} ${activeTab === 'info' ? styles.active : ''}`}
                 onClick={() => setActiveTab('info')}
               >
-                <FaUser className="nav-icon" /> Thông tin cá nhân
+                <FaUser className={styles.nav_icon} /> Thông tin cá nhân
               </button>
               <button 
-                className={`profile-nav-item ${activeTab === 'security' ? 'active' : ''}`}
+                className={`${styles.profile_nav_item} ${activeTab === 'security' ? styles.active : ''}`}
                 onClick={() => setActiveTab('security')}
               >
-                <FaKey className="nav-icon" /> Bảo mật
+                <FaKey className={styles.nav_icon} /> Bảo mật
               </button>
               <button 
-                className={`profile-nav-item ${activeTab === 'preferences' ? 'active' : ''}`}
+                className={`${styles.profile_nav_item} ${activeTab === 'preferences' ? styles.active : ''}`}
                 onClick={() => setActiveTab('preferences')}
               >
-                <FaExclamationTriangle className="nav-icon" /> Tài khoản
+                <FaExclamationTriangle className={styles.nav_icon} /> Tài khoản
               </button>
             </div>
 
-            <button className="back-button" onClick={() => navigate('/')}>
+            <button className={styles.back_button} onClick={() => navigate('/')}>
               <FaArrowLeft /> Quay lại trang chủ
             </button>
           </div>
           
-          <div className="profile-content">
+          <div className={styles.profile_content}>
             {activeTab === 'info' && (
               <>
-                <div className="content-header">
+                <div className={styles.content_header}>
                   <h1>Thông tin cá nhân</h1>
-                  <p className="subtitle">Cập nhật thông tin cá nhân của bạn</p>
+                  <p className={styles.subtitle}>Cập nhật thông tin cá nhân của bạn</p>
                 </div>
                 
-                <form className="profile-form" onSubmit={handleSubmit}>
-                  <div className="form-row">
-                    <div className="form-group">
+                <form className={styles.profile_form} onSubmit={handleSubmit}>
+                  <div className={styles.form_row}>
+                    <div className={styles.form_group}>
                       <label htmlFor="full_name">
-                        <FaUser className="input-icon" /> Họ và tên
+                        <FaUser className={styles.input_icon} /> Họ và tên
                       </label>
                       <input
                         type="text"
@@ -296,9 +296,9 @@ const UserProfile = () => {
                       />
                     </div>
 
-                    <div className="form-group">
+                    <div className={styles.form_group}>
                       <label htmlFor="dob">
-                        <FaCalendar className="input-icon" /> Ngày sinh
+                        <FaCalendar className={styles.input_icon} /> Ngày sinh
                       </label>
                       <input
                         type="date"
@@ -310,10 +310,10 @@ const UserProfile = () => {
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
+                  <div className={styles.form_row}>
+                    <div className={styles.form_group}>
                       <label htmlFor="gender">
-                        <FaVenusMars className="input-icon" /> Giới tính
+                        <FaVenusMars className={styles.input_icon} /> Giới tính
                       </label>
                       <select
                         id="gender"
@@ -327,9 +327,9 @@ const UserProfile = () => {
                       </select>
                     </div>
 
-                    <div className="form-group">
+                    <div className={styles.form_group}>
                       <label htmlFor="phone_number">
-                        <FaPhone className="input-icon" /> Số điện thoại
+                        <FaPhone className={styles.input_icon} /> Số điện thoại
                       </label>
                       <input
                         type="tel"
@@ -342,9 +342,9 @@ const UserProfile = () => {
                     </div>
                   </div>
 
-                  <div className="form-group full-width">
+                  <div className={`${styles.form_group} ${styles.full_width}`}>
                     <label htmlFor="address">
-                      <FaMapMarkerAlt className="input-icon" /> Địa chỉ
+                      <FaMapMarkerAlt className={styles.input_icon} /> Địa chỉ
                     </label>
                     <textarea
                       id="address"
@@ -356,15 +356,15 @@ const UserProfile = () => {
                     />
                   </div>
 
-                  <div className="form-actions">
+                  <div className={styles.form_actions}>
                     <button
                       type="submit"
-                      className="submit-button"
+                      className={styles.submit_button}
                       disabled={saving}
                     >
                       {saving ? (
                         <>
-                          <div className="button-spinner"></div>
+                          <div className={styles.button_spinner}></div>
                           Đang lưu...
                         </>
                       ) : (
@@ -379,14 +379,14 @@ const UserProfile = () => {
             )}
 
             {activeTab === 'security' && (
-              <div className="content-section">
-                <div className="content-header">
+              <div className={styles.content_section}>
+                <div className={styles.content_header}>
                   <h1>Bảo mật tài khoản</h1>
-                  <p className="subtitle">Quản lý mật khẩu và bảo mật</p>
+                  <p className={styles.subtitle}>Quản lý mật khẩu và bảo mật</p>
                 </div>
-                <div className="security-content">
-                  <div className="feature-coming-soon">
-                    <FaKey size={48} className="coming-soon-icon" />
+                <div className={styles.security_content}>
+                  <div className={styles.feature_coming_soon}>
+                    <FaKey size={48} className={styles.coming_soon_icon} />
                     <h3>Tính năng đang phát triển</h3>
                     <p>Chức năng này sẽ sớm được cập nhật.</p>
                   </div>
@@ -395,14 +395,14 @@ const UserProfile = () => {
             )}
 
             {activeTab === 'preferences' && (
-              <div className="content-section">
-                <div className="content-header">
+              <div className={styles.content_section}>
+                <div className={styles.content_header}>
                   <h1>Quản lý tài khoản</h1>
-                  <p className="subtitle">Thay đổi tùy chọn tài khoản</p>
+                  <p className={styles.subtitle}>Thay đổi tùy chọn tài khoản</p>
                 </div>
-                <div className="preferences-content">
-                  <div className="feature-coming-soon">
-                    <FaExclamationTriangle size={48} className="coming-soon-icon" />
+                <div className={styles.preferences_content}>
+                  <div className={styles.feature_coming_soon}>
+                    <FaExclamationTriangle size={48} className={styles.coming_soon_icon} />
                     <h3>Tính năng đang phát triển</h3>
                     <p>Chức năng này sẽ sớm được cập nhật.</p>
                   </div>
