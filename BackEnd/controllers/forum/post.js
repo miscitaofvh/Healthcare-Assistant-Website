@@ -351,14 +351,14 @@ export const createPost = async (req, res) => {
             });
         }
 
-        const { category_name, thread_name, content, tag_name, image_url } = req.body;
+        const { thread_id, title, content, tag_name = [], image_url } = req.body;
 
         const result = await createPostDB(
             author_id,
-            category_name.trim(),
-            thread_name.trim(),
+            thread_id,
+            title.trim(),
             content.trim(),
-            tag_name?.trim(),
+            tag_name && tag_name.length > 0 ? tag_name : null,
             image_url?.trim()
         );
 
@@ -368,7 +368,6 @@ export const createPost = async (req, res) => {
             data: {
                 postId: result.post_id,
                 threadId: result.thread_id,
-                category: result.category_name,
                 threadName: result.thread_name,
                 createdAt: result.created_at
             },

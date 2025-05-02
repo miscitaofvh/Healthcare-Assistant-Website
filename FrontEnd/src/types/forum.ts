@@ -143,6 +143,7 @@ export interface PostSummary {
 
 export interface PostNew {
     thread_id: number;
+    title: string;
     content: string;
     image_url?: string | null;
     tag_name: string[];

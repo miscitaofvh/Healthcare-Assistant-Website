@@ -77,29 +77,23 @@ export const validateThread = [
 
 // Post
 export const validateForumPost = [
-    body("category_name")
-        .notEmpty()
-        .withMessage("Chuyên mục là bắt buộc")
-        .isLength({ min: 3, max: 100 })
-        .withMessage("Chuyên mục phải từ 3-100 ký tự")
-        .trim(),
-    body("thread_name")
-        .notEmpty()
-        .withMessage("Chủ đề là bắt buộc")
-        .isLength({ min: 3, max: 100 })
-        .withMessage("Chủ đề phải từ 3-100 ký tự")
-        .trim(),
+    body("thread_id")
+      .notEmpty()
+      .withMessage("Thread ID là bắt buộc")
+      .isInt({ min: 1 })
+      .withMessage("Thread ID phải là số nguyên dương"),
+    body("title")
+      .notEmpty()
+      .withMessage("Tiêu đề là bắt buộc")
+      .isLength({ min: 3, max: 100 })
+      .withMessage("Tiêu đề phải từ 3 đến 100 ký tự")
+      .trim(),
     body("content")
-        .notEmpty()
-        .withMessage("Nội dung là bắt buộc")
-        .isLength({ min: 10 })
-        .withMessage("Nội dung phải có ít nhất 10 ký tự")
-        .trim(),
-    body("image_url")
-        .optional()
-        .isURL()
-        .withMessage("URL ảnh không hợp lệ")
-        .trim(),
+      .notEmpty()
+      .withMessage("Nội dung là bắt buộc")
+      .isLength({ min: 10, max: 10000 })
+      .withMessage("Nội dung phải có ít nhất 10 ký tự")
+      .trim(),
     body("tags")
         .optional()
         .isArray()

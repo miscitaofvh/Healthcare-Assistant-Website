@@ -13,10 +13,13 @@ import {
   TagSummary
 } from "../../../../types/forum";
 
+// ...imports remain the same
+
 const CreatePost: React.FC = () => {
   const [categoryId, setCategoryId] = useState<number>(0);
   const [post, setPost] = useState<PostNew>({
     thread_id: 0,
+    title: "", // ✅ Add title field
     content: "",
     image_url: null,
     tag_name: [],
@@ -32,8 +35,8 @@ const CreatePost: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCategoriesSummary(setLoading, setCategories, setError, () => { });
-    loadTagsSummary(setTagsLoading, setTags, setError, () => { });
+    loadCategoriesSummary(setLoading, setCategories, setError, () => {});
+    loadTagsSummary(setTagsLoading, setTags, setError, () => {});
   }, []);
 
   useEffect(() => {
@@ -45,7 +48,6 @@ const CreatePost: React.FC = () => {
   }, [categoryId]);
 
   useEffect(() => {
-    // Filter out already selected tags
     const filtered = tags.filter(tag => !post.tag_name.includes(tag.tag_name));
     setAvailableTags(filtered);
   }, [tags, post.tag_name]);
@@ -109,6 +111,7 @@ const CreatePost: React.FC = () => {
 
         <div className={styles.tagCard}>
           <form onSubmit={handleSubmit}>
+            {/* Category */}
             <div className={styles.formGroup}>
               <label htmlFor="category" className={styles.metaLabel}>
                 Category *
@@ -120,7 +123,7 @@ const CreatePost: React.FC = () => {
                 onChange={(e) => {
                   const selected = parseInt(e.target.value);
                   setCategoryId(selected);
-                  setPost({ ...post, thread_id: 0 }); // Reset thread when category changes
+                  setPost({ ...post, thread_id: 0 }); // Reset thread
                 }}
                 required
                 disabled={loading}
@@ -134,6 +137,7 @@ const CreatePost: React.FC = () => {
               </select>
             </div>
 
+            {/* Thread */}
             <div className={styles.formGroup}>
               <label htmlFor="thread" className={styles.metaLabel}>
                 Thread *
@@ -157,6 +161,29 @@ const CreatePost: React.FC = () => {
               </select>
             </div>
 
+            {/* Title input */}
+            <div className={styles.formGroup}>
+              <label htmlFor="title" className={styles.metaLabel}>
+                Title *
+              </label>
+              <input
+                id="title"
+                type="text"
+                className={styles.formInput}
+                value={post.title || ""}
+                onChange={(e) =>
+                  setPost({ ...post, title: e.target.value })
+                }
+                required
+                maxLength={150}
+                disabled={loading}
+              />
+              <small className={styles.characterCount}>
+                {post.title.length}/150 characters
+              </small>
+            </div>
+
+            {/* Content */}
             <div className={styles.formGroup}>
               <label htmlFor="content" className={styles.metaLabel}>
                 Content *
@@ -176,6 +203,7 @@ const CreatePost: React.FC = () => {
               </small>
             </div>
 
+            {/* Image URL */}
             <div className={styles.formGroup}>
               <label htmlFor="imageUrl" className={styles.metaLabel}>
                 Image URL (optional)
@@ -192,6 +220,7 @@ const CreatePost: React.FC = () => {
               />
             </div>
 
+            {/* Tags */}
             <div className={styles.formGroup}>
               <label htmlFor="tags" className={styles.metaLabel}>
                 Tags
@@ -202,7 +231,7 @@ const CreatePost: React.FC = () => {
                 onChange={(e) => {
                   if (e.target.value) {
                     handleAddTag(e.target.value);
-                    e.target.value = ""; // Reset selection
+                    e.target.value = "";
                   }
                 }}
                 disabled={loading || tagsLoading}
@@ -232,6 +261,7 @@ const CreatePost: React.FC = () => {
               </div>
             </div>
 
+            {/* Buttons */}
             <div className={styles.buttonGroup}>
               <button
                 type="button"
@@ -244,7 +274,12 @@ const CreatePost: React.FC = () => {
               <button
                 type="submit"
                 className={styles.primaryButton}
-                disabled={loading || !post.thread_id || !post.content}
+                disabled={
+                  loading ||
+                  !post.thread_id ||
+                  !post.title.trim() ||
+                  !post.content.trim()
+                }
               >
                 {loading ? (
                   <>

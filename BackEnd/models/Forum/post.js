@@ -282,87 +282,52 @@ export const getPostsByUserDB = async (username) => {
     }
 };
 
-
-export const createPostDB = async (user_id, category_name, thread_name, content, tag_name = [], image_url = null) => {
+export const createPostDB = async (user_id, thread_id, title, content, tag_names = [], image_url = null) => {
     let conn;
     try {
-        if (!user_id || !category_name || !thread_name || !content) {
-            throw new Error("Missing required fields");
-        }
-
-        if (content.length > 10000) {
-            throw new Error("Content must be less than 10000 characters");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Get or create category
-        const [categoryResult] = await conn.execute(
-            "SELECT category_id FROM forum_categories WHERE category_name = ?",
-            [category_name]
+        const [threadCheck] = await conn.execute(
+            `SELECT thread_id, category_id FROM forum_threads WHERE thread_id = ?`,
+            [thread_id]
         );
-
-        let category_id;
-        if (categoryResult.length > 0) {
-            category_id = categoryResult[0].category_id;
-        } else {
-            const [insertCategoryResult] = await conn.execute(
-                "INSERT INTO forum_categories (category_name, user_id) VALUES (?, ?)",
-                [category_name, user_id]
-            );
-            category_id = insertCategoryResult.insertId;
+        if (threadCheck.length === 0) {
+            throw new Error("Thread not found");
         }
+        const category_id = threadCheck[0].category_id;
 
-        // Get or create thread
-        const [threadResult] = await conn.execute(
-            "SELECT thread_id FROM forum_threads WHERE thread_name = ? AND category_id = ?",
-            [thread_name, category_id]
-        );
-
-        let thread_id;
-        if (threadResult.length > 0) {
-            thread_id = threadResult[0].thread_id;
-        } else {
-            const [insertThreadResult] = await conn.execute(
-                "INSERT INTO forum_threads (thread_name, category_id, user_id, description) VALUES (?, ?, ?, ?)",
-                [thread_name, category_id, user_id, content.slice(0, 100)]
-            );
-            thread_id = insertThreadResult.insertId;
-        }
-
-        // Create post
-        const insertForumPostQuery = `
-            INSERT INTO forum_posts (thread_id, thread_name, user_id, content, image_url, created_at)
+        const insertPostQuery = `
+            INSERT INTO forum_posts (thread_id, user_id, title, content, image_url, created_at)
             VALUES (?, ?, ?, ?, ?, NOW())
         `;
-        const [forumPostResult] = await conn.execute(insertForumPostQuery, [
+        const [postResult] = await conn.execute(insertPostQuery, [
             thread_id,
-            thread_name,
             user_id,
+            title,
             content,
             image_url || null
         ]);
 
-        const post_id = forumPostResult.insertId;
-
-        if (!forumPostResult) {
+        const post_id = postResult.insertId;
+        if (!post_id) {
             throw new Error("Failed to create post");
         }
 
-        // Handle tags
-        if (Array.isArray(tag_name) && tag_name.length > 0) {
-            for (const tag of tag_name.map(t => t.trim())) {
-                if (!tag) continue;
-
+        if (Array.isArray(tag_names) && tag_names.length > 0) {
+            for (const tag of tag_names.map(t => t.trim()).filter(Boolean)) {
+                let tag_id;
                 const [tagResult] = await conn.execute(
                     "SELECT tag_id FROM forum_tags WHERE tag_name = ?",
                     [tag]
                 );
 
-                let tag_id;
                 if (tagResult.length > 0) {
                     tag_id = tagResult[0].tag_id;
+                    await conn.execute(
+                        "UPDATE forum_tags SET usage_count = usage_count + 1, last_used_at = NOW() WHERE tag_id = ?",
+                        [tag_id]
+                    );
                 } else {
                     const [insertTagResult] = await conn.execute(
                         "INSERT INTO forum_tags (tag_name, user_id) VALUES (?, ?)",
@@ -378,18 +343,22 @@ export const createPostDB = async (user_id, category_name, thread_name, content,
             }
         }
 
-        // Create forum entry
         await conn.execute(
             "INSERT INTO forum (user_id, category_id, thread_id, post_id, created_at) VALUES (?, ?, ?, ?, NOW())",
             [user_id, category_id, thread_id, post_id]
         );
 
         await conn.commit();
-        return { post_id };
+
+        return {
+            post_id,
+            thread_id,
+            created_at: new Date().toISOString()
+        };
 
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Error creating post:", error);
+        console.error("Error in createPostDB:", error);
         throw error;
     } finally {
         if (conn) conn.release();
