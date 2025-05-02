@@ -9,6 +9,11 @@ export async function getAllTags() {
     return response;
 }
 
+export async function getAllTagsSummary() {
+    const response = await requestAPI(BASE_URL, "/tags", "GET");
+    return response;
+}
+
 // Get a single tag by ID
 export async function getTagById(id: number) {
     const response = await requestAPI(BASE_URL, `/tags/${id}`, "GET");

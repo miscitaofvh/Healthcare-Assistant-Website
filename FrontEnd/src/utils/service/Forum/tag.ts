@@ -1,5 +1,6 @@
 import {
     getTagById,
+    getAllTagsSummary,
     getPostsByTag,
     getAllTags,
     createTag,
@@ -21,6 +22,33 @@ export const loadTags = async (
         setSuccess("");
 
         const response = await getAllTags();
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            throw new Error(data?.message || "Unknown error occurred while loading tags.");
+        }
+
+        setTags(data.data?.tags || []);
+        setSuccess("Tải danh sách tag thành công");
+    } catch (err: any) {
+        setError(err?.response?.data?.message || err.message || "Đã xảy ra lỗi khi tải danh sách tag");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadTagsSummary = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: (tags: Tag[]) => void,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+) => {
+    try {
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        const response = await getAllTagsSummary();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
