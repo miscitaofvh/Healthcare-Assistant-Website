@@ -3,6 +3,7 @@ import Forum from "./pages";
 import PostList from "./pages/Post/PostList";
 import PostDetail from "./pages/Post/PostPage";
 import CreatePost from "./pages/Post/CreatePost";
+import UpdatePost from "./pages/Post/UpdatePost";
 import CategoryList from "./pages/Category/CategoryList";
 import CategoryPage from "./pages/Category/CategoryPage";
 import CreateCategory from "./pages/Category/CreateCategory";
@@ -26,7 +27,7 @@ export const forumRoutes = (
       <Route path="create" element={<CreatePost />} />
       <Route path=":id">
         <Route index element={<PostDetail />} />
-        {/* <Route path="update" element={<UpdatePost />} /> */}
+        <Route path="update" element={<UpdatePost />} />
       </Route>
     </Route>
 
