@@ -434,7 +434,7 @@ export const updatePost = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { content, image_url, edit_reason } = req.body;
+        const { title, content, image_url, edit_reason } = req.body;
 
         if (!id) {
             return res.status(400).json({
@@ -449,6 +449,7 @@ export const updatePost = async (req, res) => {
         const result = await updatePostDB(
             id,
             author_id,
+            title,
             content.trim(),
             image_url?.trim(),
         );

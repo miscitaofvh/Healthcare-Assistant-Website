@@ -365,17 +365,9 @@ export const createPostDB = async (user_id, thread_id, title, content, tag_names
     }
 };
 
-export const updatePostDB = async (postId, user_id, content, image_url = null) => {
+export const updatePostDB = async (postId, user_id, title, content, image_url = null) => {
     let conn;
     try {
-        if (!postId || !user_id || !content) {
-            throw new Error("Missing required fields");
-        }
-
-        if (content.length > 10000) {
-            throw new Error("Content must be less than 10000 characters");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
@@ -395,10 +387,10 @@ export const updatePostDB = async (postId, user_id, content, image_url = null) =
 
         const sql = `
             UPDATE forum_posts
-            SET content = ?, image_url = ?, last_updated = CURRENT_TIMESTAMP
+            SET title = ? , content = ?, image_url = ?, last_updated = CURRENT_TIMESTAMP
             WHERE post_id = ?
         `;
-        await conn.execute(sql, [content, image_url, postId]);
+        await conn.execute(sql, [title, content, image_url, postId]);
         await conn.commit();
         return "Post updated successfully";
     } catch (error) {

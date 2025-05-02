@@ -13,7 +13,6 @@ export async function getPostById(id: string) {
 }
 
 export async function createPost(post: PostNew) {
-    alert(JSON.stringify(post));
     const response = await requestAPI(BASE_URL, "/posts", "POST", post);
     return response;
 }

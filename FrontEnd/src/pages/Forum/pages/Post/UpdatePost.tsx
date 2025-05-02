@@ -38,13 +38,14 @@ const UpdatePost: React.FC = () => {
 
         setPost({
           thread_id: data.thread_id,
+          title: data.title,
           content: data.content,
           image_url: data.image_url,
           tag_name: data.tags.map(tag => tag.tag_name),
         });
 
-        await loadCategoriesSummary(() => {}, setCategories, setError, () => {});
-        await loadTagsSummary(setTagsLoading, setTags, setError, () => {});
+        await loadCategoriesSummary(() => { }, setCategories, setError, () => { });
+        await loadTagsSummary(setTagsLoading, setTags, setError, () => { });
         await loadThreadsByCategory(data.category_id, setThreads, setError);
       } catch (err) {
         setError("Failed to load post details.");
@@ -161,7 +162,19 @@ const UpdatePost: React.FC = () => {
                 ))}
               </select>
             </div>
-
+            
+            <div className={styles.formGroup}>
+              <label htmlFor="title" className={styles.metaLabel}>Title *</label>
+              <input
+                id="title"
+                type="text"
+                className={styles.formInput}
+                value={post.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
             <div className={styles.formGroup}>
               <label htmlFor="content" className={styles.metaLabel}>Content *</label>
               <textarea
