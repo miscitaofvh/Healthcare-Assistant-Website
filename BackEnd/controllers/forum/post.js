@@ -434,7 +434,7 @@ export const updatePost = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { title, content, image_url, edit_reason } = req.body;
+        const { title, content, image_url, edit_reason, tags } = req.body;
 
         if (!id) {
             return res.status(400).json({
@@ -452,6 +452,7 @@ export const updatePost = async (req, res) => {
             title,
             content.trim(),
             image_url?.trim(),
+            tags // Add tags parameter
         );
 
         res.status(200).json({

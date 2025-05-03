@@ -365,13 +365,12 @@ export const createPostDB = async (user_id, thread_id, title, content, tag_names
     }
 };
 
-export const updatePostDB = async (postId, user_id, title, content, image_url = null) => {
+export const updatePostDB = async (postId, user_id, title, content, image_url = null, tags = []) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Check if post exists and user is authorized
         const [post] = await conn.execute(
             "SELECT user_id FROM forum_posts WHERE post_id = ?",
             [postId]
@@ -385,14 +384,68 @@ export const updatePostDB = async (postId, user_id, title, content, image_url = 
             throw new Error("Unauthorized to update this post");
         }
 
-        const sql = `
+        if (tags && !Array.isArray(tags)) {
+            throw new Error("Invalid tags provided");
+        }
+
+        const updateSql = `
             UPDATE forum_posts
-            SET title = ? , content = ?, image_url = ?, last_updated = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, image_url = ?, last_updated = CURRENT_TIMESTAMP
             WHERE post_id = ?
         `;
-        await conn.execute(sql, [title, content, image_url, postId]);
+        await conn.execute(updateSql, [title, content, image_url, postId]);
+
+        if (tags) {
+            await conn.execute(
+                "DELETE FROM forum_tags_mapping WHERE post_id = ?",
+                [postId]
+            );
+
+            if (tags.length > 0) {
+                const tagPlaceholders = tags.map(() => '?').join(',');
+                const [existingTags] = await conn.execute(
+                    `SELECT tag_id, tag_name FROM forum_tags WHERE tag_name IN (${tagPlaceholders})`,
+                    tags
+                );
+
+                const tagMap = {};
+                existingTags.forEach(tag => {
+                    tagMap[tag.tag_name] = tag.tag_id;
+                });
+
+                for (const tagName of tags) {
+                    if (!tagMap[tagName]) {
+                        const [insertResult] = await conn.execute(
+                            "INSERT INTO forum_tags (tag_name, user_id) VALUES (?, ?)",
+                            [tagName, user_id]
+                        );
+                        tagMap[tagName] = insertResult.insertId;
+                    }
+
+                    await conn.execute(
+                        "INSERT INTO forum_tags_mapping (post_id, tag_id) VALUES (?, ?)",
+                        [postId, tagMap[tagName]]
+                    );
+
+                    await conn.execute(
+                        "UPDATE forum_tags SET usage_count = usage_count + 1, last_used_at = CURRENT_TIMESTAMP WHERE tag_id = ?",
+                        [tagMap[tagName]]
+                    );
+                }
+            }
+        }
+
         await conn.commit();
-        return "Post updated successfully";
+        
+        const [updatedPost] = await conn.execute(
+            "SELECT last_updated FROM forum_posts WHERE post_id = ?",
+            [postId]
+        );
+
+        return {
+            updated_at: updatedPost[0].last_updated,
+            edit_count: 1 
+        };
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error updating post:", error);
