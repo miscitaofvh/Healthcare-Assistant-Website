@@ -10,7 +10,12 @@ export async function getAllTags() {
 }
 
 export async function getAllTagsSummary() {
-    const response = await requestAPI(BASE_URL, "/tags", "GET");
+    const response = await requestAPI(BASE_URL, "/tags/summary", "GET");
+    return response;
+}
+
+export async function getAllTagsLittleSummary() {
+    const response = await requestAPI(BASE_URL, "/tags/summary/little", "GET");
     return response;
 }
 

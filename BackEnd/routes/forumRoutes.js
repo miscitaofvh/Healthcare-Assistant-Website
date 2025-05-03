@@ -13,7 +13,7 @@ import {
         likeComment, unlikeComment, reportComment, getReportsForComment, updateReportStatusForComment
 } from "../controllers/forum/comment.js";
 import {
-        getAllTags, getSummaryTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
+        getAllTags, getSummaryTags, getSummaryLittleTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
         getTagOfPostById, getTagsForPost, addTagsToPost, createTag, updateTagById, deleteTagById,
         removeTagFromPost
 } from "../controllers/forum/tag.js";
@@ -101,6 +101,7 @@ router.put("/posts/:id/comments/:id/reports/:id", asyncHandler(updateReportStatu
 // Tag Routes
 router.get("/tags", asyncHandler(getAllTags));
 router.get("/tags/summary", asyncHandler(getSummaryTags));
+router.get("/tags/summary/little", asyncHandler(getSummaryLittleTags));
 router.get("/tags/summary/:id", asyncHandler(getSummaryTagById));
 router.get("/tags/popular", asyncHandler(getPopularTags));
 router.get("/tags/:id", asyncHandler(getTagById));

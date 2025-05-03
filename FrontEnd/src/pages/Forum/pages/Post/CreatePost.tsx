@@ -13,13 +13,11 @@ import {
   TagSummary
 } from "../../../../types/forum";
 
-// ...imports remain the same
-
 const CreatePost: React.FC = () => {
   const [categoryId, setCategoryId] = useState<number>(0);
   const [post, setPost] = useState<PostNew>({
     thread_id: 0,
-    title: "", // ✅ Add title field
+    title: "", 
     content: "",
     image_url: null,
     tag_name: [],

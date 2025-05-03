@@ -100,6 +100,40 @@ export const getSummaryTagsDB = async (page = 1, limit = 20, search = '', sortBy
         if (conn) conn.release();
     }
 };
+export const getSummaryLittleTagsDB = async () => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+
+        const tagsQuery = `
+            SELECT 
+                t.tag_id, 
+                t.tag_name
+            FROM forum_tags t
+        `;
+        const [tags] = await conn.execute(tagsQuery);
+
+        const totalTags = tags.length > 0 ? tags[0].total_count : 0;
+
+        const cleanTags = tags.map(({ total_count, ...rest }) => rest);
+
+        await conn.commit();
+
+        return { tags: cleanTags, totalTags };
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Database error in getSummaryTagsDB:", error);
+
+        const enhancedError = new Error(`Failed to fetch summary tags: ${error.message}`);
+        enhancedError.statusCode = 500;
+        enhancedError.originalError = error;
+        throw enhancedError;
+    } finally {
+        if (conn) conn.release();
+    }
+};
 
 export const getSummaryTagByIdDB = async (id) => {
     let conn;

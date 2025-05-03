@@ -43,7 +43,7 @@ export interface NewThread {
 export interface ThreadDropdown {
     thread_id: number;
     thread_name: string;
-    category_id: number;
+    category_id?: number;
 }
 export interface ThreadSummary {
     thread_id: number;
@@ -111,6 +111,7 @@ export interface PostComment {
 export interface PostTag {
     tag_id: number;
     tag_name: string;
+    description?: string;
 }
 
 export interface PostListResponse {
@@ -142,6 +143,7 @@ export interface PostSummary {
 }
 
 export interface PostNew {
+    category_id?: number;
     thread_id: number;
     title: string;
     content: string;

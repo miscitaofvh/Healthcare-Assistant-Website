@@ -10,8 +10,8 @@ import {
     deleteComment,
 } from "../../../utils/api/Forum/post";
 import { Dispatch, SetStateAction } from "react";
-import { PostListResponse, Post } from "../../../types/forum";
-import { PostComment } from "../../../types/forum";
+import { PostListResponse, Post, PostComment, PostNew, PostTag } from "../../../types/forum";
+import { CategorySummary, ThreadDropdown, TagSummary } from "../../../types/forum";
 import { on } from "events";
 
 // Posts list functions
@@ -76,9 +76,9 @@ export const loadPostPageById = async (
         }
         const post = data.post;
         if (!post) {
-          throw new Error("Post not found");
+            throw new Error("Post not found");
         }
-    
+
         const comments = Array.isArray(post.comments) ? post.comments : [];
         setPost(post);
         setComments(comments);
@@ -103,6 +103,72 @@ export const loadPostPageById = async (
         setLoading(false);
     }
 };
+
+export const updatePostFE = async (
+  id: string,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setPost: (post: Post | null) => void,
+  setCategories: (categories: CategorySummary[]) => void,
+  setThreads: (threads: ThreadDropdown[]) => void,
+  setError: React.Dispatch<React.SetStateAction<string>>,
+  setSuccess: React.Dispatch<React.SetStateAction<string>>,
+  onSuccess?: () => void
+): Promise<void> => {
+  const handleError = (message: string) => {
+    setError(`Không thể tải post: ${message}`);
+    setSuccess("");
+  };
+
+  try {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    const response = await getPostById(id);
+    const { status, data } = response;
+
+    if (status !== 200 || !data?.success) {
+      const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
+      return handleError(errorMsg);
+    }
+
+    const post = data.post;
+
+    setPost({
+      ...post,
+      tag_name: post.tags.map((tag: TagSummary) => tag.tag_name),
+    });
+
+    setCategories([
+      {
+        category_id: post.category_id,
+        category_name: post.category_name,
+      },
+    ]);
+
+    setThreads([
+      {
+        thread_id: post.thread_id,
+        thread_name: post.thread_name,
+      },
+    ]);
+
+    setSuccess("Post loaded successfully");
+
+    if (onSuccess) {
+      setTimeout(onSuccess, 2000);
+    }
+  } catch (err: unknown) {
+    let errorMessage = "Failed to load post";
+    if (err instanceof Error) errorMessage = err.message;
+    else if (typeof err === "string") errorMessage = err;
+
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 export const deletePostFE = async (
     id: string,

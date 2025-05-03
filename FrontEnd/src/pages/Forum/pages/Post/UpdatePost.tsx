@@ -2,15 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
-import { loadThreadsByCategory } from "../../../../utils/service/Forum/thread";
-import { loadTagsSummary } from "../../../../utils/service/Forum/tag";
-import { getPostById, updatePost } from "../../../../utils/api/Forum/main";
+import { updatePostFE } from "../../../../utils/service/Forum/post";
+import { updatePost } from "../../../../utils/api/Forum/main";
+import { loadTagsPostSummary } from "../../../../utils/service/Forum/tag";
 import {
   CategorySummary,
   ThreadDropdown,
   PostNew,
-  TagSummary,
+  PostTag,
   Post,
 } from "../../../../types/forum";
 
@@ -18,11 +17,11 @@ const UpdatePost: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [post, setPost] = useState<PostNew | null>(null);
+  const [post, setPost] = useState<Post | null>(null);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
-  const [tags, setTags] = useState<TagSummary[]>([]);
-  const [availableTags, setAvailableTags] = useState<TagSummary[]>([]);
+  const [tags, setTags] = useState<PostTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<PostTag[]>([]);
   const [loading, setLoading] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,21 +31,16 @@ const UpdatePost: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const postId = id || "0";
-        const response = await getPostById(postId);
-        const data: Post = response.data.post;
-
-        setPost({
-          thread_id: data.thread_id,
-          title: data.title,
-          content: data.content,
-          image_url: data.image_url,
-          tag_name: data.tags.map(tag => tag.tag_name),
-        });
-
-        await loadCategoriesSummary(() => { }, setCategories, setError, () => { });
-        await loadTagsSummary(setTagsLoading, setTags, setError, () => { });
-        await loadThreadsByCategory(data.category_id, setThreads, setError);
+        await updatePostFE(
+          id || "",
+          setLoading,
+          setPost,
+          setCategories,
+          setThreads,
+          setError,
+          setSuccess
+        );
+        await loadTagsPostSummary(setTagsLoading, setTags, setError, () => { });
       } catch (err) {
         setError("Failed to load post details.");
       } finally {
@@ -58,24 +52,38 @@ const UpdatePost: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    const filtered = tags.filter(tag => !post?.tag_name.includes(tag.tag_name));
+    if (!post) return;
+
+    const filtered = tags.filter(tag =>
+      !post.tags.some(postTag => postTag.tag_name === tag.tag_name)
+    );
     setAvailableTags(filtered);
-  }, [tags, post?.tag_name]);
+  }, [tags, post?.tags]);
 
   const handleAddTag = (tagName: string) => {
-    if (post && tagName && !post.tag_name.includes(tagName)) {
-      setPost(prev => ({
-        ...prev!,
-        tag_name: [...prev!.tag_name, tagName],
-      }));
-    }
+    if (!post || !tagName || post.tags.some(tag => tag.tag_name === tagName)) return;
+
+    const tagToAdd = tags.find(tag => tag.tag_name === tagName);
+    if (!tagToAdd) return;
+
+    setPost(prev => ({
+      ...prev!,
+      tags: [...prev!.tags, tagToAdd],
+    }));
   };
 
   const removeTag = (tagToRemove: string) => {
+    if (!post) return;
+
     setPost(prev => ({
       ...prev!,
-      tag_name: prev!.tag_name.filter(tag => tag !== tagToRemove),
+      tags: prev!.tags.filter(tag => tag.tag_name !== tagToRemove),
     }));
+  };
+
+  const handleError = (message: string) => {
+    setError(`Không thể tải post: ${message}`);
+    setSuccess("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,7 +93,19 @@ const UpdatePost: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      await updatePost(id || "", post);
+      const postData = {
+        ...post,
+        tags: post.tags.map(tag => tag.tag_name),
+        tag_name: undefined
+      };
+
+      const response = await updatePost(id || "", postData);
+      const { status, data } = response;
+
+      if (status !== 200 || !data?.success) {
+        const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
+        return handleError(errorMsg);
+      }
       setSuccess("Post updated successfully!");
       setTimeout(() => navigate(`/forum/posts/${id}`), 2000);
     } catch {
@@ -143,6 +163,25 @@ const UpdatePost: React.FC = () => {
         <div className={styles.tagCard}>
           <form onSubmit={handleSubmit}>
             <div className={styles.formGroup}>
+              <label htmlFor="category" className={styles.metaLabel}>Category *</label>
+              <select
+                id="category"
+                className={styles.formInput}
+                value={post.category_id}
+                onChange={(e) =>
+                  handleInputChange("category_id", parseInt(e.target.value))
+                }
+                required
+                disabled={loading}
+              >
+                <option value={0}>Select category</option>
+                {categories.map(category => (
+                  <option key={category.category_id} value={category.category_id}>
+                    {category.category_name}
+                  </option>
+                ))}
+              </select>
+
               <label htmlFor="thread" className={styles.metaLabel}>Thread *</label>
               <select
                 id="thread"
@@ -162,7 +201,7 @@ const UpdatePost: React.FC = () => {
                 ))}
               </select>
             </div>
-            
+
             <div className={styles.formGroup}>
               <label htmlFor="title" className={styles.metaLabel}>Title *</label>
               <input
@@ -175,6 +214,7 @@ const UpdatePost: React.FC = () => {
                 disabled={loading}
               />
             </div>
+
             <div className={styles.formGroup}>
               <label htmlFor="content" className={styles.metaLabel}>Content *</label>
               <textarea
@@ -228,13 +268,13 @@ const UpdatePost: React.FC = () => {
               </select>
 
               <div className={styles.tagContainer}>
-                {post.tag_name.map(tag => (
-                  <span key={tag} className={styles.tag}>
-                    #{tag}
+                {post.tags.map(tag => (
+                  <span key={tag.tag_id} className={styles.tag}>
+                    #{tag.tag_name}
                     <button
                       type="button"
                       className={styles.tagRemove}
-                      onClick={() => removeTag(tag)}
+                      onClick={() => removeTag(tag.tag_name)}
                       disabled={loading}
                     >
                       ×

@@ -1,15 +1,16 @@
 import {
     getTagById,
     getAllTagsSummary,
+    getAllTagsLittleSummary,
     getPostsByTag,
     getAllTags,
     createTag,
     updateTag,
     deleteTag,
 } from "../../../utils/api/Forum/tag";
-import { Tag, NewTag } from "../../../types/forum";
-import { Dispatch, SetStateAction } from "react";
+import { Tag, NewTag, PostTag } from "../../../types/forum";
 
+import { Dispatch, SetStateAction } from "react";
 export const loadTags = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setTags: (tags: Tag[]) => void,
@@ -49,6 +50,33 @@ export const loadTagsSummary = async (
         setSuccess("");
 
         const response = await getAllTagsSummary();
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            throw new Error(data?.message || "Unknown error occurred while loading tags.");
+        }
+
+        setTags(data.data?.tags || []);
+        setSuccess("Tải danh sách tag thành công");
+    } catch (err: any) {
+        setError(err?.response?.data?.message || err.message || "Đã xảy ra lỗi khi tải danh sách tag");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadTagsPostSummary = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: (tags: PostTag[]) => void,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+) => {
+    try {
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        const response = await getAllTagsLittleSummary();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

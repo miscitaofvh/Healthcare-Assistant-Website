@@ -384,8 +384,12 @@ export const updatePostDB = async (postId, user_id, title, content, image_url = 
             throw new Error("Unauthorized to update this post");
         }
 
-        if (tags && !Array.isArray(tags)) {
-            throw new Error("Invalid tags provided");
+        const normalizedTags = tags.map(tag =>
+            typeof tag === 'string' ? tag :
+                (tag?.tag_name ? tag.tag_name : null)
+        ).filter(tag => tag !== null);
+        if (normalizedTags.some(tag => typeof tag !== 'string')) {
+            throw new Error("Invalid tags format");
         }
 
         const updateSql = `
@@ -395,48 +399,48 @@ export const updatePostDB = async (postId, user_id, title, content, image_url = 
         `;
         await conn.execute(updateSql, [title, content, image_url, postId]);
 
-        if (tags) {
-            await conn.execute(
-                "DELETE FROM forum_tags_mapping WHERE post_id = ?",
-                [postId]
+        await conn.execute(
+            "DELETE FROM forum_tags_mapping WHERE post_id = ?",
+            [postId]
+        );
+
+        if (normalizedTags.length > 0) {
+            const tagPlaceholders = normalizedTags.map(() => '?').join(',');
+            const [existingTags] = await conn.execute(
+                `SELECT tag_id, tag_name FROM forum_tags WHERE tag_name IN (${tagPlaceholders})`,
+                normalizedTags
             );
 
-            if (tags.length > 0) {
-                const tagPlaceholders = tags.map(() => '?').join(',');
-                const [existingTags] = await conn.execute(
-                    `SELECT tag_id, tag_name FROM forum_tags WHERE tag_name IN (${tagPlaceholders})`,
-                    tags
+            const tagMap = {};
+            existingTags.forEach(tag => {
+                tagMap[tag.tag_name] = tag.tag_id;
+            });
+
+            for (const tagName of normalizedTags) {
+                let tagId = tagMap[tagName];
+
+                if (!tagId) {
+                    const [insertResult] = await conn.execute(
+                        "INSERT INTO forum_tags (tag_name, user_id) VALUES (?, ?)",
+                        [tagName, user_id]
+                    );
+                    tagId = insertResult.insertId;
+                }
+
+                await conn.execute(
+                    "INSERT INTO forum_tags_mapping (post_id, tag_id) VALUES (?, ?)",
+                    [postId, tagId]
                 );
 
-                const tagMap = {};
-                existingTags.forEach(tag => {
-                    tagMap[tag.tag_name] = tag.tag_id;
-                });
-
-                for (const tagName of tags) {
-                    if (!tagMap[tagName]) {
-                        const [insertResult] = await conn.execute(
-                            "INSERT INTO forum_tags (tag_name, user_id) VALUES (?, ?)",
-                            [tagName, user_id]
-                        );
-                        tagMap[tagName] = insertResult.insertId;
-                    }
-
-                    await conn.execute(
-                        "INSERT INTO forum_tags_mapping (post_id, tag_id) VALUES (?, ?)",
-                        [postId, tagMap[tagName]]
-                    );
-
-                    await conn.execute(
-                        "UPDATE forum_tags SET usage_count = usage_count + 1, last_used_at = CURRENT_TIMESTAMP WHERE tag_id = ?",
-                        [tagMap[tagName]]
-                    );
-                }
+                await conn.execute(
+                    "UPDATE forum_tags SET usage_count = usage_count + 1, last_used_at = CURRENT_TIMESTAMP WHERE tag_id = ?",
+                    [tagId]
+                );
             }
         }
 
         await conn.commit();
-        
+
         const [updatedPost] = await conn.execute(
             "SELECT last_updated FROM forum_posts WHERE post_id = ?",
             [postId]
@@ -444,7 +448,7 @@ export const updatePostDB = async (postId, user_id, title, content, image_url = 
 
         return {
             updated_at: updatedPost[0].last_updated,
-            edit_count: 1 
+            edit_count: 1
         };
     } catch (error) {
         if (conn) await conn.rollback();

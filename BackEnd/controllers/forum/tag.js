@@ -5,6 +5,7 @@ import {
     getAllTagsDB,
     getSummaryTagsDB,
     getSummaryTagByIdDB,
+    getSummaryLittleTagsDB,
     getTagByIdDB,
     getTagByNameDB,
     getPostsByTagDB,
@@ -143,6 +144,41 @@ export const getSummaryTags = async (req, res) => {
                     search,
                     sortBy,
                     sortOrder
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error getting summary tags:", error);
+
+        const statusCode = error.statusCode || 500;
+        const errorResponse = {
+            success: false,
+            message: error.message || "Error fetching summary tags",
+            error: error.message
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+            errorResponse.stack = error.stack;
+            if (error.originalError) {
+                errorResponse.originalError = error.originalError.message;
+            }
+        }
+
+        res.status(statusCode).json(errorResponse);
+    }
+};
+
+export const getSummaryLittleTags = async (req, res) => {
+    try {
+        const { tags, totalTags } = await getSummaryLittleTagsDB();
+
+
+        res.status(200).json({
+            success: true,
+            data: {
+                tags,
+                pagination: {
+                    totalItems: totalTags
                 }
             }
         });
