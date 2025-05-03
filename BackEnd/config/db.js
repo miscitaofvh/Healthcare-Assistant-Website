@@ -1,26 +1,18 @@
-import dotenv from "dotenv";
-import mysql from "mysql2/promise";
+import mysql from 'mysql2';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-
+// Create a connection pool to the database
 const pool = mysql.createPool({
-  host: DB_HOST,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'healthcare_service_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
+  queueLimit: 0
 });
 
-try {
-  const connection = await pool.getConnection();
-  console.log("✅ MySQL Database Connected!");
-  connection.release();
-} catch (error) {
-  console.error("❌ MySQL Connection Error:", error.message);
-}
-
-export default pool; // Export mặc định để dùng import
+// Export the pool for use in other modules
+export default pool.promise();

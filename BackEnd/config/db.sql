@@ -154,36 +154,34 @@ CREATE TABLE article_views (
 CREATE INDEX idx_article_view_article ON article_views(article_id);
 CREATE INDEX idx_article_view_user ON article_views(user_id);
 
--- ========== CHAT HISTORY ==========
-CREATE TABLE chat_history (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+-- ========== CHATBOT CONVERSATIONS ==========
+CREATE TABLE chatbot_conversations (
+    conversation_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     user_id CHAR(36) NOT NULL,
-    question_text TEXT NOT NULL,
-    image_url TEXT DEFAULT NULL,
-    status ENUM('pending', 'answered') DEFAULT 'pending',
+    title VARCHAR(255) DEFAULT 'New Conversation',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    answered_by CHAR(36) DEFAULT NULL,
-    answer_text TEXT NOT NULL,
-    is_ai BOOLEAN DEFAULT TRUE,
-    review_by CHAR(36) DEFAULT NULL,
-    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (answered_by) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (review_by) REFERENCES users(user_id) ON DELETE SET NULL
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ========== ANSWERS ==========
-CREATE TABLE answers (
-    answer_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    answered_by CHAR(36) NOT NULL,
-    question_id INT UNSIGNED NOT NULL,
-    answer_text TEXT NOT NULL,
+CREATE INDEX idx_chatbot_conversation_user ON chatbot_conversations(user_id);
+
+-- ========== CHATBOT MESSAGES ==========
+CREATE TABLE chatbot_messages (
+    message_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    conversation_id CHAR(36) NOT NULL,
+    sender_type ENUM('user', 'bot', 'doctor') NOT NULL,
+    sender_id CHAR(36),
+    message_text TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES chat_history(id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (conversation_id) REFERENCES chatbot_conversations(conversation_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE INDEX idx_answer_question ON answers(question_id);
-CREATE INDEX idx_answer_user ON answers(answered_by);
+CREATE INDEX idx_chatbot_message_conversation ON chatbot_messages(conversation_id);
+CREATE INDEX idx_chatbot_message_sender ON chatbot_messages(sender_id);
 
 -- ========== FORUM CATEGORIES ==========
 CREATE TABLE forum_categories (

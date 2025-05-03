@@ -37,3 +37,37 @@ export const validateChatRequest = (req, res, next) => {
     
     next();
 };
+
+/**
+ * Validate and sanitize save chat request with title
+ */
+export const validateSaveChatRequest = (req, res, next) => {
+  // Validate title exists and is not empty
+  if (!req.body.title || req.body.title.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      error: 'Title is required and cannot be empty'
+    });
+  }
+  
+  // Sanitize title - remove excessive whitespace
+  req.body.title = req.body.title.trim();
+  
+  // Limit title length
+  if (req.body.title.length > 255) {
+    return res.status(400).json({
+      success: false,
+      error: 'Title exceeds maximum length of 255 characters'
+    });
+  }
+  
+  // Validate messages array
+  if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length < 2) {
+    return res.status(400).json({
+      success: false,
+      error: 'Messages array is required and must contain at least one user message and one assistant response'
+    });
+  }
+  
+  next();
+};

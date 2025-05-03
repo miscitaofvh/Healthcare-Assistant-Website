@@ -1,22 +1,29 @@
-import { Router } from 'express';
-import { getChatHistory , getChatById, deleteChat } from '../controllers/chatController.js';
-import { handleStreamingChat } from '../controllers/publicChatController.js';
+import express from 'express';
+import { 
+  handleStreamingChat 
+} from '../controllers/publicChatController.js';
+
+import { 
+  getChatHistory, 
+  getChatById, 
+  deleteChat, 
+  saveChatConversation,
+  updateConversationTitle
+} from '../controllers/chatController.js';
+
+import { validateChatRequest, validateSaveChatRequest } from '../middleware/chatMiddleware.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
-import { validateChatRequest } from '../middleware/chatMiddleware.js';
 
-const router = Router();
+const router = express.Router();
 
-// Public chat endpoints - không cần xác thực
-router.post('/stream', handleStreamingChat);
+// Public chat routes (no authentication required)
+router.post('/stream', validateChatRequest, handleStreamingChat);
 
-// Bảo vệ các route chat còn lại bằng middleware xác thực
-router.use('/history', authenticateUser);
-router.use('/message', authenticateUser);
-router.use('/:chatId', authenticateUser);
-
-// Các route cần xác thực
-router.get('/history', getChatHistory);
-router.get('/:chatId', getChatById);
-router.delete('/:chatId', deleteChat);
+// Routes requiring authentication
+router.get('/history', authenticateUser, getChatHistory);
+router.get('/:chatId', authenticateUser, getChatById);
+router.delete('/:chatId', authenticateUser, deleteChat);
+router.post('/save', authenticateUser, validateSaveChatRequest, saveChatConversation);
+router.put('/:chatId/title', authenticateUser, updateConversationTitle);
 
 export default router;

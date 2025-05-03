@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './ChatBot.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
-import { useLocation } from 'react-router-dom';
-import API from '../../utils/api/api';
+import { faTimes, faPaperPlane, faSave } from '@fortawesome/free-solid-svg-icons';
 import mainLogo from '../../assets/images/Logo/main_logo.png';
 import ReactMarkdown from 'react-markdown';
-import { streamChatMessage } from '../../utils/service/chat';
+import { streamChatMessage, saveChatHistory } from '../../utils/service/chat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,8 +19,12 @@ const ChatBot: React.FC = () => {
   const [inputMessage, setInputMessage] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
+  const [showTitleDialog, setShowTitleDialog] = useState<boolean>(false);
+  const [conversationTitle, setConversationTitle] = useState<string>('');
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const { user } = useAuth();
 
   // List of paths where chatbot should NOT be available
   const excludedPaths = ['/test', '/verify-pending', '/verify', '/error'];
@@ -73,32 +77,38 @@ const ChatBot: React.FC = () => {
       content: inputMessage
     };
     
+    // Save current message for API call
+    const currentInputMessage = inputMessage;
+    const currentMessages = [...messages];
+    
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsStreaming(true); // Just use isStreaming
+    setIsStreaming(true);
     
     try {
       // Create an empty assistant message that will be updated with streaming content
-      setMessages(prevMessages => [
-        ...prevMessages,
-        {
-          role: 'assistant',
+      setMessages(prevMessages => {
+        const newMessages = [...prevMessages, {
+          role: 'assistant' as const,
           content: ''
-        }
-      ]);
+        }];
+        
+        // Set the streaming index to the last message (the assistant response)
+        setCurrentStreamingIndex(newMessages.length - 1);
+        
+        return newMessages;
+      });
       
-      setCurrentStreamingIndex(messages.length + 1); // Set the index of streaming message
-      
-      // Use the streaming API
+      // Use the streaming API with current message state (not the updated one)
       await streamChatMessage(
-        inputMessage,
-        messages,
+        currentInputMessage,
+        currentMessages,
         // On each chunk received
         (chunk) => {
           setMessages(prevMessages => {
             const newMessages = [...prevMessages];
             const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage.role === 'assistant') {
+            if (lastMessage && lastMessage.role === 'assistant') {
               lastMessage.content += chunk;
             }
             return newMessages;
@@ -118,11 +128,47 @@ const ChatBot: React.FC = () => {
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again later.'
+          content: 'Xin lỗi, tôi đã gặp lỗi. Vui lòng thử lại sau.'
         }
       ]);
       setIsStreaming(false);
       setCurrentStreamingIndex(null);
+    }
+  };
+
+  const handleSaveChat = () => {
+    if (!user) {
+      alert('Bạn cần đăng nhập để lưu lịch sử trò chuyện.');
+      return;
+    }
+    
+    // Generate default title from first user message
+    const firstUserMessage = messages.find(msg => msg.role === 'user');
+    const defaultTitle = firstUserMessage 
+      ? firstUserMessage.content.substring(0, 30) + (firstUserMessage.content.length > 30 ? '...' : '') 
+      : 'Cuộc trò chuyện mới';
+    
+    setConversationTitle(defaultTitle);
+    setShowTitleDialog(true);
+  };
+
+  // Add new method to handle actual saving with title
+  const handleSaveWithTitle = async () => {
+    if (!conversationTitle.trim()) {
+      alert('Vui lòng nhập tiêu đề cho cuộc trò chuyện.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveChatHistory(messages, conversationTitle);
+      setShowTitleDialog(false);
+      setIsSaving(false);
+      alert('Lịch sử trò chuyện đã được lưu thành công!');
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+      setIsSaving(false);
+      alert('Không thể lưu lịch sử trò chuyện. Vui lòng thử lại sau.');
     }
   };
 
@@ -135,9 +181,16 @@ const ChatBot: React.FC = () => {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <h3>AMH Healthcare Assistant</h3>
-            <button className="close-button" onClick={toggleChat}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
+            <div className="header-buttons">
+              {user && (
+                <button className="save-button" onClick={handleSaveChat} title="Save chat">
+                  <FontAwesomeIcon icon={faSave} />
+                </button>
+              )}
+              <button className="close-button" onClick={toggleChat}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
           </div>
           
           <div className="chatbot-messages">
@@ -177,6 +230,39 @@ const ChatBot: React.FC = () => {
               <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </form>
+        </div>
+      )}
+      
+      {/* Title Dialog */}
+      {showTitleDialog && (
+        <div className="chatbot-title-dialog">
+          <div className="title-dialog-content">
+            <h3>Lưu cuộc trò chuyện</h3>
+            <p>Nhập tiêu đề cho cuộc trò chuyện:</p>
+            <input 
+              type="text" 
+              value={conversationTitle}
+              onChange={(e) => setConversationTitle(e.target.value)}
+              placeholder="Nhập tiêu đề..."
+              maxLength={255}
+            />
+            <div className="title-dialog-buttons">
+              <button 
+                onClick={() => setShowTitleDialog(false)}
+                disabled={isSaving}
+                className="cancel-button"
+              >
+                Hủy
+              </button>
+              <button 
+                onClick={handleSaveWithTitle}
+                disabled={!conversationTitle.trim() || isSaving}
+                className="save-button"
+              >
+                {isSaving ? 'Đang lưu...' : 'Lưu'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
       

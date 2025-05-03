@@ -67,13 +67,32 @@
     margin: 0;
     font-size: 14px;
   }
+
+  .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   
-  .close-button {
+  .close-button, .save-button {
     background: none;
     border: none;
     color: #293241; /* Darker blue-gray for contrast */
     font-size: 16px;
     cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+
+  .close-button:hover {
+    color: #e63946; /* Red on hover */
+  }
+
+  .save-button:hover {
+    color: #4CAF50; /* Green on hover */
   }
   
   .chatbot-messages {
@@ -222,4 +241,84 @@
       width: 280px;
       right: 0;
     }
+  }
+
+  /* Title Dialog Styles */
+  .chatbot-title-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+  }
+
+  .title-dialog-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .title-dialog-content h3 {
+    margin-top: 0;
+    color: #293241;
+  }
+
+  .title-dialog-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #bdd5e7;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+
+  .title-dialog-content input:focus {
+    outline: none;
+    border-color: #98c1d9;
+  }
+
+  .title-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .title-dialog-buttons button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+  }
+
+  .title-dialog-buttons .cancel-button {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+
+  .title-dialog-buttons .save-button {
+    background-color: #98c1d9;
+    color: #293241;
+  }
+
+  .title-dialog-buttons .cancel-button:hover {
+    background-color: #d0d0d0;
+  }
+
+  .title-dialog-buttons .save-button:hover {
+    background-color: #7aabc8;
+  }
+
+  .title-dialog-buttons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
