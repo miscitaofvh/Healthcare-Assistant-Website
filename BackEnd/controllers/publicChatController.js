@@ -1,7 +1,9 @@
 import ollama from 'ollama';
 import dotenv from 'dotenv';
-import connection from '../config/connection.js';
 import { v4 as uuidv4 } from 'uuid';
+import { createConversationDB } from '../models/Chat.js';
+import { addUserMessage, addAssistantMessage } from '../models/ChatMessage.js';
+import { checkConversationExistsQuery } from '../queries/chatQueries.js';
 
 dotenv.config();
 
@@ -36,118 +38,47 @@ export const handleStreamingChat = async (req, res) => {
       content: message
     });
 
-    // If the user is authenticated and there's no conversationId, create a new conversation
+    // Nếu người dùng đã đăng nhập và không có conversationId, tạo cuộc trò chuyện mới
     if (req.user && !conversationId) {
-      // Create a new conversation with the first message as the title
-      const title = message.length > 30 ? message.substring(0, 30) + '...' : message;
-      
-      // Generate and check for a unique UUID
-      let uniqueId = null;
-      const conn = await connection.getConnection();
       try {
-        let isUnique = false;
-        while (!isUnique) {
-          // Generate a new UUID
-          const generatedId = uuidv4();
-          
-          // Check if this UUID already exists in the database
-          const [existingConversations] = await conn.execute(
-            'SELECT conversation_id FROM chatbot_conversations WHERE conversation_id = ?',
-            [generatedId]
-          );
-          
-          if (existingConversations.length === 0) {
-            // This ID doesn't exist yet, so we can use it
-            uniqueId = generatedId;
-            isUnique = true;
-          } else {
-            console.log(`Generated conversation ID ${generatedId} already exists in database, trying again...`);
-          }
-        }
+        // Tạo tiêu đề từ tin nhắn đầu tiên
+        const title = message.length > 30 ? message.substring(0, 30) + '...' : message;
         
-        responseConversationId = uniqueId;
+        // Tạo cuộc hội thoại mới và lưu tin nhắn đầu tiên
+        responseConversationId = await createConversationDB(req.user.user_id, title);
         isNewConversation = true;
         
-        await conn.beginTransaction();
-        
-        // Insert the conversation
-        const conversationQuery = `
-          INSERT INTO chatbot_conversations (
-            conversation_id,
-            user_id,
-            title
-          ) VALUES (?, ?, ?)
-        `;
-        await conn.execute(conversationQuery, [responseConversationId, req.user.user_id, title]);
-        
-        // Insert the user message
-        const messageId = uuidv4();
-        const messageQuery = `
-          INSERT INTO chatbot_messages (
-            message_id,
-            conversation_id,
-            sender_type,
-            sender_id,
-            message_text
-          ) VALUES (?, ?, ?, ?, ?)
-        `;
-        await conn.execute(messageQuery, [
-          messageId,
-          responseConversationId,
-          'user',
-          req.user.user_id,
-          message
-        ]);
-        
-        await conn.commit();
+        // Lưu tin nhắn người dùng
+        await addUserMessage(responseConversationId, req.user.user_id, message);
       } catch (error) {
-        await conn.rollback();
         console.error('Error creating conversation:', error);
-        // Continue with the chat even if saving fails
-      } finally {
-        conn.release();
+        // Tiếp tục chat ngay cả khi lưu không thành công
       }
     }
     
-    // Save the user message if user is authenticated and conversation already exists
+    // Lưu tin nhắn của người dùng nếu cuộc trò chuyện đã tồn tại
     if (req.user && conversationId && !isNewConversation) {
       try {
-        const messageId = uuidv4();
-        const conn = await connection.getConnection();
-        const messageQuery = `
-          INSERT INTO chatbot_messages (
-            message_id,
-            conversation_id,
-            sender_type,
-            sender_id,
-            message_text
-          ) VALUES (?, ?, ?, ?, ?)
-        `;
-        await conn.execute(messageQuery, [
-          messageId,
-          conversationId,
-          'user',
-          req.user.user_id,
-          message
-        ]);
-        conn.release();
+        // Kiểm tra conversationId có hợp lệ không
+        const conversationExists = await checkConversationExistsQuery(conversationId);
+        if (conversationExists) {
+          await addUserMessage(conversationId, req.user.user_id, message);
+        }
       } catch (error) {
         console.error('Error saving user message:', error);
-        // Continue with the chat even if saving fails
+        // Tiếp tục chat ngay cả khi lưu không thành công
       }
     }
 
-    // If this is a new conversation, send the conversation ID in the response header
-    // Setting header BEFORE writing any data to the response
+    // Nếu đây là cuộc trò chuyện mới, gửi ID trong header
     if (isNewConversation) {
       res.setHeader('X-Conversation-Id', responseConversationId);
       
-      // Also send the conversation ID as a special message at the start of the stream
-      // This ensures clients will receive it even if they don't check headers
+      // Gửi ID cuộc trò chuyện như một thông điệp đặc biệt khi bắt đầu stream
       res.write(`CONVERSATION_ID:${responseConversationId}\n\n`);
     }
 
-    // Stream response from Ollama
+    // Stream phản hồi từ mô hình Ollama
     const stream = await ollama.chat({
       model: process.env.AI_MODEL_NAME || 'AMH_chatbot',
       messages: formattedHistory,
@@ -156,7 +87,7 @@ export const handleStreamingChat = async (req, res) => {
 
     let assistantResponse = '';
 
-    // Process the stream
+    // Xử lý stream
     for await (const part of stream) {
       if (part.message?.content) {
         assistantResponse += part.message.content;
@@ -164,26 +95,11 @@ export const handleStreamingChat = async (req, res) => {
       }
     }
     
-    // Save the assistant's response if user is authenticated and we have a conversation ID
+    // Lưu phản hồi của trợ lý nếu người dùng đã đăng nhập
     if (req.user && (responseConversationId || conversationId)) {
       try {
-        const messageId = uuidv4();
-        const conn = await connection.getConnection();
-        const messageQuery = `
-          INSERT INTO chatbot_messages (
-            message_id,
-            conversation_id,
-            sender_type,
-            message_text
-          ) VALUES (?, ?, ?, ?)
-        `;
-        await conn.execute(messageQuery, [
-          messageId,
-          responseConversationId || conversationId,
-          'bot',
-          assistantResponse
-        ]);
-        conn.release();
+        const chatId = responseConversationId || conversationId;
+        await addAssistantMessage(chatId, assistantResponse);
       } catch (error) {
         console.error('Error saving assistant response:', error);
       }
