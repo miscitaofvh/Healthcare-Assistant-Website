@@ -14,6 +14,8 @@ import { ModalProvider } from './contexts/ModalContext';
 import ChatBot from './components/ChatBot';
 import { forumRoutes } from './pages/Forum/forumRoutes'; // import Forum routes
 import UserProfile from './pages/UserProfile';
+import ChatHistory from './pages/ChatHistory';
+import ChatDetail from './pages/ChatHistory/ChatDetail';
 
 function App() {
     return (
@@ -34,6 +36,8 @@ function App() {
                     <Route path="/verify-pending" element={<VerifyPending />} />
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="/user/profile" element={<UserProfile />} />
+                    <Route path="/user/chat-history" element={<ChatHistory />} />
+                    <Route path="/user/chat/:chatId" element={<ChatDetail />} />
                     <Route path="*" element={<h1>Page Not Found</h1>} />
                 </Routes>
                 <ChatBot />

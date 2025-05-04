@@ -34,11 +34,6 @@ const Navbar = () => {
     closeDropdown();
   };
 
-  // Handle click on dropdown item
-  const handleDropdownItemClick = (e: React.MouseEvent) => {
-    // Don't stop propagation here to allow Link navigation
-  };
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,35 +119,30 @@ const Navbar = () => {
                     <Link
                       to="/user/profile"
                       className="dropdown-item"
-                      onClick={handleDropdownItemClick}
                     >
                       <FaUser /> Hồ sơ cá nhân
                     </Link>
                     <Link
                       to="/user/health-tracking"
                       className="dropdown-item"
-                      onClick={handleDropdownItemClick}
                     >
                       <FaHeartbeat /> Theo dõi sức khỏe
                     </Link>
                     <Link
                       to="/user/medical-history"
-                      className="dropdown-item" 
-                      onClick={handleDropdownItemClick}
+                      className="dropdown-item"
                     >
                       <FaHistory /> Lịch sử y tế
                     </Link>
                     <Link
                       to="/user/appointments"
                       className="dropdown-item"
-                      onClick={handleDropdownItemClick}
                     >
                       <FaCalendarAlt /> Lịch hẹn
                     </Link>
                     <Link
                       to="/user/chat-history"
                       className="dropdown-item"
-                      onClick={handleDropdownItemClick}
                     >
                       <FaComment /> Lịch sử chat
                     </Link>

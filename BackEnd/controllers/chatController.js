@@ -1,5 +1,5 @@
 import ollama from 'ollama';
-import db from '../config/db.js';
+import connection from '../config/connection.js';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -9,6 +9,7 @@ dotenv.config();
 export const getChatHistory = async (req, res) => {
 	try {
 		const userId = req.user.user_id;
+		const conn = await connection.getConnection();
 
 		// Query to get all conversations for a user
 		const query = `
@@ -23,17 +24,10 @@ export const getChatHistory = async (req, res) => {
       ORDER BY updated_at DESC
     `;
 
-		db.query(query, [userId], (err, results) => {
-			if (err) {
-				return res.status(500).json({
-					success: false,
-					message: 'Error retrieving chat history',
-					error: err.message
-				});
-			}
-
-			res.status(200).json({ success: true, data: results });
-		});
+		const [results] = await conn.execute(query, [userId]);
+		conn.release();
+		
+		res.status(200).json({ success: true, data: results });
 	} catch (error) {
 		res.status(500).json({
 			success: false,
@@ -48,6 +42,7 @@ export const getChatById = async (req, res) => {
 	try {
 		const { chatId } = req.params;
 		const userId = req.user.user_id;
+		const conn = await connection.getConnection();
 
 		// First check if conversation exists and belongs to user
 		const conversationQuery = `
@@ -56,24 +51,18 @@ export const getChatById = async (req, res) => {
       WHERE conversation_id = ? AND user_id = ?
     `;
 
-		db.query(conversationQuery, [chatId, userId], (err, conversations) => {
-			if (err) {
-				return res.status(500).json({
-					success: false,
-					message: 'Error retrieving conversation',
-					error: err.message
-				});
-			}
+		const [conversations] = await conn.execute(conversationQuery, [chatId, userId]);
 
-			if (!conversations || conversations.length === 0) {
-				return res.status(404).json({
-					success: false,
-					message: 'Conversation not found'
-				});
-			}
+		if (!conversations || conversations.length === 0) {
+			conn.release();
+			return res.status(404).json({
+				success: false,
+				message: 'Conversation not found'
+			});
+		}
 
-			// Get all messages for this conversation
-			const messagesQuery = `
+		// Get all messages for this conversation
+		const messagesQuery = `
         SELECT 
           message_id,
           sender_type,
@@ -85,33 +74,25 @@ export const getChatById = async (req, res) => {
         ORDER BY created_at ASC
       `;
 
-			db.query(messagesQuery, [chatId], (messagesErr, messages) => {
-				if (messagesErr) {
-					return res.status(500).json({
-						success: false,
-						message: 'Error retrieving messages',
-						error: messagesErr.message
-					});
-				}
+		const [messages] = await conn.execute(messagesQuery, [chatId]);
+		conn.release();
 
-				// Format messages for frontend
-				const formattedMessages = messages.map(msg => ({
-					role: msg.sender_type === 'user' ? 'user' : 'assistant',
-					content: msg.content,
-					timestamp: msg.created_at
-				}));
+		// Format messages for frontend
+		const formattedMessages = messages.map(msg => ({
+			role: msg.sender_type === 'user' ? 'user' : 'assistant',
+			content: msg.content,
+			timestamp: msg.created_at
+		}));
 
-				const formattedConversation = {
-					conversation_id: conversations[0].conversation_id,
-					title: conversations[0].title,
-					messages: formattedMessages,
-					createdAt: conversations[0].created_at,
-					updatedAt: conversations[0].updated_at
-				};
+		const formattedConversation = {
+			conversation_id: conversations[0].conversation_id,
+			title: conversations[0].title,
+			messages: formattedMessages,
+			createdAt: conversations[0].created_at,
+			updatedAt: conversations[0].updated_at
+		};
 
-				res.status(200).json({ success: true, data: formattedConversation });
-			});
-		});
+		res.status(200).json({ success: true, data: formattedConversation });
 	} catch (error) {
 		res.status(500).json({
 			success: false,
@@ -126,32 +107,26 @@ export const deleteChat = async (req, res) => {
 	try {
 		const { chatId } = req.params;
 		const userId = req.user.user_id;
+		const conn = await connection.getConnection();
 
 		const query = `
       DELETE FROM chatbot_conversations
       WHERE conversation_id = ? AND user_id = ?
     `;
 
-		db.query(query, [chatId, userId], (err, result) => {
-			if (err) {
-				return res.status(500).json({
-					success: false,
-					message: 'Error deleting chat',
-					error: err.message
-				});
-			}
+		const [result] = await conn.execute(query, [chatId, userId]);
+		conn.release();
 
-			if (result.affectedRows === 0) {
-				return res.status(404).json({
-					success: false,
-					message: 'Chat not found or already deleted'
-				});
-			}
-
-			res.status(200).json({
-				success: true,
-				message: 'Chat deleted successfully'
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				success: false,
+				message: 'Chat not found or already deleted'
 			});
+		}
+
+		res.status(200).json({
+			success: true,
+			message: 'Chat deleted successfully'
 		});
 	} catch (error) {
 		res.status(500).json({
@@ -182,102 +157,73 @@ export const saveChatConversation = async (req, res) => {
 			});
 		}
 
-		// Begin transaction
-		db.beginTransaction(async (transErr) => {
-			if (transErr) {
-				return res.status(500).json({
-					success: false,
-					message: 'Database transaction error',
-					error: transErr.message
-				});
-			}
-
+		// Sử dụng connection pool thay vì db
+		const conn = await connection.getConnection();
+		try {
+			await conn.beginTransaction();
+			
 			// Create a new conversation
 			const conversationId = uuidv4();
 			const conversationQuery = `
-        INSERT INTO chatbot_conversations (
-          conversation_id,
-          user_id,
-          title
-        ) VALUES (?, ?, ?)
-      `;
+				INSERT INTO chatbot_conversations (
+					conversation_id,
+					user_id,
+					title
+				) VALUES (?, ?, ?)
+			`;
 
-			db.query(conversationQuery, [conversationId, userId, title], (convErr, convResult) => {
-				if (convErr) {
-					return db.rollback(() => {
-						res.status(500).json({
-							success: false,
-							message: 'Error creating conversation',
-							error: convErr.message
-						});
-					});
-				}
+			await conn.execute(conversationQuery, [conversationId, userId, title]);
+			
+			// Insert all messages
+			const messageQueries = [];
+			const messageParams = [];
 
-				// Insert all messages
-				const messageQueries = [];
-				const messageParams = [];
+			messages.forEach(message => {
+				const messageId = uuidv4();
+				const senderType = message.role === 'user' ? 'user' : 'bot';
+				const senderId = message.role === 'user' ? userId : null;
 
-				messages.forEach(message => {
-					const messageId = uuidv4();
-					const senderType = message.role === 'user' ? 'user' : 'bot';
-					const senderId = message.role === 'user' ? userId : null;
-
-					messageQueries.push(`(?, ?, ?, ?, ?)`);
-					messageParams.push(
-						messageId,
-						conversationId,
-						senderType,
-						senderId,
-						message.content
-					);
-				});
-
-				const messagesQuery = `
-          INSERT INTO chatbot_messages (
-            message_id, 
-            conversation_id,
-            sender_type,
-            sender_id,
-            message_text
-          ) VALUES ${messageQueries.join(', ')}
-        `;
-
-				db.query(messagesQuery, messageParams, (msgErr) => {
-					if (msgErr) {
-						return db.rollback(() => {
-							res.status(500).json({
-								success: false,
-								message: 'Error saving messages',
-								error: msgErr.message
-							});
-						});
-					}
-
-					// Commit the transaction
-					db.commit(commitErr => {
-						if (commitErr) {
-							return db.rollback(() => {
-								res.status(500).json({
-									success: false,
-									message: 'Error committing transaction',
-									error: commitErr.message
-								});
-							});
-						}
-
-						res.status(201).json({
-							success: true,
-							message: 'Chat history saved successfully',
-							data: {
-								conversationId,
-								title
-							}
-						});
-					});
-				});
+				messageQueries.push(`(?, ?, ?, ?, ?)`);
+				messageParams.push(
+					messageId,
+					conversationId,
+					senderType,
+					senderId,
+					message.content
+				);
 			});
-		});
+
+			const messagesQuery = `
+				INSERT INTO chatbot_messages (
+					message_id, 
+					conversation_id,
+					sender_type,
+					sender_id,
+					message_text
+				) VALUES ${messageQueries.join(', ')}
+			`;
+
+			await conn.execute(messagesQuery, messageParams);
+			
+			// Commit the transaction
+			await conn.commit();
+			
+			res.status(201).json({
+				success: true,
+				message: 'Chat history saved successfully',
+				data: {
+					conversationId,
+					title
+				}
+			});
+		} catch (error) {
+			await conn.rollback();
+			throw error;
+		} finally {
+			conn.release();
+		}
 	} catch (error) {
+		console.error('Error saving chat history:', error);
 		res.status(500).json({
 			success: false,
 			message: 'Error saving chat history',
@@ -292,8 +238,10 @@ export const updateConversationTitle = async (req, res) => {
 		const { chatId } = req.params;
 		const { title } = req.body;
 		const userId = req.user.user_id;
+		const conn = await connection.getConnection();
 
 		if (!title || title.trim() === '') {
+			conn.release();
 			return res.status(400).json({
 				success: false,
 				message: 'Title is required'
@@ -306,26 +254,19 @@ export const updateConversationTitle = async (req, res) => {
       WHERE conversation_id = ? AND user_id = ?
     `;
 
-		db.query(query, [title, chatId, userId], (err, result) => {
-			if (err) {
-				return res.status(500).json({
-					success: false,
-					message: 'Error updating chat title',
-					error: err.message
-				});
-			}
+		const [result] = await conn.execute(query, [title, chatId, userId]);
+		conn.release();
 
-			if (result.affectedRows === 0) {
-				return res.status(404).json({
-					success: false,
-					message: 'Chat not found or not authorized'
-				});
-			}
-
-			res.status(200).json({
-				success: true,
-				message: 'Chat title updated successfully'
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				success: false,
+				message: 'Chat not found or not authorized'
 			});
+		}
+
+		res.status(200).json({
+			success: true,
+			message: 'Chat title updated successfully'
 		});
 	} catch (error) {
 		res.status(500).json({

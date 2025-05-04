@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import './ChatBot.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPaperPlane, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
 import mainLogo from '../../assets/images/Logo/main_logo.png';
 import ReactMarkdown from 'react-markdown';
-import { streamChatMessage, saveChatHistory } from '../../utils/service/chat';
+import { streamChatMessage } from '../../utils/service/chat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,12 +18,9 @@ const ChatBot: React.FC = () => {
   const [inputMessage, setInputMessage] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
-  const [showTitleDialog, setShowTitleDialog] = useState<boolean>(false);
-  const [conversationTitle, setConversationTitle] = useState<string>('');
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const { user } = useAuth();
 
   // List of paths where chatbot should NOT be available
   const excludedPaths = ['/test', '/verify-pending', '/verify', '/error'];
@@ -103,6 +99,7 @@ const ChatBot: React.FC = () => {
       await streamChatMessage(
         currentInputMessage,
         currentMessages,
+        conversationId,
         // On each chunk received
         (chunk) => {
           setMessages(prevMessages => {
@@ -117,9 +114,17 @@ const ChatBot: React.FC = () => {
           scrollToBottom();
         },
         // When streaming is complete
-        () => {
+        (fullResponse, newConversationId) => {
+          console.log('onComplete called with newConversationId:', newConversationId);
+          console.log('Current conversationId state:', conversationId);
           setIsStreaming(false);
           setCurrentStreamingIndex(null);
+          
+          // If this is the first message and we got a new conversation ID back
+          if (newConversationId && !conversationId) {
+            setConversationId(newConversationId);
+            console.log('Cuộc trò chuyện đã được tự động lưu với ID:', newConversationId);
+          }
         }
       );
     } catch (error) {
@@ -136,147 +141,58 @@ const ChatBot: React.FC = () => {
     }
   };
 
-  const handleSaveChat = () => {
-    if (!user) {
-      alert('Bạn cần đăng nhập để lưu lịch sử trò chuyện.');
-      return;
-    }
-    
-    // Generate default title from first user message
-    const firstUserMessage = messages.find(msg => msg.role === 'user');
-    const defaultTitle = firstUserMessage 
-      ? firstUserMessage.content.substring(0, 30) + (firstUserMessage.content.length > 30 ? '...' : '') 
-      : 'Cuộc trò chuyện mới';
-    
-    setConversationTitle(defaultTitle);
-    setShowTitleDialog(true);
-  };
-
-  // Add new method to handle actual saving with title
-  const handleSaveWithTitle = async () => {
-    if (!conversationTitle.trim()) {
-      alert('Vui lòng nhập tiêu đề cho cuộc trò chuyện.');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await saveChatHistory(messages, conversationTitle);
-      setShowTitleDialog(false);
-      setIsSaving(false);
-      alert('Lịch sử trò chuyện đã được lưu thành công!');
-    } catch (error) {
-      console.error('Error saving chat history:', error);
-      setIsSaving(false);
-      alert('Không thể lưu lịch sử trò chuyện. Vui lòng thử lại sau.');
-    }
-  };
-
-  // Don't render the component if it's on an excluded path
-  if (!isChatbotAllowed) return null;
+  // Don't render if not allowed on this page
+  if (!isChatbotAllowed) {
+    return null;
+  }
 
   return (
     <div className="chatbot-container">
-      {isOpen && (
+      {!isOpen ? (
+        <button onClick={toggleChat} className="chatbot-toggle">
+          <img src={mainLogo} alt="Chat" className="chatbot-logo" />
+        </button>
+      ) : (
         <div className="chatbot-window">
           <div className="chatbot-header">
-            <h3>AMH Healthcare Assistant</h3>
-            <div className="header-buttons">
-              {user && (
-                <button className="save-button" onClick={handleSaveChat} title="Save chat">
-                  <FontAwesomeIcon icon={faSave} />
-                </button>
-              )}
-              <button className="close-button" onClick={toggleChat}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
+            <h3>Trợ lý Y tế AMH</h3>
+            <button onClick={toggleChat} className="close-button">
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           </div>
-          
           <div className="chatbot-messages">
-            {messages.map((message, index) => (
+            {messages.map((msg, index) => (
               <div 
                 key={index} 
-                className={`message ${message.role === 'user' ? 'user-message' : 'bot-message'} ${
-                  isStreaming && index === currentStreamingIndex ? 'streaming' : ''
-                }`}
+                className={`message ${msg.role === 'user' ? 'user-message' : 'bot-message'} 
+                           ${index === currentStreamingIndex ? 'streaming' : ''}`}
               >
                 <div className="message-content">
-                  {message.role === 'assistant' ? (
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  ) : (
-                    message.content
-                  )}
-                  {isStreaming && index === currentStreamingIndex && (
-                    <span className="streaming-cursor" aria-hidden="true"></span>
-                  )}
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  {index === currentStreamingIndex && <span className="streaming-cursor"></span>}
                 </div>
               </div>
             ))}
-            
             <div ref={messagesEndRef} />
           </div>
-          
-          <form className="chatbot-input" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="chatbot-input">
             <input
               type="text"
-              placeholder="Type your message here..."
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
+              placeholder="Nhập câu hỏi của bạn..."
               disabled={isStreaming}
             />
-            <button type="submit" disabled={!inputMessage.trim() || isStreaming}>
+            <button 
+              type="submit" 
+              disabled={isStreaming || !inputMessage.trim()}
+            >
               <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </form>
         </div>
       )}
-      
-      {/* Title Dialog */}
-      {showTitleDialog && (
-        <div className="chatbot-title-dialog">
-          <div className="title-dialog-content">
-            <h3>Lưu cuộc trò chuyện</h3>
-            <p>Nhập tiêu đề cho cuộc trò chuyện:</p>
-            <input 
-              type="text" 
-              value={conversationTitle}
-              onChange={(e) => setConversationTitle(e.target.value)}
-              placeholder="Nhập tiêu đề..."
-              maxLength={255}
-            />
-            <div className="title-dialog-buttons">
-              <button 
-                onClick={() => setShowTitleDialog(false)}
-                disabled={isSaving}
-                className="cancel-button"
-              >
-                Hủy
-              </button>
-              <button 
-                onClick={handleSaveWithTitle}
-                disabled={!conversationTitle.trim() || isSaving}
-                className="save-button"
-              >
-                {isSaving ? 'Đang lưu...' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <button 
-        className={`chatbot-toggle ${isOpen ? 'open' : ''}`} 
-        onClick={toggleChat}
-        aria-label="Toggle chat"
-      >
-        {isOpen ? (
-          <FontAwesomeIcon icon={faTimes} />
-        ) : (
-          <img src={mainLogo} alt="Chat" className="chatbot-logo" />
-        )}
-      </button>
     </div>
   );
 };

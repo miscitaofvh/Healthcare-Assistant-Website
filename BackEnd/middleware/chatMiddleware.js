@@ -22,7 +22,7 @@ export const validateChatRequest = (req, res, next) => {
     }
     
     // Ensure history is an array
-    if (req.body.history && !Array.isArray(req.body.history)) {
+    if (!req.body.history || !Array.isArray(req.body.history)) {
       req.body.history = [];
     }
     
@@ -33,6 +33,13 @@ export const validateChatRequest = (req, res, next) => {
         typeof msg.content === 'string' &&
         typeof msg.role === 'string'
       );
+    }
+
+    // Validate conversationId if present
+    if (req.body.conversationId !== undefined && 
+        (typeof req.body.conversationId !== 'string' || 
+         !req.body.conversationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
+      delete req.body.conversationId;
     }
     
     next();

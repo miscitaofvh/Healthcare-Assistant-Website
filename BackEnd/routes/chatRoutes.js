@@ -12,12 +12,12 @@ import {
 } from '../controllers/chatController.js';
 
 import { validateChatRequest, validateSaveChatRequest } from '../middleware/chatMiddleware.js';
-import { authenticateUser } from '../middleware/authMiddleware.js';
+import { authenticateUser, decodeTokenIfExists } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public chat routes (no authentication required)
-router.post('/stream', validateChatRequest, handleStreamingChat);
+// Public chat routes (optional authentication)
+router.post('/stream', decodeTokenIfExists, validateChatRequest, handleStreamingChat);
 
 // Routes requiring authentication
 router.get('/history', authenticateUser, getChatHistory);

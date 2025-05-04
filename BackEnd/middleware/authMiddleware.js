@@ -13,4 +13,22 @@ export const authenticateUser = (req, res, next) => {
     }
 };
 
+// Middleware to decode token if it exists, but doesn't require authentication
+export const decodeTokenIfExists = (req, res, next) => {
+    const token = req.cookies.auth_token;
+    
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = decoded;
+        } catch (error) {
+            // Ignore token errors, user will be treated as not logged in
+            console.log('Invalid token, continuing as unauthenticated user');
+        }
+    }
+    
+    // Always continue to next middleware/route handler
+    next();
+};
+
 

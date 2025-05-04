@@ -1,0 +1,138 @@
+.chat-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 100px;
+}
+
+.chat-detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.chat-detail-header h1 {
+  margin: 0;
+  flex-grow: 1;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.back-button {
+  background-color: #3498db;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #2980b9;
+}
+
+.chat-meta {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 1rem;
+}
+
+.error {
+  color: #e74c3c;
+  background-color: #fadbd8;
+  border-radius: 4px;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-message {
+  padding: 1rem;
+  border-radius: 8px;
+  position: relative;
+  max-width: 80%;
+}
+
+.user-message {
+  background-color: #3498db;
+  color: white;
+  align-self: flex-end;
+}
+
+.assistant-message {
+  background-color: #f2f2f2;
+  color: #2c3e50;
+  align-self: flex-start;
+}
+
+.message-content {
+  margin-bottom: 0.5rem;
+}
+
+.message-content p {
+  margin: 0 0 0.5rem;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
+
+.assistant-message .message-time {
+  color: #95a5a6;
+}
+
+/* Styles for code blocks within messages */
+.message-content pre {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.user-message pre {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.assistant-message pre {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.message-content code {
+  font-family: monospace;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .chat-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .chat-meta {
+    flex-direction: column;
+  }
+  
+  .chat-message {
+    max-width: 90%;
+  }
+}
