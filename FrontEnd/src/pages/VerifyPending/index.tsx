@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestAPI } from "../../utils/api/request";
-import "./VerifyPending.css";
+import styles from "./VerifyPending.module.css";
 
 const BASE_URL = "http://localhost:5000/api/verify";
 
@@ -80,9 +80,9 @@ const VerifyPending = () => {
     };
 
     return (
-        <div className="verify-container">
-            <div className="verify-content">
-                <div className="verify-field">
+        <div className={styles.verifyContainer}>
+            <div className={styles.verifyContent}>
+                <div className={styles.verifyField}>
                     <h2>{getHeaderText()}</h2>
                     <p>{message} <strong>{email}</strong></p>
                     <p>
@@ -91,7 +91,7 @@ const VerifyPending = () => {
                             : "Click the link in the email to reset your password"}
                     </p>
                     <button 
-                        className="verify-button" 
+                        className={styles.verifyButton} 
                         onClick={handleResend} 
                         disabled={loading || cooldown > 0}
                     >

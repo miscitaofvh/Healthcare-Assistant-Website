@@ -4,8 +4,6 @@ import "./Navbar.css";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-
-// Icons
 import { FaNewspaper, FaComments, FaInfoCircle, FaPhone, FaUser, FaHeartbeat, FaHistory, FaCalendarAlt, FaComment, FaSignOutAlt, FaCaretDown } from "react-icons/fa";
 
 const Navbar = () => {
@@ -16,7 +14,6 @@ const Navbar = () => {
   const { openModal } = useModal();
   const { user, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const closeMenu = () => setIsOpen(false);
   
   const toggleDropdown = (e: React.MouseEvent) => {
@@ -135,7 +132,7 @@ const Navbar = () => {
                       <FaHistory /> Lịch sử y tế
                     </Link>
                     <Link
-                      to="/user/appointments"
+                      to="/appointDoctor"
                       className="dropdown-item"
                     >
                       <FaCalendarAlt /> Lịch hẹn

@@ -10,6 +10,8 @@ import verifyRoutes from "./routes/verifyRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import doctorRoutes from "./routes/doctorRoutes.js";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
 import errorHandler from "./middleware/errorHandler.js"; 
 
 dotenv.config();
@@ -42,6 +44,8 @@ app.use("/api/article", articleRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/verify", verifyRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/appointments', appointmentRoutes);
 app.use("/api/user", userRoutes); // Add the new user routes
 // app.get('/profile', authenticateUser, async (req, res) => {
 //     const user = await getUserById(req.user.user_id);
@@ -51,4 +55,4 @@ app.use("/api/user", userRoutes); // Add the new user routes
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));

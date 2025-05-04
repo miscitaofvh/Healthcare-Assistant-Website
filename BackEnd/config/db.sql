@@ -23,15 +23,12 @@ CREATE TABLE users (
 CREATE INDEX idx_email ON users(email);
 CREATE INDEX idx_username ON users(username);
 
--- Insert default admin user
-INSERT INTO users (user_id, username, password_hash, email, full_name, role, is_active) VALUES
-('admin-uuid', 'admin', '$2y$10$e0c5a1f3b4d8c9e7a8b8Oe1Q6Z5v5g5g5g5g5g5g5g5g5g5g5g5', 'healthcare.service.amh@gmail.com', 'Admin User', 'Admin', TRUE);
 -- ========== DOCTORS ==========
 CREATE TABLE doctors (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    user_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL UNIQUE,
     specialty VARCHAR(255) NOT NULL,
-    license VARCHAR(50) UNIQUE NOT NULL,
+    license VARCHAR(50) NOT NULL UNIQUE,
     hospital VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -59,20 +56,23 @@ CREATE INDEX idx_tracking_user ON health_tracking(user_id);
 
 -- ========== APPOINTMENTS ==========
 CREATE TABLE appointments (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    doctor_id CHAR(36) NOT NULL,
-    appointment_date DATETIME NOT NULL,
-    status ENUM('scheduled', 'completed', 'canceled') DEFAULT 'scheduled',
-    notes TEXT DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
-)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    appointment_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    patient_id     CHAR(36) NOT NULL,
+    doctor_id      CHAR(36) NOT NULL,
+    appointment_time DATETIME   NOT NULL,
+    status         ENUM('Pending','Confirmed','Cancelled')
+                   DEFAULT 'Pending',
+    notes          TEXT        DEFAULT NULL,
+    created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+                   ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id)  REFERENCES users(user_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE INDEX idx_appointment_user ON appointments(user_id);
-CREATE INDEX idx_appointment_doctor ON appointments(doctor_id);
-CREATE INDEX idx_appointment_date ON appointments(appointment_date);
+CREATE INDEX idx_doctor   ON appointments(doctor_id);
+CREATE INDEX idx_patient  ON appointments(patient_id);
+CREATE INDEX idx_appt_time ON appointments(appointment_time);
 
 -- ========== ARTICLE CATEGORIES ==========
 CREATE TABLE article_categories (
