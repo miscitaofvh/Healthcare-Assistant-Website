@@ -1,0 +1,363 @@
+/* Chat History Page with Two-Column Layout */
+.container {
+  display: flex;
+  height: calc(100vh - 60px);
+  padding-top: 60px;
+  background-color: #f5f7fa;
+  color: #2c3e50;
+}
+
+/* Left Sidebar - Conversation List */
+.sidebar {
+  width: 320px;
+  border-right: 1px solid #e1e8ed;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #f0f7fa;
+  transition: width 0.3s ease;
+}
+
+.sidebarHeader {
+  padding: 20px;
+  border-bottom: 1px solid #e1e8ed;
+  background-color: #f0f7fa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sidebarTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #3498db;
+  text-align: center;
+}
+
+.newChatButton {
+  display: block;
+  width: 90%;
+  margin: 15px auto;
+  padding: 10px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.newChatButton:hover {
+  background-color: #2980b9;
+}
+
+.conversationList {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  gap: 8px;
+}
+
+.conversationItem {
+  padding: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+  position: relative;
+}
+
+.conversationItem:hover {
+  background-color: #e1f0fa;
+}
+
+.activeConversation {
+  background-color: #d6ebf5;
+  border-left: 4px solid #3498db;
+}
+
+.conversationTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.conversationMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #7f8c8d;
+  margin-top: 5px;
+}
+
+.conversationActions {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: none;
+  gap: 5px;
+}
+
+.conversationItem:hover .conversationActions {
+  display: flex;
+}
+
+.actionButton {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #7f8c8d;
+  transition: color 0.2s;
+  font-size: 0.8rem;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.editButton:hover {
+  color: #3498db;
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.deleteButton:hover {
+  color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+/* Main Content - Chat Display */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.chatHeader {
+  padding: 15px 25px;
+  border-bottom: 1px solid #e1e8ed;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chatTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.chatInfo {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.chatContent {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.userMessage {
+  align-self: flex-end;
+}
+
+.assistantMessage {
+  align-self: flex-start;
+}
+
+.messageBubble {
+  padding: 15px;
+  border-radius: 15px;
+  position: relative;
+}
+
+.userMessageBubble {
+  background-color: #3498db;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.assistantMessageBubble {
+  background-color: #edf2f7;
+  color: #2c3e50;
+  border-bottom-left-radius: 4px;
+}
+
+.messageTime {
+  font-size: 0.7rem;
+  margin-top: 5px;
+  opacity: 0.7;
+  align-self: flex-end;
+}
+
+.userMessageTime {
+  color: #dbeaff;
+}
+
+.assistantMessageTime {
+  color: #7f8c8d;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #95a5a6;
+  padding: 20px;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  color: #bdc3c7;
+}
+
+.emptyTitle {
+  font-size: 1.5rem;
+  margin: 0 0 10px;
+  color: #7f8c8d;
+}
+
+.emptyText {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Edit Title Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.modalHeader {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modalInput {
+  padding: 10px;
+  border: 1px solid #e1e8ed;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.modalInput:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modalButton {
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.saveButton {
+  background-color: #3498db;
+  color: white;
+}
+
+.saveButton:hover {
+  background-color: #2980b9;
+}
+
+.cancelButton {
+  background-color: #e1e8ed;
+  color: #2c3e50;
+}
+
+.cancelButton:hover {
+  background-color: #d1d8dd;
+}
+
+/* Loading and Error States */
+.loading, .error {
+  text-align: center;
+  padding: 20px;
+  margin: 20px auto;
+}
+
+.loading {
+  color: #3498db;
+}
+
+.error {
+  color: #e74c3c;
+  background-color: #fdeaea;
+  border-radius: 5px;
+  max-width: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 30vh;
+  }
+
+  .main {
+    height: 70vh;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+}
