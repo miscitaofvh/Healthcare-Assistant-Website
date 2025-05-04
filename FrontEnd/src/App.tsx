@@ -14,7 +14,7 @@ import { ModalProvider } from './contexts/ModalContext';
 import ChatBot from './components/ChatBot';
 import { forumRoutes } from './pages/Forum/forumRoutes'; // import Forum routes
 import UserProfile from './pages/UserProfile';
-
+import AppointDoctor from './pages/AppointDoctor';
 function App() {
     return (
         <UserProvider>
@@ -26,14 +26,13 @@ function App() {
                     <Route path="/article/:id" element={<ArticleDetail />} />
                     {forumRoutes}
                     <Route path="/about" element={<About />} />
-                    {/* <Route path="/login" element={<Login />} /> */}
-                    {/* <Route path="/sign-up" element={<SignUp />} /> */}
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/test" element={<Test />} />
                     <Route path="/error" element={<Error />} />
                     <Route path="/verify-pending" element={<VerifyPending />} />
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="/user/profile" element={<UserProfile />} />
+                    <Route path="/appointDoctor" element={<AppointDoctor />} />
                     <Route path="*" element={<h1>Page Not Found</h1>} />
                 </Routes>
                 <ChatBot />

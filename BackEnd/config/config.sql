@@ -3,6 +3,50 @@ USE healthcare_service_db;
 INSERT INTO users (user_id, username, password_hash, email, verified_at, full_name, role) 
     VALUES ('00000000-0000-0000-0000-000000000000', 'miscitaofvh', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 
             'miscitaofvh@gmail.com', '2025-04-24 10:17:10', 'Nguyễn Văn Hưng', 'Admin' );
+-- inital doctor data
+-- ===============================================
+INSERT INTO users (user_id, username, password_hash, email, full_name, role, profile_picture_url)
+VALUES
+  (UUID(), 'drnguyenvanan', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'nguyenvanan@example.com', 'Nguyễn Văn An', 'Doctor', 'https://randomuser.me/api/portraits/men/45.jpg'),
+  (UUID(), 'drtranthibich', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'tranthibich@example.com', 'Trần Thị Bích', 'Doctor', 'https://randomuser.me/api/portraits/women/65.jpg'),
+  (UUID(), 'drlevancuong', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'levancuong@example.com', 'Lê Văn Cường', 'Doctor', 'https://randomuser.me/api/portraits/men/32.jpg'),
+  (UUID(), 'drphamthidung', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'phamthidung@example.com', 'Phạm Thị Dung', 'Doctor', 'https://randomuser.me/api/portraits/women/12.jpg'),
+  (UUID(), 'drhoangvanthang', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'hoangvanthang@example.com', 'Hoàng Văn Thắng', 'Doctor', 'https://randomuser.me/api/portraits/men/76.jpg'),
+  (UUID(), 'drdothihoa', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'dothihoa@example.com', 'Đỗ Thị Hoa', 'Doctor', 'https://randomuser.me/api/portraits/women/54.jpg'),
+  (UUID(), 'drvuminhtuan', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'vuminhtuan@example.com', 'Vũ Minh Tuấn', 'Doctor', 'https://randomuser.me/api/portraits/men/23.jpg'),
+  (UUID(), 'drbuithilan', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'buithilan@example.com', 'Bùi Thị Lan', 'Doctor', 'https://randomuser.me/api/portraits/women/36.jpg'),
+  (UUID(), 'drdangvanhung', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'dangvanhung@example.com', 'Đặng Văn Hùng', 'Doctor', 'https://randomuser.me/api/portraits/men/58.jpg'),
+  (UUID(), 'drphanthimai', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'phanthimai@example.com', 'Phan Thị Mai', 'Doctor', 'https://randomuser.me/api/portraits/women/29.jpg'),
+  (UUID(), 'drtrinhminhkoa', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'trinhminhkhoa@example.com', 'Trịnh Minh Khoa', 'Doctor', 'https://randomuser.me/api/portraits/men/12.jpg'),
+  (UUID(), 'drdinhthihanh', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'dinhthihanh@example.com', 'Đinh Thị Hạnh', 'Doctor', 'https://randomuser.me/api/portraits/women/44.jpg'),
+  (UUID(), 'drmaihuunghia', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'maihuunghia@example.com', 'Mai Hữu Nghĩa', 'Doctor', 'https://randomuser.me/api/portraits/men/7.jpg'),
+  (UUID(), 'drlythingoc', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'lythingoc@example.com', 'Lý Thị Ngọc', 'Doctor', 'https://randomuser.me/api/portraits/women/18.jpg'),
+  (UUID(), 'drcaominhduc', '$2b$10$szbk0NQ3Mz8MY.dAMaZ3qeNTXx0aC5tsgZqLK3gikQ.VQr1iqkiD2', 'caominhduc@example.com', 'Cao Minh Đức', 'Doctor', 'https://randomuser.me/api/portraits/men/85.jpg');
+
+-- ===============================================
+
+INSERT INTO doctors (id, user_id, specialty, license, hospital)
+SELECT UUID(), u.user_id, d.specialty, d.license, d.hospital
+FROM (
+  SELECT 'drnguyenvanan' AS username, 'Nội Tim mạch'       AS specialty, 'LIC1001' AS license, 'Bệnh viện Bạch Mai'         AS hospital UNION ALL
+  SELECT 'drtranthibich',  'Ngoại Tổng quát',               'LIC1002',             'Bệnh viện Chợ Rẫy'                   UNION ALL
+  SELECT 'drlevancuong',   'Nhi khoa',                      'LIC1003',             'Bệnh viện Nhi Trung ương'            UNION ALL
+  SELECT 'drphamthidung',  'Sản phụ khoa',                  'LIC1004',             'Bệnh viện Từ Dũ'                     UNION ALL
+  SELECT 'drhoangvanthang','Da liễu',                       'LIC1005',             'Bệnh viện Da Liễu Trung ương'        UNION ALL
+  SELECT 'drdothihoa',     'Tai–Mũi–Họng',                 'LIC1006',             'Bệnh viện Tai Mũi Họng Trung ương'   UNION ALL
+  SELECT 'drvuminhtuan',   'Răng–Hàm–Mặt',                 'LIC1007',             'Bệnh viện Răng Hàm Mặt Trung ương'   UNION ALL
+  SELECT 'drbuithilan',    'Hô hấp',                        'LIC1008',             'Bệnh viện Phổi Trung ương'          UNION ALL
+  SELECT 'drdangvanhung',  'Thần kinh',                     'LIC1009',             'Bệnh viện Bạch Mai'                  UNION ALL
+  SELECT 'drphanthimai',   'Cơ xương khớp',                'LIC1010',             'Bệnh viện Chỉnh hình và PHCN TP.HCM' UNION ALL
+  SELECT 'drtrinhminhkoa', 'Tiêu hóa – Gan mật',           'LIC1011',             'Bệnh viện Trung ương Huế'            UNION ALL
+  SELECT 'drdinhthihanh',  'Huyết học – Truyền máu',        'LIC1012',             'Bệnh viện 108'                       UNION ALL
+  SELECT 'drmaihuunghia',  'Ung bướu',                     'LIC1013',             'Bệnh viện Ung bướu Hà Nội'          UNION ALL
+  SELECT 'drlythingoc',    'Y học Cổ truyền',               'LIC1014',             'Bệnh viện Y học Cổ truyền Trung ương'UNION ALL
+  SELECT 'drcaominhduc',   'Tim mạch can thiệp',            'LIC1015',             'Bệnh viện Tim Hà Nội'
+) AS d
+JOIN users AS u ON u.username = d.username;
+
+-- ===============================================
 USE healthcare_service_db;
 
 INSERT IGNORE INTO article_categories (category_name) VALUES ('Dinh dưỡng');
@@ -4216,5 +4260,5 @@ INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_articl
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bệnh viện'));
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bác sĩ'));
 
--- UPDATE articles
---   SET last_updated = publication_date;
+UPDATE articles
+  SET last_updated = publication_date;
