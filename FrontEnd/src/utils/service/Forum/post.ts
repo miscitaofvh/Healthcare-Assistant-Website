@@ -4,10 +4,8 @@ import {
     createPost,
     updatePost,
     deletePost,
-    getTagByForumPost,
-    getComments,
-    createComment,
-    deleteComment,
+    likePost,
+    getTagByForumPost
 } from "../../../utils/api/Forum/post";
 import { Dispatch, SetStateAction } from "react";
 import { PostListResponse, Post, PostComment, PostNew, TagPost } from "../../../types/forum";
@@ -277,40 +275,31 @@ export const deletePostFE = async (
     }
 };
 
-export const handleCommentSubmit = async (
+export const likePostFE = async (
     postId: string,
-    commentText: string,
-    setCommentText: (text: string) => void,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
-    fetchComments: () => Promise<void>
+    refetchPost: () => Promise<void>
 ): Promise<void> => {
     try {
         if (!postId) {
             throw new Error('Invalid post ID');
         }
 
-        const trimmedComment = commentText.trim();
-        if (!trimmedComment) {
-            throw new Error('Comment cannot be empty');
-        }
-
         setError('');
         setSuccess('');
 
-        const response = await createComment(postId, { content: trimmedComment });
+        const response = await likePost(postId);
 
         if (response.status !== 200 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to create comment');
+            throw new Error(response.data?.message || 'Failed to like post');
         }
 
-        setCommentText('');
-        setSuccess('Comment posted successfully');
-
-        await fetchComments();
+        setSuccess(response.data.message || 'Post like updated');
+        await refetchPost();
 
     } catch (err: unknown) {
-        let errorMessage = 'Failed to post comment';
+        let errorMessage = 'Failed to like post';
 
         if (err instanceof Error) {
             errorMessage = err.message;

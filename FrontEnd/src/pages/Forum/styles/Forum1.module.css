@@ -1,8 +1,9 @@
+/* Layout */
 .main_navbar {
   position: relative;
   width: 100%;
   z-index: 1000;
-  background: white;
+  background: #ffffff;
 }
 
 .forumContainer {
@@ -18,56 +19,61 @@
   width: 100%;
 }
 
+/* Typography */
 .headerSection {
   margin-bottom: 2rem;
   text-align: center;
 }
 
-/* Cards */
+.pageTitle {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #24292e;
+}
+
+.pageSubtitle {
+  color: #586069;
+  margin-bottom: 1.5rem;
+}
+
+/* Cards & Grid */
 .tagGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
-.tagCard {
-  background: white;
+.tagCard,
+.postCard {
+  background: #ffffff;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.tagCard:hover {
+.tagCard:hover,
+.postCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Typography */
-.pageTitle {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.pageSubtitle {
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-
+/* Content Styles */
 .tagName {
   color: #2563eb;
   margin-bottom: 0.5rem;
 }
 
-.tagDescription {
+.tagDescription,
+.postContent {
   color: #4b5563;
   margin-bottom: 1rem;
+  line-height: 1.6;
 }
 
-/* Meta info */
-.tagMeta {
+/* Meta Information */
+.tagMeta,
+.postHeader {
   margin-top: 1rem;
   font-size: 0.875rem;
 }
@@ -83,85 +89,109 @@
   color: #4b5563;
 }
 
-.metaValue {
+.metaValue,
+.postDate {
   color: #6b7280;
 }
 
+.postHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.postAuthor {
+  font-weight: 600;
+  color: #24292e;
+}
+
+/* Posts Container */
+.postsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* Image Handling */
+.postImage {
+  margin: 1rem 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.responsiveImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
 /* Buttons */
-.primaryButton {
-  background-color: #2563eb;
-  color: white;
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.primaryButton,
+.secondaryButton {
   padding: 0.75rem 1.5rem;
-  border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+}
+
+.primaryButton {
+  background-color: #2563eb;
+  color: white;
+  border: none;
 }
 
 .primaryButton:hover {
   background-color: #1d4ed8;
 }
 
+.secondaryButton {
+  background-color: white;
+  color: #2563eb;
+  border: 1px solid #2563eb;
+}
+
+.secondaryButton:hover {
+  background-color: #f0f4ff;
+}
+
+.secondaryButtonSmall {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.secondaryButtonSmall:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
 .createButton {
-  margin: 1rem auto;
+  margin-right: 0.75rem;
 }
 
-/* Loading states */
-.loadingState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top: 4px solid #2563eb;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Empty state */
-.emptyState {
-  text-align: center;
-  padding: 3rem;
-}
-
-.emptyMessage {
-  margin-bottom: 1.5rem;
-  color: #6b7280;
-}
-
-/* Error state */
-.errorAlert {
-  background-color: #fee2e2;
-  color: #b91c1c;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-}
-
-.errorIcon {
-  margin-right: 0.5rem;
-}
-
+/* Form Elements */
 .formGroup {
   margin-bottom: 1.5rem;
 }
 
-.formInput, .formTextarea {
+.formInput,
+.formTextarea {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #d1d5db;
@@ -171,7 +201,8 @@
   transition: border-color 0.2s;
 }
 
-.formInput:focus, .formTextarea:focus {
+.formInput:focus,
+.formTextarea:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
@@ -190,38 +221,23 @@
   margin-top: 0.25rem;
 }
 
-/* Button Styles */
-.buttonGroup {
+/* States */
+.loadingState,
+.emptyState {
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
-.secondaryButton {
-  background-color: white;
-  color: #2563eb;
-  padding: 0.75rem 1.5rem;
-  border: 1px solid #2563eb;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+.emptyMessage {
+  margin-bottom: 1.5rem;
+  color: #6b7280;
 }
 
-.secondaryButton:hover {
-  background-color: #f0f4ff;
-}
-
-.secondaryButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Alert Styles */
+.errorAlert,
 .alertSuccess {
-  background-color: #dcfce7;
-  color: #166534;
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
@@ -229,101 +245,54 @@
   align-items: center;
 }
 
-/* Small Spinner */
+.errorAlert {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.alertSuccess {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.errorIcon,
+.successIcon {
+  margin-right: 0.5rem;
+}
+
+/* Spinners */
+.spinner,
+.spinnerSmall {
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #2563eb;
+  width: 40px;
+  height: 40px;
+}
+
 .spinnerSmall {
   display: inline-block;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
   border-top: 2px solid white;
   width: 16px;
   height: 16px;
-  animation: spin 1s linear infinite;
   margin-right: 8px;
   vertical-align: middle;
 }
 
-.alertSuccess {
-  background-color: #d4edda;
-  color: #155724;
-  padding: 10px;
-  margin-bottom: 16px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+@keyframes spin {
+  0% {
+      transform: rotate(0deg);
+  }
 
-.successIcon {
-  font-weight: bold;
-}
-
-/* Add these to your existing Forum.module.css */
-
-/* Posts Container */
-.postsContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-/* Post Card */
-.postCard {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.postCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Post Header */
-.postHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.postAuthor {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.postDate {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-/* Post Content */
-.postContent {
-  margin-bottom: 1rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-}
-
-.postContent p {
-  margin-bottom: 1rem;
-}
-
-/* Post Image */
-.postImage {
-  margin: 1rem 0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.responsiveImage {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  display: block;
+  100% {
+      transform: rotate(360deg);
+  }
 }
 
 /* Post Actions */
@@ -333,240 +302,236 @@
   gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #e1e4e8;
 }
 
-/* Small Buttons */
-.secondaryButtonSmall {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  background-color: var(--button-secondary-bg);
-  color: var(--button-secondary-text);
-  border: 1px solid var(--button-secondary-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.secondaryButtonSmall:hover {
-  background-color: var(--button-secondary-hover-bg);
-  border-color: var(--button-secondary-hover-border);
-}
-
-/* Create Button */
-/* .createButton {
-  margin-right: 0.75rem;
-} */
-
-/* Responsive Adjustments */
+/* Responsive */
 @media (max-width: 768px) {
   .postHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
   }
-  
-  .postActions {
-    justify-content: flex-start;
+
+  .postActions,
+  .buttonGroup {
+      flex-direction: column;
   }
-  
-  .tagCard button {
-    width: 100%;
-    margin-bottom: 0.75rem;
+
+  .tagCard button,
+  .postCard button {
+      width: 100%;
+      margin-bottom: 0.75rem;
   }
-  
+
   .createButton {
-    margin-right: 0;
+      margin-right: 0;
   }
 }
 
-/* Here... */
-/* .container {
-  max-width: 800px;
-  margin: auto;
-  padding: 20px;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.list-group-item {
-  transition: background-color 0.2s ease-in-out;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.list-group-item:hover {
-  background-color: #f8f9fa;
-}
-
-.alert {
-  margin-top: 10px;
-  color: red;
-}
-
-.spinner-border {
-  display: block;
-  margin: auto;
-}
-
-.btn {
-  padding: 8px 16px;
-  margin-top: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-.btnDelete {
-  padding: 8px 16px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.btnDelete:hover {
-  background-color: #c82333;
-}
-
-.commentBox {
-  margin-top: 20px;
-}
-
-.textarea {
-  width: 100%;
-  height: 100px;
-  padding: 8px;
-  margin-bottom: 10px;
-}
-
-.pageWrapper {
-  background-color: #f9fafb;
-  min-height: 100vh;
-  padding: 2rem;
-}
-
-
-.card {
-  background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-}
-
-.title {
-  text-align: center;
-  font-size: 1.75rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-}
-
-.formGroup label {
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.formGroup input,
-.formGroup textarea {
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #d1d5db;
-  font-size: 1rem;
-  resize: vertical;
-}
-
-.formGroup input:focus,
-.formGroup textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.buttonGroup {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.submitButton {
-  background-color: #3b82f6;
-  color: white;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.submitButton:hover {
-  background-color: #2563eb;
-}
-
-.submitButton:disabled {
-  background-color: #93c5fd;
-  cursor: not-allowed;
-}
-
-.cancelButton {
-  background-color: #e5e7eb;
-  color: #374151;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.cancelButton:hover {
-  background-color: #d1d5db;
-}
-
-.alert {
-  background-color: #fee2e2;
-  color: #b91c1c;
-  padding: 1rem;
-  border-radius: 0.5rem;
+.readOnlyField {
   margin-bottom: 1rem;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
+.readOnlyValue {
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  flex-grow: 1;
+}
 
-.tags {
-  margin-top: 0.5rem;
+/* Like Button Styles */
+.likeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.likeButton:hover {
+  color: var(--primary-color);
+}
+
+.likeButton.liked {
+  color: #ff0000;
+}
+
+/* Comment Actions */
+.commentActions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.actionButton:hover {
+  color: var(--primary-color);
+}
+
+.deleteButton:hover {
+  color: #ff0000;
+}
+
+/* Reply Styling */
+.replyIndicator {
+  background-color: var(--background-secondary);
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.cancelReply {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* Nested Comments */
+.commentCard {
+  margin-bottom: 15px;
+  border-left: 3px solid var(--background-secondary);
+  padding-left: 10px;
+}
+
+.replyComment {
+  background-color: var(--background-secondary);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* Post Header Styles */
+.postHeader {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.postTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.postTitle {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--heading-color);
+}
+
+.postMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.metaGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.metaIcon {
+  opacity: 0.7;
+}
+
+.updatedBadge {
+  font-size: 0.8em;
+  color: var(--text-tertiary);
+  margin-left: 0.3rem;
+}
+
+/* Action Buttons */
+.postActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.likeButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.likeButton:hover {
+  background: var(--hover-bg);
+}
+
+.likeButton.liked {
+  color: var(--like-color);
+}
+
+.likeCount {
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--edit-bg);
+  color: var(--edit-color);
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton:hover {
+  background: var(--edit-hover-bg);
+}
+
+/* Tags */
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .tag {
-  display: inline-block;
-  background-color: #e1ecf4;
-  color: #39739d;
-  border-radius: 3px;
-  padding: 2px 6px;
-  margin-right: 5px;
-  font-size: 0.85rem;
-} */
+  background: var(--tag-bg);
+  color: var(--tag-color);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}

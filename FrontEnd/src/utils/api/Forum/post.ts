@@ -42,17 +42,7 @@ export async function getTagByForumPost(forum_post_id: string) {
     return response;
 }
 
-export async function getComments(id: string) {
-    const response = await requestAPI(BASE_URL, `/posts/${id}/comments`, "GET");
+export async function likePost(postID: string) {
+    const response = await requestAPI(BASE_URL, `/posts/${postID}/likes`, "POST");
     return response;
-}
-
-export async function createComment(id: string, comment: any) {
-    const response = await requestAPI(BASE_URL, `/posts/${id}/comments`, "POST", comment);
-    return response;
-}   
-
-export async function deleteComment(id: string, commentId: string) {
-    const response = await requestAPI(BASE_URL, `/posts/${id}/comments/${commentId}`, "DELETE");
-    return response;
-}
+} 

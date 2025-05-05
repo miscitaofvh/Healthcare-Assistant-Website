@@ -254,7 +254,7 @@ export const validateForumPostComment = [
     body("postId")
         .notEmpty()
         .withMessage("ID bài viết là bắt buộc")
-        .isMongoId()
+        .isInt()
         .withMessage("ID bài viết không hợp lệ"),
     body("content")
         .notEmpty()

@@ -118,6 +118,11 @@ export interface CategoryMain {
 export interface PostComment {
     post_id: number;
     comment_id: number;
+    parent_comment_id: number | null;
+    depth: number;
+    is_owner?: boolean;
+    is_liked?: boolean;
+    like_count?: number;
     username: string;
     content: string;
     created_at: string;
@@ -180,6 +185,8 @@ export interface Post {
     category_id: number;
     category_name: string;
     like_count: number;
+    is_owner?: boolean;
+    is_liked?: boolean;
     tags: TagPost[];
     comments: PostComment[];
 }
