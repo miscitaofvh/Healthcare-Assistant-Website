@@ -1,19 +1,20 @@
 import {
+    getAllTags,
     getTagById,
     getAllTagsSummary,
     getAllTagsLittleSummary,
     getPostsByTag,
-    getAllTags,
     createTag,
     updateTag,
     deleteTag,
 } from "../../../utils/api/Forum/tag";
-import { Tag, NewTag, PostTag } from "../../../types/forum";
+import { Tag, NewTag, TagPost, PostbyTag } from "../../../types/forum";
 
 import { Dispatch, SetStateAction } from "react";
+
 export const loadTags = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setTags: (tags: Tag[]) => void,
+    setTags: Dispatch<SetStateAction<Tag[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ) => {
@@ -30,9 +31,37 @@ export const loadTags = async (
         }
 
         setTags(data.data?.tags || []);
-        setSuccess("Tải danh sách tag thành công");
+        setSuccess("Tags loaded successfully");
     } catch (err: any) {
-        setError(err?.response?.data?.message || err.message || "Đã xảy ra lỗi khi tải danh sách tag");
+        setError(err?.response?.data?.message || err.message || "Errors occurred while loading tags.");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadTagByID = async (
+    id: number,
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: Dispatch<SetStateAction<Tag | null>>,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+) => {
+    try {
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        const response = await getTagById(id);
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            throw new Error(data?.message || "Unknown error occurred while loading tags.");
+        }
+
+        setTags(data?.tag || []);
+        setSuccess("Tag loaded successfully");
+    } catch (err: any) {
+        setError(err?.response?.data?.message || err.message || "Errors occurred while loading tags.");
     } finally {
         setLoading(false);
     }
@@ -40,7 +69,7 @@ export const loadTags = async (
 
 export const loadTagsSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setTags: (tags: Tag[]) => void,
+    setTags: Dispatch<SetStateAction<Tag[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ) => {
@@ -67,7 +96,7 @@ export const loadTagsSummary = async (
 
 export const loadTagsPostSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setTags: (tags: PostTag[]) => void,
+    setTags: Dispatch<SetStateAction<TagPost[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ) => {
@@ -96,12 +125,14 @@ export const loadTagandPostsByTag = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setTag: Dispatch<SetStateAction<Tag | null>>,
-    setPosts: Dispatch<SetStateAction<any[]>>,
-    setError: Dispatch<SetStateAction<string>>
+    setPosts: Dispatch<SetStateAction<PostbyTag[]>>,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
         setError("");
+        setSuccess("");
 
         const response = await getPostsByTag(Number(id));
         const { status, data } = response;
@@ -109,13 +140,13 @@ export const loadTagandPostsByTag = async (
         if (status !== 200 || !data?.success) {
             throw new Error(data?.message || "Không thể tải dữ liệu thẻ và bài viết.");
         }
-
         if (!data.tag || !data.posts) {
             throw new Error("Không tìm thấy tag hoặc bài viết tương ứng.");
         }
 
         setTag(data.tag);
         setPosts(data.posts || []);
+        setSuccess("Tag and posts loaded successfully");
     } catch (error: any) {
         setTag(null);
         setPosts([]);

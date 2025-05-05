@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateCategory, loadCategories } from "../../../../utils/service/Forum/category";
+import { handleUpdateCategory, loadCategorieById } from "../../../../utils/service/Forum/category";
 import { Category, NewCategory } from "../../../../types/forum";
 
 const UpdateCategory: React.FC = () => {
@@ -16,21 +16,10 @@ const UpdateCategory: React.FC = () => {
 
   useEffect(() => {
     const fetchCategory = async () => {
-      setInitialLoad(true);
-      setError("");
       try {
-        await loadCategories(
-          () => { },
-          (categories: Category[]) => {
-            const found = categories.find(c => c.category_id === parseInt(id || ""));
-            found ? setCategory(found) : setError("Category not found");
-          },
-          setError,
-          () => setInitialLoad(false)
-        );
+        await loadCategorieById(parseInt(id || ""), setInitialLoad, setCategory, setError, () => {});
       } catch {
         setError("An unexpected error occurred");
-        setInitialLoad(false);
       }
     };
 
@@ -38,15 +27,13 @@ const UpdateCategory: React.FC = () => {
   }, [id]);
 
   const validateInputs = (category: NewCategory): string | null => {
-    const name = category.category_name.trim();
-    const description = category.description?.trim();
-
-    if (!name) return "Category name is required";
-    if (name.length < 2 || name.length > 50)
-      return "Category name must be from 2 to 50 characters long";
-    if (description && (description.length < 10 || description.length > 200))
+    const categoryName = category.category_name.trim();
+    let description = category.description?.trim() || "";
+    if (!categoryName) return "Category name is required";
+    if (categoryName.length < 3 || categoryName.length > 50) return "Category name must be from 3 to 50 characters";
+    if (description && (description.length < 10 || description.length > 200)) {
       return "Description must be from 10 to 200 characters long";
-
+    }
     return null;
   };
 
@@ -65,19 +52,23 @@ const UpdateCategory: React.FC = () => {
       return;
     }
 
-    await handleUpdateCategory(
-      category.category_id,
-      updatedCategory,
-      setFormLoading,
-      setError,
-      setSuccess,
-      () => {
-        // Wait 3 seconds before navigating
-        setTimeout(() => {
-          navigate("/forum/categories");
-        }, 3000);
-      }
-    );
+    try {
+      await handleUpdateCategory(
+        category.category_id,
+        updatedCategory,
+        setFormLoading,
+        setError,
+        setSuccess,
+        () => {
+          setTimeout(() => {
+            navigate("/forum/categories");
+          }, 2000);
+        }
+      );
+    }
+    catch (err) {
+      setError("An unexpected error occurred while updating the category");
+    }
   };
 
   const handleInputChange = (field: keyof Category, value: string) => {

@@ -20,6 +20,22 @@ export interface TagSummary {
     usage_count: number;
     last_used_at: string | null;
 }
+
+export interface PostbyTag {
+    author: string;
+    post_id: number;
+    title: string;
+    content: string;
+    created_at: string;
+    last_updated: string;
+    category_id: number;
+    category_name: string;
+    thread_id: number;
+    thread_name: string;
+    like_count: number;
+    report_count: number;
+}
+
 export interface Tag {
     tag_id: number;
     tag_name: string;
@@ -29,7 +45,6 @@ export interface Tag {
     last_used_at: string;
     created_at: string;
     last_updated: string;
-    post_count: number;
 }
 
 // Thread Interfaces
@@ -47,9 +62,10 @@ export interface ThreadDropdown {
 }
 export interface ThreadSummary {
     thread_id: number;
-    description: string;
     thread_name: string;
+    description: string;
     category_id: number;
+    category_name: string;
 }
 export interface Thread {
     thread_id: number;
@@ -108,7 +124,7 @@ export interface PostComment {
     last_updated: string;
 }
 
-export interface PostTag {
+export interface TagPost {
     tag_id: number;
     tag_name: string;
     description?: string;
@@ -127,7 +143,7 @@ export interface PostListResponse {
     created_at: string;
     last_updated: string;
     like_count: number;
-    tags: PostTag[];
+    tags: TagPost[];
 }
 
 export interface PostSummary {
@@ -164,7 +180,7 @@ export interface Post {
     category_id: number;
     category_name: string;
     like_count: number;
-    tags: PostTag[];
+    tags: TagPost[];
     comments: PostComment[];
 }
 // Like Interfaces
@@ -223,12 +239,6 @@ export interface Forum {
     post_id: number;
     created_at: string;
 }
-
-
-
-
-
-
 
 export interface CommentResponse {
     comment_id: number;

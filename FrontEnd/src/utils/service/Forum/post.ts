@@ -10,7 +10,7 @@ import {
     deleteComment,
 } from "../../../utils/api/Forum/post";
 import { Dispatch, SetStateAction } from "react";
-import { PostListResponse, Post, PostComment, PostNew, PostTag } from "../../../types/forum";
+import { PostListResponse, Post, PostComment, PostNew, TagPost } from "../../../types/forum";
 import { CategorySummary, ThreadDropdown, TagSummary } from "../../../types/forum";
 import { on } from "events";
 

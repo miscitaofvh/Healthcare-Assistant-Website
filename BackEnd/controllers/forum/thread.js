@@ -104,7 +104,7 @@ export const getThreadById = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: thread,
+            thread: thread,
             message: "Thread retrieved successfully",
             timestamp: new Date().toISOString()
         });

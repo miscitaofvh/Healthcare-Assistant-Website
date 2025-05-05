@@ -15,27 +15,26 @@ const CreateTag: React.FC = () => {
     const [success, setSuccess] = useState("");
     const navigate = useNavigate();
 
+    const validateInputs = (tag: NewTag): string | null => {
+        const tagName = tag.tag_name.trim();
+        let description = tag.description?.trim() || "";
+        if (!tagName) return "Tag name is required";
+        if (tagName.length < 2 || tagName.length > 50) return "Tag name must be from 2 to 50 characters";
+        if (description && (description.length < 10 || description.length > 200)) {
+            return "Description must be from 10 to 200 characters long";
+        }
+        return null;
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!newTag.tag_name) {
-            setError("Tag name is required");
+        const validationError = validateInputs(newTag);
+        if (validationError) {
+            setError(validationError);
             return;
         }
-
-        if (newTag.tag_name.length > 50 || newTag.tag_name.length < 1) {
-            setError("Tag name must be from 2 to 50 characters long");
-            return;
-        }
-
-        if (newTag.description && (newTag.description.length > 200 || newTag.description.length < 10)) {
-            setError("Description must be from 10 to 200 characters long");
-            return;
-        }
-
-        setError("");
-        setFormLoading(true);
-
+        
         try {
             await handleCreateTag(
                 {
@@ -49,9 +48,6 @@ const CreateTag: React.FC = () => {
             );
         } catch (err) {
             setError("An unexpected error occurred while creating the tag");
-            console.error("Tag creation error:", err);
-        } finally {
-            setFormLoading(false);
         }
     };
 

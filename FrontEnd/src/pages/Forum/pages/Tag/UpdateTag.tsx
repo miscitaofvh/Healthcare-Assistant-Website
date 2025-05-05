@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateTag, loadTags } from "../../../../utils/service/Forum/tag";
+import { handleUpdateTag, loadTags, loadTagByID } from "../../../../utils/service/Forum/tag";
 import { Tag, NewTag } from "../../../../types/forum";
 
 const UpdateTag: React.FC = () => {
@@ -11,35 +11,38 @@ const UpdateTag: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const navigate = useNavigate();
   const [initialLoad, setInitialLoad] = useState(true);
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchTag = async () => {
-      setInitialLoad(true);
-      setError("");
       try {
-        await loadTags(
-          () => {}, 
-          (tags: Tag[]) => {
-            const found = tags.find((t) => t.tag_id === parseInt(id || ""));
-            if (found) {
-              setTag(found); 
-            } else {
-              setError("Tag not found"); 
-            }
-          },
+        await loadTagByID(
+          parseInt(id || ""),
+          setInitialLoad,
+          setTag,
           setError,
-          () => setInitialLoad(false)
+          () => { }
         );
       } catch (err) {
-        setError("An unexpected error occurred"); 
-        setInitialLoad(false); 
+        setError("An unexpected error occurred");
+        setInitialLoad(false);
       }
     };
-  
+
     fetchTag();
-  }, [id]); 
-  
+  }, [id]);
+
+  const validateInputs = (tag: NewTag): string | null => {
+    const tagName = tag.tag_name.trim();
+    let description = tag.description?.trim() || "";
+    if (!tagName) return "Tag name is required";
+    if (tagName.length < 2 || tagName.length > 50) return "Tag name must be from 2 to 50 characters";
+    if (description && (description.length < 10 || description.length > 200)) {
+      return "Description must be from 10 to 200 characters long";
+    }
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag?.tag_id) return;
@@ -50,18 +53,9 @@ const UpdateTag: React.FC = () => {
       description: tag.description?.trim() || undefined,
     };
 
-    if (!updatedTag.tag_name) {
-      setError("Tag name is required");
-      return;
-    }
-
-    if (updatedTag.tag_name.length > 50 || updatedTag.tag_name.length < 1) {
-      setError("Tag name must be from 2 to 50 characters long");
-      return;
-    }
-
-    if (updatedTag.description && (updatedTag.description.length > 200 || updatedTag.description.length < 10)) {
-      setError("Description must be from 10 to 200 characters long");
+    const validationError = validateInputs(updatedTag);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 

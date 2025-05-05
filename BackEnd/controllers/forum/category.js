@@ -164,7 +164,7 @@ export const getCategoryById = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: category,
+            category: category,
             metadata: {
                 retrievedAt: new Date().toISOString(),
                 cache: {
@@ -569,6 +569,9 @@ export const createCategory = async (req, res) => {
 
 export const updateCategory = async (req, res) => {
     try {
+        const { id } = req.params;
+        const { category_name, description } = req.body;
+
         if (!id || isNaN(id)) {
             return res.status(StatusCodes.BAD_REQUEST).json({
                 success: false,
@@ -601,10 +604,6 @@ export const updateCategory = async (req, res) => {
                 message: "Invalid token payload"
             });
         }
-
-        const { id } = req.params;
-        const { category_name, description } = req.body;
-
         const result = await updateCategoryDB(
             author_id,
             id,

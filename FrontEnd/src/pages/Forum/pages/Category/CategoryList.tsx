@@ -13,12 +13,16 @@ const CategoryList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCategories(setLoading, setCategories, setError, setSuccess);
+    try {
+      loadCategories(setLoading, setCategories, setError, setSuccess);
+    } catch (error) {
+      setError("Failed to load categories. Please try again later.");
+    }
   }, []);
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000);
+      const timer = setTimeout(() => setSuccess(""), 2000);
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -89,11 +93,15 @@ const CategoryList: React.FC = () => {
               >
                 <h3 className={styles.tagName}>{category.category_name}</h3>
                 <p className={styles.tagDescription}>
-                  {category.description || "No description available"}
+                  {category.description
+                    ? category.description.split(/\s+/).slice(0, 10).join(' ') +
+                    (category.description.split(/\s+/).length > 10 ? '...' : '')
+                    : "No description available"
+                  }
                 </p>
                 <div className={styles.tagMeta}>
                   <div className={styles.metaItem}>
-                    <span className={styles.metaLabel}>Topics:</span>
+                    <span className={styles.metaLabel}>Threads:</span>
                     <span className={styles.metaValue}>{category.thread_count || 0}</span>
                   </div>
                   <div className={styles.metaItem}>

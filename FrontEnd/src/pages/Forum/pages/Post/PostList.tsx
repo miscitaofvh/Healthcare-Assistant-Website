@@ -19,7 +19,7 @@ const PostList: React.FC = () => {
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000);
+      const timer = setTimeout(() => setSuccess(""), 2000);
       return () => clearTimeout(timer);
     }
   }, [success]);

@@ -17,8 +17,7 @@ export const getAllTagsDB = async (page = 1, limit = 20, search = '', sortBy = '
                 t.last_used_at,
                 t.created_at, 
                 t.last_updated,
-                u.username AS created_by,
-                COUNT(DISTINCT tm.post_id) AS post_count
+                u.username AS created_by
             FROM forum_tags t
             LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
             LEFT JOIN users u ON t.user_id = u.user_id
@@ -211,26 +210,8 @@ export const getTagByIdDB = async (tagId) => {
                 t.last_used_at,
                 t.created_at, 
                 t.last_updated,
-                u.username AS created_by,
-                COUNT(DISTINCT tm.post_id) AS post_count,
-                GROUP_CONCAT(DISTINCT p.post_id) AS post_ids,
-                (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'post_id', p2.post_id,
-                            'title', p2.title,
-                            'created_at', p2.created_at
-                        )
-                    )
-                    FROM forum_posts p2
-                    JOIN forum_tags_mapping tm2 ON p2.post_id = tm2.post_id
-                    WHERE tm2.tag_id = t.tag_id
-                    ORDER BY p2.created_at DESC
-                    LIMIT 5
-                ) AS recent_posts
+                u.username AS created_by
             FROM forum_tags t
-            LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
-            LEFT JOIN forum_posts p ON tm.post_id = p.post_id
             LEFT JOIN users u ON t.user_id = u.user_id
             WHERE t.tag_id = ?
             GROUP BY t.tag_id
@@ -326,17 +307,14 @@ export const getPostsByTagDB = async (tagId, page = 1, limit = 10) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Calculate offset for pagination
         const offset = (page - 1) * limit;
 
-        // 1. First query: Get tag details
         const sqlTag = `
             SELECT 
                 t.tag_id, t.tag_name, t.description,
                 t.usage_count, t.last_used_at,
                 t.created_at, t.last_updated,
-                t.user_id, u.username AS created_by,
-                COUNT(DISTINCT tm.post_id) AS post_count
+                u.username AS created_by
             FROM forum_tags t
             LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
             LEFT JOIN users u ON t.user_id = u.user_id
@@ -353,16 +331,14 @@ export const getPostsByTagDB = async (tagId, page = 1, limit = 10) => {
             throw error;
         }
 
-        // 2. Second query: Get posts with pagination
         const sqlPost = `
             SELECT 
                 p.post_id, p.content, p.created_at, p.last_updated,
-                u.username AS author, u.user_id,
+                u.username AS author,
                 th.thread_name, th.thread_id,
                 cat.category_name, cat.category_id,
                 COUNT(DISTINCT l.like_id) AS like_count,
-                COUNT(DISTINCT r.report_id) AS report_count,
-                COUNT(DISTINCT com.comment_id) AS comment_count
+                COUNT(DISTINCT r.report_id) AS report_count
             FROM forum_posts p
             JOIN forum_tags_mapping tm ON p.post_id = tm.post_id
             JOIN forum_tags t ON tm.tag_id = t.tag_id
@@ -597,7 +573,7 @@ export const updateTagDB = async (tagId, tagName, description = null, userId) =>
         `;
         await conn.execute(sql, [tagName, description, tagId]);
         await conn.commit();
-        return "Tag updated successfully";
+        return `Tag updated successfully`;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error updating tag:", error);

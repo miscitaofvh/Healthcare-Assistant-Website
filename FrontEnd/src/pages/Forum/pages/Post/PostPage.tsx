@@ -1,3 +1,4 @@
+// src/components/Forum/pages/ForumPostDetail.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
@@ -16,10 +17,10 @@ const ForumPostDetail: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [commentText, setCommentText] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
@@ -32,7 +33,7 @@ const ForumPostDetail: React.FC = () => {
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000);
+      const timer = setTimeout(() => setSuccess(""), 2000);
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -91,52 +92,6 @@ const ForumPostDetail: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.forumContainer}>
-        <div className={styles.main_navbar}>
-          <Navbar />
-        </div>
-        <div className={styles.loadingState}>
-          <div className={styles.spinner}></div>
-          <p>Loading post...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.forumContainer}>
-        <div className={styles.main_navbar}>
-          <Navbar />
-        </div>
-        <div className={styles.errorAlert}>
-          <span className={styles.errorIcon}>⚠️</span> {error}
-        </div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className={styles.forumContainer}>
-        <div className={styles.main_navbar}>
-          <Navbar />
-        </div>
-        <div className={styles.emptyState}>
-          <p className={styles.emptyMessage}>Post not found</p>
-          <button
-            className={styles.primaryButton}
-            onClick={() => navigate("/forum")}
-          >
-            Back to Forum
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.forumContainer}>
       <div className={styles.main_navbar}>
@@ -144,6 +99,7 @@ const ForumPostDetail: React.FC = () => {
       </div>
 
       <div className={styles.tagListContainer}>
+
         {error && (
           <div className={styles.errorAlert}>
             <span className={styles.errorIcon}>⚠️</span> {error}
@@ -156,111 +112,143 @@ const ForumPostDetail: React.FC = () => {
           </div>
         )}
 
-        <div className={styles.postCard}>
-          <div className={styles.postHeader}>
-            <h1 className={styles.pageTitle}>{post.title}</h1>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Posted by:</span>
-              <span className={styles.metaValue}>{post.author}</span>
+        {loading ? (
+          <div className={styles.loadingState}>
+            <div className={styles.spinner}></div>
+            <p>Loading post...</p>
+          </div>
+        ) : post ? (
+          <div>
+            {/* Post Header Section */}
+            <div className={styles.headerSection}>
+              <h1 className={styles.pageTitle}>{post.title}</h1>
             </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Posted at:</span>
-              <span className={styles.metaValue}>{formatDate(post.created_at)}</span>
-            </div>
-            {post.last_updated && (
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>Last updated:</span>
-                <span className={styles.metaValue}>{formatDate(post.last_updated)}</span>
+
+            {/* Post Content Card */}
+            <div className={styles.tagCard}>
+              <div className={styles.tagMeta}>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Posted by:</span>
+                  <span className={styles.metaValue}>{post.author}</span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Posted at:</span>
+                  <span className={styles.metaValue}>{formatDate(post.created_at)}</span>
+                </div>
+                {post.last_updated && (
+                  <div className={styles.metaItem}>
+                    <span className={styles.metaLabel}>Last updated:</span>
+                    <span className={styles.metaValue}>{formatDate(post.last_updated)}</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className={styles.postContent}>
-            {post.content}
-          </div>
+              <div className={styles.postContent}>
+                <p>{post.content}</p>
+                {post.image_url && (
+                  <div className={styles.postImage}>
+                    <img
+                      src={post.image_url}
+                      alt="Post content"
+                      className={styles.responsiveImage}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
 
-          {post.image_url && (
-            <div className={styles.postImage}>
-              <img
-                src={post.image_url}
-                alt="Post"
-                className={styles.responsiveImage}
-              />
+              <div className={styles.buttonGroup}>
+                <button
+                  className={styles.secondaryButton}
+                  onClick={() => navigate(-1)}
+                  disabled={loading}
+                >
+                  Back
+                </button>
+                <button
+                  className={styles.primaryButton}
+                  onClick={onDeletePost}
+                  disabled={isDeleting || loading}
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className={styles.spinnerSmall}></span> Deleting...
+                    </>
+                  ) : (
+                    "Delete Post"
+                  )}
+                </button>
+              </div>
             </div>
-          )}
 
-          <div className={styles.buttonGroup}>
-            <button
-              className={styles.secondaryButton}
-              onClick={() => navigate(-1)}
-            >
-              Back
-            </button>
+            {/* Comments Section */}
+            <div className={styles.headerSection}>
+              <h2 className={styles.pageTitle}>Comments</h2>
+            </div>
+
+            <div className={styles.tagCard}>
+              <form onSubmit={onCommentSubmit} className={styles.commentForm}>
+                <textarea
+                  className={styles.formTextarea}
+                  placeholder="Write your comment here..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={4}
+                  required
+                  maxLength={1000}
+                />
+                <small className={styles.characterCount}>
+                  {commentText.length}/1000 characters
+                </small>
+                <div className={styles.buttonGroup}>
+                  <button
+                    type="submit"
+                    className={styles.primaryButton}
+                    disabled={!commentText.trim() || loading}
+                  >
+                    Post Comment
+                  </button>
+                </div>
+              </form>
+
+              {comments.length > 0 ? (
+                <div className={styles.postsContainer}>
+                  {comments.map((comment) => (
+                    <div key={comment.comment_id} className={styles.postCard}>
+                      <div className={styles.postHeader}>
+                        <span className={styles.postAuthor}>{comment.username}</span>
+                        <span className={styles.postDate}>
+                          {formatDate(comment.created_at)}
+                        </span>
+                      </div>
+                      <div className={styles.postContent}>
+                        <p>{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <p className={styles.emptyMessage}>No comments available for this post.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyMessage}>Post not found.</p>
             <button
               className={styles.primaryButton}
-              onClick={onDeletePost}
-              disabled={isDeleting}
+              onClick={() => navigate("/forum")}
+              disabled={loading}
             >
-              {isDeleting ? (
-                <>
-                  <span className={styles.spinnerSmall}></span> Deleting...
-                </>
-              ) : (
-                "Delete Post"
-              )}
+              Back to Forum
             </button>
           </div>
-        </div>
-
-        <div className={styles.commentSection}>
-          <h2 className={styles.pageSubtitle}>Comments</h2>
-
-          <form onSubmit={onCommentSubmit} className={styles.commentForm}>
-            <textarea
-              className={styles.formTextarea}
-              placeholder="Write your comment here..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              rows={4}
-              required
-              maxLength={1000}
-            />
-            <small className={styles.characterCount}>
-              {commentText.length}/1000 characters
-            </small>
-            <div className={styles.buttonGroup}>
-              <button
-                type="submit"
-                className={styles.primaryButton}
-                disabled={!commentText.trim()}
-              >
-                Post Comment
-              </button>
-            </div>
-          </form>
-
-          {comments.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p className={styles.emptyMessage}>No comments yet</p>
-            </div>
-          ) : (
-            <div className={styles.commentsList}>
-              {comments.map((comment) => (
-                <div key={comment.comment_id} className={styles.commentCard}>
-                  <div className={styles.commentHeader}>
-                    <span className={styles.postAuthor}>{comment.username}</span>
-                    <span className={styles.postDate}>
-                      {formatDate(comment.created_at)}
-                    </span>
-                  </div>
-                  <div className={styles.commentContent}>
-                    {comment.content}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -13,57 +13,52 @@ import { Dispatch, SetStateAction } from "react";
 
 export const loadThreads = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setThreads: (threads: Thread[]) => void,
+    setThreads: Dispatch<SetStateAction<Thread[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ): Promise<void> => {
-    const handleError = (message: string) => {
-        setError(`Không thể tải threads: ${message}`);
-        setSuccess("");
-    };
     try {
         setLoading(true);
         const response = await getAllThreads();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
-            return handleError(errorMsg);
+            setError(data?.message ?? "Internal server error.");
+            setSuccess("");
         }
         setThreads(data.threads ?? []);
-        setSuccess("Tải danh sách threads thành công");
+        setSuccess("Threads loaded successfully");
         setError("");
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
-            "Đã xảy ra lỗi khi tải danh sách category";
-        handleError(errorMsg);
+            "Failed to load threads.";
+        setError(errorMsg);
+        setSuccess("");
     } finally {
         setLoading(false);
     }
 };
 
-export const loadThreadSummary = async (
+export const loadThreadByID = async (
+    id: number,
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setThreads: (threads: ThreadSummary[]) => void,
+    setThread: Dispatch<SetStateAction<ThreadSummary | null>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ): Promise<void> => {
-    const handleError = (message: string) => {
-        setError(`Không thể tải threads: ${message}`);
-        setSuccess("");
-    };
     try {
         setLoading(true);
-        const response = await getSummaryThreads();
+        const response = await getThreadById(id);
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
-            return handleError(errorMsg);
+            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            setSuccess("");
         }
-        setThreads(data.threads ?? []);
+        setThread(data.thread || null);
         setSuccess("Tải danh sách threads thành công");
         setError("");
     } catch (err: any) {
@@ -71,7 +66,8 @@ export const loadThreadSummary = async (
             err?.response?.data?.message ??
             err?.message ??
             "Đã xảy ra lỗi khi tải danh sách category";
-        handleError(errorMsg);
+        setError(errorMsg);
+        setSuccess("");
     } finally {
         setLoading(false);
     }
@@ -82,7 +78,8 @@ export const loadPostsandThreadByCategory = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThread: Dispatch<SetStateAction<Thread | null>>,
     setPosts: Dispatch<SetStateAction<any[]>>,
-    setError: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
@@ -101,6 +98,7 @@ export const loadPostsandThreadByCategory = async (
         } else {
             setError("Failed to load Posts.");
         }
+        setSuccess("Thread loaded successfully");
     } catch (error) {
         setError("Failed to load Posts. Please try again later.");
         console.error("Error loading Posts:", error);
@@ -130,11 +128,11 @@ export const handleCreateThread = async (
             return;
         }
 
-        setSuccess(data?.message || "Tạo thread thành công!");
+        setSuccess(data?.message || "Thread created successfully!");
 
         setTimeout(() => {
             onSuccess();
-        }, 3000);
+        }, 2000);
 
     } catch (err: any) {
         setError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
@@ -150,7 +148,7 @@ export const handleUpdateThread = async (
     setFormLoading: Dispatch<SetStateAction<boolean>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>,
-    onSuccessCallback?: () => void
+    onSuccess?: () => void
 ): Promise<void> => {
     try {
         setFormLoading(true);
@@ -165,13 +163,12 @@ export const handleUpdateThread = async (
             setError(`Không thể cập nhật thread: ${errorMsg}`);
             return;
         }
+        setSuccess(data?.message || "Thread updated successfully!");
 
-        setSuccess(data?.message || "Cập nhật thread thành công!");
-
-        if (onSuccessCallback) {
+        if (onSuccess) {
             setTimeout(() => {
-                onSuccessCallback();
-            }, 3000);
+                onSuccess();
+            }, 2000);
         }
 
     } catch (err: any) {

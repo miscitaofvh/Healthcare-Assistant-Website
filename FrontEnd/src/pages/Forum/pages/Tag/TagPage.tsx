@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { PostSummary, Tag } from "../../../../types/forum";
+import { PostbyTag, Tag } from "../../../../types/forum";
 import { loadTagandPostsByTag } from "../../../../utils/service/Forum/tag";
 
 const TagPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [tag, setTag] = useState<Tag | null>(null);
-    const [posts, setPosts] = useState<PostSummary[]>([]);
+    const [posts, setPosts] = useState<PostbyTag[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [success, setSuccess] = useState<string>("");
     const [error, setError] = useState<string>("");
     const navigate = useNavigate();
 
@@ -22,18 +23,28 @@ const TagPage: React.FC = () => {
             }
 
             try {
-                setLoading(true);
-                loadTagandPostsByTag(id, setLoading, setTag, setPosts, setError);
+                loadTagandPostsByTag(id, setLoading, setTag, setPosts, setError, setSuccess);
             } catch (err: any) {
-                console.error("Error fetching tag data:", err);
-                setError("Failed to load tag data.");
-            } finally {
-                setLoading(false);
+                setError("An unexpected error occurred while loading the tag and posts.");
             }
         };
 
         fetchData();
     }, [id]);
+
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(""), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(""), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     return (
         <div className={styles.forumContainer}>
@@ -47,11 +58,6 @@ const TagPage: React.FC = () => {
                         <div className={styles.spinner}></div>
                         <p>Loading tag...</p>
                     </div>
-                ) : error ? (
-                    <div className={styles.errorAlert}>
-                        <span className={styles.errorIcon}>!</span>
-                        {error}
-                    </div>
                 ) : tag ? (
                     <div>
                         {/* Tag Header Section */}
@@ -60,8 +66,36 @@ const TagPage: React.FC = () => {
                             <p className={styles.pageSubtitle}>{tag.description}</p>
                         </div>
 
+                        {error && (
+                            <div className={styles.errorAlert}>
+                                <span className={styles.errorIcon}>⚠️</span> {error}
+                            </div>
+                        )}
+
+                        {success && (
+                            <div className={styles.alertSuccess}>
+                                <span className={styles.successIcon}>✅</span> {success}
+                            </div>
+                        )}
+
                         {/* Tag Info Card */}
                         <div className={styles.tagCard}>
+                            <div className={styles.tagMeta}>
+                                <div className={styles.metaItem}>
+                                    <span className={styles.metaLabel}>Created by:</span>
+                                    <span className={styles.metaValue}>{tag.created_by}</span>
+                                </div>
+                            </div>
+                            <div className={styles.tagMeta}>
+                                <div className={styles.metaItem}>
+                                    <span className={styles.metaLabel}>Created at:</span>
+                                    <span className={styles.metaValue}>{new Date(tag.created_at).toLocaleString()}</span>
+                                </div>
+                                <div className={styles.metaItem}>
+                                    <span className={styles.metaLabel}>Last updated:</span>
+                                    <span className={styles.metaValue}>{new Date(tag.last_updated).toLocaleString()}</span>
+                                </div>
+                            </div>
                             <div className={styles.tagMeta}>
                                 <div className={styles.metaItem}>
                                     <span className={styles.metaLabel}>Usage:</span>
@@ -90,6 +124,14 @@ const TagPage: React.FC = () => {
                                         <p className={styles.tagDescription}>{post.content.slice(0, 100)}...</p>
 
                                         <div className={styles.tagMeta}>
+                                            <div className={styles.metaItem}>
+                                                <span className={styles.metaLabel}>Category:</span>
+                                                <span className={styles.metaValue}>{post.category_name}</span>
+                                            </div>
+                                            <div className={styles.metaItem}>
+                                                <span className={styles.metaLabel}>Thread:</span>
+                                                <span className={styles.metaValue}>{post.thread_name}</span>
+                                            </div>
                                             <div className={styles.metaItem}>
                                                 <span className={styles.metaLabel}>Author:</span>
                                                 <span className={styles.metaValue}>{post.author}</span>

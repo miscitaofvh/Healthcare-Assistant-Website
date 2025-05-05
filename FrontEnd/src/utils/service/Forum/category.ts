@@ -12,34 +12,31 @@ import { Dispatch, SetStateAction } from "react";
 
 export const loadCategories = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setCategories: (categories: CategoryMain[]) => void,
+    setCategories: Dispatch<SetStateAction<CategoryMain[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ): Promise<void> => {
-    const handleError = (message: string) => {
-        setError(`Không thể tải categories: ${message}`);
-        setSuccess("");
-    };
-
     try {
         setLoading(true);
         const response = await getAllCategories();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
-            return handleError(errorMsg);
+            setError(data?.message ?? "Errors occurred while loading categories.");
+            setSuccess("");
+            return;
         }
 
         setCategories(data.categories ?? []);
-        setSuccess("Tải danh sách categories thành công");
+        setSuccess("Categories loaded successfully!");
         setError("");
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
-            "Đã xảy ra lỗi khi tải danh sách category";
-        handleError(errorMsg);
+            "Errors occurred while loading categories.";
+        setError(errorMsg);
+        setSuccess("");
     } finally {
         setLoading(false);
     }
@@ -48,23 +45,18 @@ export const loadCategories = async (
 
 export const loadCategoriesSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setCategories: (categories: CategorySummary[]) => void,
+    setCategories: Dispatch<SetStateAction<CategorySummary[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ): Promise<void> => {
-    const handleError = (message: string) => {
-        setError(`Không thể tải categories: ${message}`);
-        setSuccess("");
-    };
-
     try {
         setLoading(true);
         const response = await getSummaryCategories();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
-            return handleError(errorMsg);
+            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            setSuccess("");
         }
 
         setCategories(data.categories ?? []);
@@ -75,7 +67,41 @@ export const loadCategoriesSummary = async (
             err?.response?.data?.message ??
             err?.message ??
             "Đã xảy ra lỗi khi tải danh sách category";
-        handleError(errorMsg);
+        setError(errorMsg);
+        setSuccess("");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const loadCategorieById = async (
+    id: number,
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setCategories: Dispatch<SetStateAction<Category | null>>,
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await getCategoryById(id);
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            setSuccess("");
+            return;
+        }
+
+        setCategories(data.category || null);
+        setSuccess("Tải danh sách categories thành công");
+        setError("");
+    } catch (err: any) {
+        const errorMsg =
+            err?.response?.data?.message ??
+            err?.message ??
+            "Đã xảy ra lỗi khi tải danh sách category";
+        setError(errorMsg);
+        setSuccess("");
     } finally {
         setLoading(false);
     }
@@ -122,7 +148,7 @@ export const handleCreateCategory = async (
 
         setTimeout(() => {
             onSuccess();
-        }, 3000);
+        }, 2000);
 
     } catch (err: any) {
         setError(err?.response?.data?.message ?? err.message ?? "Failed to create category.");
@@ -159,7 +185,7 @@ export const handleUpdateCategory = async (
         if (onSuccessCallback) {
             setTimeout(() => {
                 onSuccessCallback();
-            }, 3000);
+            }, 2000);
         }
 
     } catch (error: unknown) {
@@ -250,15 +276,18 @@ export const loadThreadsandCategoryByCategory = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
     setThreads: Dispatch<SetStateAction<any[]>>,
-    setError: Dispatch<SetStateAction<string>>
+    setError: Dispatch<SetStateAction<string>>,
+    setSuccess: Dispatch<SetStateAction<string>>
 ) => {
     try {
         setLoading(true);
+        setError("");
+        setSuccess("");
         const response = await getThreadsByCategory(Number(id));
         const { status, data } = response;
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while loading categories.";
-            setError(`Không thể tải categories: ${errorMsg}`);
+            const errorMsg = data?.message || "Unknown error occurred while loading category.";
+            setError(`Can't load category: ${errorMsg}`);
             return;
         }
 
@@ -268,8 +297,9 @@ export const loadThreadsandCategoryByCategory = async (
         } else {
             setError("Failed to load threads.");
         }
+        setSuccess("Category loaded successfully!");
     } catch (error) {
-        setError("Failed to load threads. Please try again later.");
+        setError("Failed to load category. Please try again later.");
         console.error("Error loading threads:", error);
     } finally {
         setLoading(false);

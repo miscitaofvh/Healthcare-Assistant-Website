@@ -13,12 +13,16 @@ const ThreadListPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadThreads(setLoading, setThreads, setError, setSuccess);
+    try {
+      loadThreads(setLoading, setThreads, setError, setSuccess);
+    } catch (error) {
+      setError("Failed to load threads. Please try again later.");
+    }
   }, []);
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000);
+      const timer = setTimeout(() => setSuccess(""), 2000);
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -71,7 +75,7 @@ const ThreadListPage: React.FC = () => {
         )}
 
         {/* <div className={styles.buttonGroup} style={{ justifyContent: 'flex-end' }}>
-
+  
         </div> */}
 
         {loading ? (
@@ -89,10 +93,14 @@ const ThreadListPage: React.FC = () => {
               >
                 <h3 className={styles.tagName}>{thread.thread_name}</h3>
                 <p className={styles.tagDescription}>
-                  {thread.description || "No description available"}
+                  {thread.description
+                    ? thread.description.split(/\s+/).slice(0, 10).join(' ') +
+                    (thread.description.split(/\s+/).length > 10 ? '...' : '')
+                    : "No description available"
+                  }
                 </p>
                 <p className={styles.tagDescription}>
-                  posts : {thread.post_count || "No description available"}
+                  posts : {thread.post_count || "0"}
                 </p>
               </div>
             ))}

@@ -17,7 +17,7 @@ const CreatePost: React.FC = () => {
   const [categoryId, setCategoryId] = useState<number>(0);
   const [post, setPost] = useState<PostNew>({
     thread_id: 0,
-    title: "", 
+    title: "",
     content: "",
     image_url: null,
     tag_name: [],
@@ -33,8 +33,8 @@ const CreatePost: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCategoriesSummary(setLoading, setCategories, setError, () => {});
-    loadTagsSummary(setTagsLoading, setTags, setError, () => {});
+    loadCategoriesSummary(setLoading, setCategories, setError, () => { });
+    loadTagsSummary(setTagsLoading, setTags, setError, () => { });
   }, []);
 
   useEffect(() => {
@@ -66,6 +66,20 @@ const CreatePost: React.FC = () => {
     }));
   };
 
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");

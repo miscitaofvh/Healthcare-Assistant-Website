@@ -469,7 +469,7 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
                 FROM forum_categories
                 WHERE LOWER(category_name) = ? AND category_id != ?
             `;
-            const [nameCheckRows] = await conn.execute(checkNameSql, [category_name.toLowerCase(), categoryId]);
+            const [nameCheckRows] = await conn.execute(checkNameSql, [category_name, categoryId]);
             if (nameCheckRows.length > 0) {
                 throw new Error("Category name already exists");
             }
@@ -487,7 +487,7 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
             WHERE category_id = ?
         `;
         const [updateResult] = await conn.execute(updateSql, [
-            category_name ? category_name.toLowerCase() : null,
+            category_name ? category_name : null,
             description !== undefined ? description : null,
             categoryId
         ]);
@@ -497,7 +497,7 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
         }
 
         await conn.commit();
-        return `Category with ID ${categoryId} updated successfully`;
+        return 'Category updated successfully';
 
     } catch (error) {
         if (conn) await conn.rollback();

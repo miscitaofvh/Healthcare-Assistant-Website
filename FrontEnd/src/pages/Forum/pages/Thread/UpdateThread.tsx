@@ -2,57 +2,43 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateThread, loadThreadSummary } from "../../../../utils/service/Forum/thread";
-import { NewThread, CategorySummary, ThreadSummary } from "../../../../types/forum";
-import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
+import { handleUpdateThread, loadThreadByID } from "../../../../utils/service/Forum/thread";
+import { NewThread, ThreadSummary } from "../../../../types/forum";
 
 const UpdateThread: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [thread, setThread] = useState<ThreadSummary | null>(null);
-    const [categories, setCategories] = useState<CategorySummary[]>([]);
     const [formLoading, setFormLoading] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
-    const [categoriesLoading, setCategoriesLoading] = useState(true);
-    const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
 
     useEffect(() => {
         const fetchThread = async () => {
-            setInitialLoad(true);
-            setError("");
             try {
-                await loadThreadSummary(
-                    () => { },
-                    (threads: ThreadSummary[]) => {
-                        const found = threads.find(t => t.thread_id === parseInt(id || ""));
-                        found ? setThread(found) : setError("Thread not found");
-                    },
-                    setError,
-                    () => setInitialLoad(false)
-                );
+                await loadThreadByID(parseInt(id || ""), setInitialLoad, setThread, setError, () => { });
             } catch {
                 setError("An unexpected error occurred");
-                setInitialLoad(false);
             }
         };
-
-        const fetchCategories = async () => {
-            try {
-                await loadCategoriesSummary(
-                    setCategoriesLoading,
-                    setCategories,
-                    setError,
-                    () => { }
-                );
-            } catch (err) {
-                setError("Failed to load categories");
-            }
-        };
-        fetchCategories();
         fetchThread();
     }, [id]);
+
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(""), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(""), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const validateInputs = (thread: NewThread): string | null => {
         const title = thread.thread_name.trim();
@@ -83,16 +69,18 @@ const UpdateThread: React.FC = () => {
             return;
         }
 
-        await handleUpdateThread(
-            thread.thread_id,
-            updatedThread,
-            setFormLoading,
-            setError,
-            setSuccess,
-            () => {
-                setTimeout(() => navigate(`/forum/threads/${thread.thread_id}`), 3000);
-            }
-        );
+        try {
+            await handleUpdateThread(
+                thread.thread_id,
+                updatedThread,
+                setFormLoading,
+                setError,
+                setSuccess,
+                () => navigate(`/forum/threads/${thread.thread_id}`)
+            );
+        } catch (err) {
+            setError("Failed to update thread. Please try again.");
+        }
     };
 
     const handleInputChange = (field: keyof NewThread, value: string | number) => {
@@ -143,6 +131,15 @@ const UpdateThread: React.FC = () => {
                     <div className={styles.tagCard}>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>
+
+                                <label htmlFor="threadCategory" className={styles.metaLabel}>
+                                    Category *
+                                </label>
+
+                                <p className={styles.categoryName}>
+                                    {thread.category_name}
+                                </p>
+                                
                                 <label htmlFor="threadTitle" className={styles.metaLabel}>
                                     Thread Title *
                                 </label>
@@ -159,25 +156,6 @@ const UpdateThread: React.FC = () => {
                                 <small className={styles.characterCount}>
                                     {thread.thread_name.length}/50 characters
                                 </small>
-
-                                <label htmlFor="threadCategory" className={styles.metaLabel}>
-                                    Category *
-                                </label>
-                                <select
-                                    id="threadCategory"
-                                    className={styles.formInput}
-                                    value={thread.category_id}
-                                    onChange={(e) => handleInputChange("category_id", parseInt(e.target.value))}
-                                    required
-                                    disabled={formLoading || categoriesLoading}
-                                >
-                                    <option value="0">Select a category</option>
-                                    {categories.map((category: CategorySummary) => (
-                                        <option key={category.category_id} value={category.category_id}>
-                                            {category.category_name}
-                                        </option>
-                                    ))}
-                                </select>
 
                                 <label htmlFor="threadContent" className={styles.metaLabel}>
                                     Content *
@@ -210,7 +188,7 @@ const UpdateThread: React.FC = () => {
                                 <button
                                     type="submit"
                                     className={styles.primaryButton}
-                                    disabled={formLoading || categoriesLoading}
+                                    disabled={formLoading || initialLoad}
                                 >
                                     {formLoading ? (
                                         <>

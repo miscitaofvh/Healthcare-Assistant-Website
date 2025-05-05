@@ -15,16 +15,37 @@ const CreateCategory: React.FC = () => {
     const [success, setSuccess] = useState("");
     const navigate = useNavigate();
 
+    const validateInputs = (category: NewCategory): string | null => {
+        const categoryName = category.category_name.trim();
+        let description = category.description?.trim() || "";
+        if (!categoryName) return "Category name is required";
+        if (categoryName.length < 3 || categoryName.length > 50) return "Category name must be from 3 to 50 characters";
+        if (description && (description.length < 10 || description.length > 200)) {
+            return "Description must be from 10 to 200 characters long";
+        }
+        return null;
+    };
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        await handleCreateCategory(
-            newCategory,
-            setFormLoading,
-            setError,
-            setSuccess,
-            () => navigate("/forum/categories")
-        );
+        const validationError = validateInputs(newCategory);
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+        try {
+            await handleCreateCategory(
+                newCategory,
+                setFormLoading,
+                setError,
+                setSuccess,
+                () => navigate("/forum/categories")
+            );
+        }
+        catch (err) {
+            setError("An unexpected error occurred while creating the category");
+        }
     };
 
     return (

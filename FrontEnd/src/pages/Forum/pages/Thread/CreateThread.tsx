@@ -28,7 +28,7 @@ const CreateThread: React.FC = () => {
                     setCategoriesLoading,
                     setCategories,
                     setError,
-                    () => {}
+                    () => { }
                 );
             } catch (err) {
                 setError("Failed to load categories");
@@ -38,21 +38,52 @@ const CreateThread: React.FC = () => {
         fetchCategories();
     }, []);
 
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(""), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(""), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
+    const validateInputs = (thread: NewThread): string | null => {
+        const title = thread.thread_name.trim();
+        let description = thread.description?.trim() || "";
+        if (!title) return "Thread title is required";
+        if (title.length < 3 || title.length > 50) return "Thread title must be from 3 to 50 characters";
+        if (!description) return "Thread content is required";
+        if (description.length < 10 || description.length > 200) return "Content must be from 10 to 200 characters";
+        if (!thread.category_id || thread.category_id <= 0) return "Please select a valid category";
+
+        return null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!newThread.category_id || newThread.category_id <= 0) {
-            setError("Please select a category");
+        const validationError = validateInputs(newThread);
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
-        await handleCreateThread(
-            newThread,
-            setFormLoading,
-            setError,
-            setSuccess,
-            () => navigate(`/forum/categories/${newThread.category_id}`)
-        );
+        try {
+            await handleCreateThread(
+                newThread,
+                setFormLoading,
+                setError,
+                setSuccess,
+                () => navigate(`/forum/categories/${newThread.category_id}`)
+            );
+        } catch (err) {
+            setError("An unexpected error occurred while creating the thread");
+        }
     };
 
     return (
@@ -82,26 +113,6 @@ const CreateThread: React.FC = () => {
                 <div className={styles.tagCard}>
                     <form onSubmit={handleSubmit}>
                         <div className={styles.formGroup}>
-                            <label htmlFor="threadTitle" className={styles.metaLabel}>
-                                Thread Title *
-                            </label>
-                            <input
-                                type="text"
-                                id="threadTitle"
-                                className={styles.formInput}
-                                value={newThread.thread_name}
-                                onChange={(e) =>
-                                    setNewThread({ ...newThread, thread_name: e.target.value })
-                                }
-                                required
-                                maxLength={100}
-                                placeholder="Enter thread title (required)"
-                                disabled={formLoading}
-                            />
-                            <small className={styles.characterCount}>
-                                {newThread.thread_name.length}/100 characters
-                            </small>
-
                             <label htmlFor="threadCategory" className={styles.metaLabel}>
                                 Category *
                             </label>
@@ -122,6 +133,26 @@ const CreateThread: React.FC = () => {
                                     </option>
                                 ))}
                             </select>
+
+                            <label htmlFor="threadTitle" className={styles.metaLabel}>
+                                Thread Title *
+                            </label>
+                            <input
+                                type="text"
+                                id="threadTitle"
+                                className={styles.formInput}
+                                value={newThread.thread_name}
+                                onChange={(e) =>
+                                    setNewThread({ ...newThread, thread_name: e.target.value })
+                                }
+                                required
+                                maxLength={100}
+                                placeholder="Enter thread title (required)"
+                                disabled={formLoading}
+                            />
+                            <small className={styles.characterCount}>
+                                {newThread.thread_name.length}/100 characters
+                            </small>
 
                             <label htmlFor="threadContent" className={styles.metaLabel}>
                                 Content *

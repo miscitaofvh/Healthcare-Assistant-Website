@@ -11,14 +11,29 @@ const ThreadPage: React.FC = () => {
   const [thread, setThread] = useState<Thread | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [success, setSuccess] = useState<string>("");
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (id) {
-      loadPostsandThreadByCategory(id, setLoading, setThread, setPosts, setError);
+      loadPostsandThreadByCategory(id, setLoading, setThread, setPosts, setError, setSuccess);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleViewPost = (postId: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,15 +47,11 @@ const ThreadPage: React.FC = () => {
       </div>
 
       <div className={styles.tagListContainer}>
+
         {loading ? (
           <div className={styles.loadingState}>
             <div className={styles.spinner}></div>
             <p>Loading thread...</p>
-          </div>
-        ) : error ? (
-          <div className={styles.errorAlert}>
-            <span className={styles.errorIcon}>!</span>
-            {error}
           </div>
         ) : thread ? (
           <div>
@@ -49,6 +60,18 @@ const ThreadPage: React.FC = () => {
               <h1 className={styles.pageTitle}>{thread.thread_name}</h1>
               <p className={styles.pageSubtitle}>{thread.description}</p>
             </div>
+
+            {error && (
+              <div className={styles.errorAlert}>
+                <span className={styles.errorIcon}>⚠️</span> {error}
+              </div>
+            )}
+
+            {success && (
+              <div className={styles.alertSuccess}>
+                <span className={styles.successIcon}>✅</span> {success}
+              </div>
+            )}
 
             {/* Thread Info Card */}
             <div className={styles.tagCard}>
@@ -76,7 +99,7 @@ const ThreadPage: React.FC = () => {
                 </button>
                 <button
                   className={styles.secondaryButton}
-                  onClick={() => navigate(`/forum/threads/${thread.thread_id}/posts/create`)}
+                  onClick={() => navigate(`/forum/posts/create`)}
                   disabled={loading}
                 >
                   Add New Post
@@ -132,7 +155,7 @@ const ThreadPage: React.FC = () => {
                 <p className={styles.emptyMessage}>No posts available in this thread.</p>
                 <button
                   className={styles.primaryButton}
-                  onClick={() => navigate(`/forum/threads/${thread.thread_id}/posts/create`)}
+                  onClick={() => navigate(`/forum/posts/create`)}
                   disabled={loading}
                 >
                   Create First Post

@@ -14,12 +14,16 @@ const TagList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadTags(setLoading, setTags, setError, setSuccess);
+    try {
+      loadTags(setLoading, setTags, setError, setSuccess);
+    } catch (err) {
+      setError("An unexpected error occurred while loading tags");
+    }
   }, []);
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000);
+      const timer = setTimeout(() => setSuccess(""), 2000);
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -84,10 +88,14 @@ const TagList: React.FC = () => {
                   className={styles.tagCard}
                   onClick={() => handleTagClick(tag.tag_id)}
                 >
+
                   <div className={styles.tagHeader}>
                     <h3 className={styles.tagName}>#{tag.tag_name}</h3>
                     {tag.description && (
-                      <p className={styles.tagDescription}>{tag.description}</p>
+                      <p className={styles.tagDescription}>
+                        {tag.description.split(/\s+/).slice(0, 10).join(' ')}
+                        {tag.description.split(/\s+/).length > 10 && '...'}
+                      </p>
                     )}
                   </div>
 
@@ -97,12 +105,12 @@ const TagList: React.FC = () => {
                       <span className={styles.metaValue}>{tag.created_by}</span>
                     </div>
                     <div className={styles.metaItem}>
-                      <span className={styles.metaLabel}>Created:</span>
-                      <span className={styles.metaValue}>{formatDate(tag.created_at)}</span>
+                      <span className={styles.metaLabel}>Usage count:</span>
+                      <span className={styles.metaValue}>{tag.usage_count}</span>
                     </div>
                     <div className={styles.metaItem}>
-                      <span className={styles.metaLabel}>Updated:</span>
-                      <span className={styles.metaValue}>{formatDate(tag.last_updated)}</span>
+                      <span className={styles.metaLabel}>Last used at:</span>
+                      <span className={styles.metaValue}>{formatDate(tag.last_used_at)}</span>
                     </div>
                   </div>
                 </div>

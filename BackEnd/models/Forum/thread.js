@@ -77,16 +77,13 @@ export const getThreadByIdDB = async (threadId) => {
 
         const sql = `
             SELECT 
-                t.thread_id, t.thread_name, t.description, t.created_at, t.last_updated,
-                u.username AS author, u.user_id,
-                c.category_name, c.category_id,
-                COUNT(DISTINCT p.post_id) AS post_count
+                t.thread_id, t.thread_name, t.description,
+                u.username AS created_by,
+                c.category_name, c.category_id
             FROM forum_threads t
             JOIN users u ON t.user_id = u.user_id
             JOIN forum_categories c ON t.category_id = c.category_id
-            LEFT JOIN forum_posts p ON t.thread_id = p.thread_id
             WHERE t.thread_id = ?
-            GROUP BY t.thread_id
         `;
         const [thread] = await conn.execute(sql, [threadId]);
         await conn.commit();
@@ -325,7 +322,6 @@ export const updateThreadDB = async (author_id, threadId, thread_name, descripti
             throw new Error("Invalid thread ID");
         }
 
-        // Check if thread exists and user is authorized
         const checkThreadSql = `
             SELECT thread_id
             FROM forum_threads
@@ -340,14 +336,13 @@ export const updateThreadDB = async (author_id, threadId, thread_name, descripti
             throw new Error("No fields to update provided");
         }
 
-        // Check for duplicate thread name if updating name
         if (thread_name) {
             const checkNameSql = `
                 SELECT thread_id
                 FROM forum_threads
                 WHERE thread_name = ? AND thread_id != ?
             `;
-            const [nameCheck] = await conn.execute(checkNameSql, [thread_name.toLowerCase(), threadId]);
+            const [nameCheck] = await conn.execute(checkNameSql, [thread_name, threadId]);
             if (nameCheck.length > 0) {
                 throw new Error("Thread name already exists");
             }
@@ -362,7 +357,7 @@ export const updateThreadDB = async (author_id, threadId, thread_name, descripti
             WHERE thread_id = ?
         `;
         const [result] = await conn.execute(sql, [
-            thread_name?.toLowerCase(),
+            thread_name,
             description,
             threadId
         ]);
@@ -370,7 +365,7 @@ export const updateThreadDB = async (author_id, threadId, thread_name, descripti
         if (result.affectedRows === 0) {
             throw new Error("Thread not found or no changes made");
         }
-        return `Thread with ID ${threadId} updated successfully`;
+        return `Thread updated successfully`;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error updating thread:", error);

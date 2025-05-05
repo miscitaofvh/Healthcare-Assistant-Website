@@ -276,7 +276,7 @@ export const getTagById = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: tag
+            tag: tag
         });
     } catch (error) {
         console.error(`Error getting tag by ID ${req.params.id}:`, error);

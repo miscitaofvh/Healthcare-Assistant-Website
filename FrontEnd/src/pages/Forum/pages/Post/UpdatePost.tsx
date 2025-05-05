@@ -9,7 +9,7 @@ import {
   CategorySummary,
   ThreadDropdown,
   PostNew,
-  PostTag,
+  TagPost,
   Post,
 } from "../../../../types/forum";
 
@@ -20,8 +20,8 @@ const UpdatePost: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
-  const [tags, setTags] = useState<PostTag[]>([]);
-  const [availableTags, setAvailableTags] = useState<PostTag[]>([]);
+  const [tags, setTags] = useState<TagPost[]>([]);
+  const [availableTags, setAvailableTags] = useState<TagPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +71,20 @@ const UpdatePost: React.FC = () => {
       tags: [...prev!.tags, tagToAdd],
     }));
   };
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const removeTag = (tagToRemove: string) => {
     if (!post) return;
