@@ -23,10 +23,15 @@ const ForumPostDetail: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (id) {
+    if (!id) {
+      setError("Invalid post ID.");
+      setLoading(false);
+      return;
+    }
+    try {
       loadPostPageById(id, setLoading, setPost, setComments, setError, setSuccess);
-    } else {
-      setError("Invalid post ID");
+    } catch (err : any) {
+      setError(err || "Failed to load post details.");
       setLoading(false);
     }
   }, [id]);
@@ -128,6 +133,14 @@ const ForumPostDetail: React.FC = () => {
             <div className={styles.tagCard}>
               <div className={styles.tagMeta}>
                 <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Category: </span>
+                  <span className={styles.metaValue}>{post.category_name}</span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Thread:</span>
+                  <span className={styles.metaValue}>{post.thread_name}</span>
+                </div>
+                <div className={styles.metaItem}>
                   <span className={styles.metaLabel}>Posted by:</span>
                   <span className={styles.metaValue}>{post.author}</span>
                 </div>
@@ -141,6 +154,10 @@ const ForumPostDetail: React.FC = () => {
                     <span className={styles.metaValue}>{formatDate(post.last_updated)}</span>
                   </div>
                 )}
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Like: </span>
+                  <span className={styles.metaValue}>{post.like_count}</span>
+                </div>
               </div>
 
               <div className={styles.postContent}>

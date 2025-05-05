@@ -1,3 +1,4 @@
+import { Post, PostNew } from "../../../types/forum";
 import { requestAPI } from "../request";
 const BASE_URL = "http://localhost:5000/api/forum";
 
@@ -21,7 +22,7 @@ export async function getPostById(id: string) {
     return response;
 }
 
-export async function createPost(post: any) {
+export async function createPost(post: PostNew) {
     const response = await requestAPI(BASE_URL, "/posts", "POST", post);
     return response;
 }

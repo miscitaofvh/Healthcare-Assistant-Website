@@ -15,8 +15,16 @@ const CategoryDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) {
+    if (!id) {
+      setError("Invalid category ID.");
+      setLoading(false);
+      return;
+    }
+    try {
       loadThreadsandCategoryByCategory(id, setLoading, setCategory, setThreads, setError, setSuccess);
+    } catch (err: any) {
+      setError("Invalid category ID");
+      setLoading(false);
     }
   }, [id]);
 

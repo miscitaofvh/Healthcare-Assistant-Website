@@ -328,3 +328,17 @@
         margin-right: 0;
     }
 }
+
+.readOnlyField {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.readOnlyValue {
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    flex-grow: 1;
+}

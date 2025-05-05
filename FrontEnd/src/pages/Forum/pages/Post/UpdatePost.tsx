@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { updatePostFE } from "../../../../utils/service/Forum/post";
+import { loadUpdatePostFE, updatePostFE } from "../../../../utils/service/Forum/post";
 import { updatePost } from "../../../../utils/api/Forum/main";
 import { loadTagsPostSummary } from "../../../../utils/service/Forum/tag";
 import {
@@ -31,14 +31,14 @@ const UpdatePost: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        await updatePostFE(
+        await loadUpdatePostFE(
           id || "",
           setLoading,
           setPost,
           setCategories,
           setThreads,
           setError,
-          setSuccess
+          () => { }
         );
         await loadTagsPostSummary(setTagsLoading, setTags, setError, () => { });
       } catch (err) {
@@ -60,18 +60,6 @@ const UpdatePost: React.FC = () => {
     setAvailableTags(filtered);
   }, [tags, post?.tags]);
 
-  const handleAddTag = (tagName: string) => {
-    if (!post || !tagName || post.tags.some(tag => tag.tag_name === tagName)) return;
-
-    const tagToAdd = tags.find(tag => tag.tag_name === tagName);
-    if (!tagToAdd) return;
-
-    setPost(prev => ({
-      ...prev!,
-      tags: [...prev!.tags, tagToAdd],
-    }));
-  };
-
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => setSuccess(""), 2000);
@@ -86,6 +74,18 @@ const UpdatePost: React.FC = () => {
     }
   }, [error]);
 
+  const handleAddTag = (tagName: string) => {
+    if (!post || !tagName || post.tags.some(tag => tag.tag_name === tagName)) return;
+
+    const tagToAdd = tags.find(tag => tag.tag_name === tagName);
+    if (!tagToAdd) return;
+
+    setPost(prev => ({
+      ...prev!,
+      tags: [...prev!.tags, tagToAdd],
+    }));
+  };
+
   const removeTag = (tagToRemove: string) => {
     if (!post) return;
 
@@ -95,33 +95,22 @@ const UpdatePost: React.FC = () => {
     }));
   };
 
-  const handleError = (message: string) => {
-    setError(`Không thể tải post: ${message}`);
-    setSuccess("");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!post) return;
+    if (!post){
+      setError("Invalid post data.");
+      return;
+    }
 
-    setLoading(true);
-    setError("");
     try {
+      
       const postData = {
         ...post,
         tags: post.tags.map(tag => tag.tag_name),
         tag_name: undefined
       };
 
-      const response = await updatePost(id || "", postData);
-      const { status, data } = response;
-
-      if (status !== 200 || !data?.success) {
-        const errorMsg = data?.message ?? "Lỗi không xác định từ máy chủ.";
-        return handleError(errorMsg);
-      }
-      setSuccess("Post updated successfully!");
-      setTimeout(() => navigate(`/forum/posts/${id}`), 2000);
+      await updatePostFE(id || "", postData, setLoading, setError, setSuccess, () => navigate(`/forum/posts/${id}`));
     } catch {
       setError("Failed to update post.");
     } finally {
@@ -177,43 +166,19 @@ const UpdatePost: React.FC = () => {
         <div className={styles.tagCard}>
           <form onSubmit={handleSubmit}>
             <div className={styles.formGroup}>
-              <label htmlFor="category" className={styles.metaLabel}>Category *</label>
-              <select
-                id="category"
-                className={styles.formInput}
-                value={post.category_id}
-                onChange={(e) =>
-                  handleInputChange("category_id", parseInt(e.target.value))
-                }
-                required
-                disabled={loading}
-              >
-                <option value={0}>Select category</option>
-                {categories.map(category => (
-                  <option key={category.category_id} value={category.category_id}>
-                    {category.category_name}
-                  </option>
-                ))}
-              </select>
+              <div className={styles.readOnlyField}>
+                <span className={styles.metaLabel}>Category:</span>
+                <span className={styles.readOnlyValue}>
+                  {categories.find(c => c.category_id === post.category_id)?.category_name || "Not selected"}
+                </span>
+              </div>
 
-              <label htmlFor="thread" className={styles.metaLabel}>Thread *</label>
-              <select
-                id="thread"
-                className={styles.formInput}
-                value={post.thread_id}
-                onChange={(e) =>
-                  handleInputChange("thread_id", parseInt(e.target.value))
-                }
-                required
-                disabled={loading}
-              >
-                <option value={0}>Select thread</option>
-                {threads.map(thread => (
-                  <option key={thread.thread_id} value={thread.thread_id}>
-                    {thread.thread_name}
-                  </option>
-                ))}
-              </select>
+              <div className={styles.readOnlyField}>
+                <span className={styles.metaLabel}>Thread:</span>
+                <span className={styles.readOnlyValue}>
+                  {threads.find(t => t.thread_id === post.thread_id)?.thread_name || "Not selected"}
+                </span>
+              </div>
             </div>
 
             <div className={styles.formGroup}>

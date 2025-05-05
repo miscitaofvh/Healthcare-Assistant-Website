@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { createPost } from "../../../../utils/api/Forum/main";
 import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
 import { loadThreadsByCategory } from "../../../../utils/service/Forum/thread";
 import { loadTagsSummary } from "../../../../utils/service/Forum/tag";
+import { createPostFE } from "../../../../utils/service/Forum/post";
 import {
   CategorySummary,
   ThreadDropdown,
@@ -33,8 +33,12 @@ const CreatePost: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCategoriesSummary(setLoading, setCategories, setError, () => { });
-    loadTagsSummary(setTagsLoading, setTags, setError, () => { });
+    try {
+      loadCategoriesSummary(setLoading, setCategories, setError, () => { });
+      loadTagsSummary(setTagsLoading, setTags, setError, () => { });
+    } catch (err) {
+      setError("Failed to load categories or tags. Please try again.");
+    }
   }, []);
 
   useEffect(() => {
@@ -79,21 +83,16 @@ const CreatePost: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
     try {
-      const response = await createPost(post);
-      setSuccess(response.data.message || "Post created successfully!");
-      setTimeout(() => navigate("/forum"), 2000);
+      await createPostFE(setLoading, post, setError, setSuccess, () => {
+        navigate("/forum/posts");
+      }
+      );
     } catch (err) {
-      console.error("Error creating post:", err);
       setError("Failed to create post. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 

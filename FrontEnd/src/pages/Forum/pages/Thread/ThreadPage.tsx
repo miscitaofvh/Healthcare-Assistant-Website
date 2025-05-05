@@ -16,8 +16,16 @@ const ThreadPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) {
+    if (!id) {
+      setError("Invalid thread ID.");
+      setLoading(false);
+      return;
+    }
+    try {
       loadPostsandThreadByCategory(id, setLoading, setThread, setPosts, setError, setSuccess);
+    } catch (err: any) {
+      setError("Invalid thread ID");
+      setLoading(false);
     }
   }, [id]);
 

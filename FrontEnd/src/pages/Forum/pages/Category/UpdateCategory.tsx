@@ -17,7 +17,7 @@ const UpdateCategory: React.FC = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        await loadCategorieById(parseInt(id || ""), setInitialLoad, setCategory, setError, () => {});
+        await loadCategorieById(parseInt(id || ""), setInitialLoad, setCategory, setError, () => { });
       } catch {
         setError("An unexpected error occurred");
       }
@@ -59,14 +59,9 @@ const UpdateCategory: React.FC = () => {
         setFormLoading,
         setError,
         setSuccess,
-        () => {
-          setTimeout(() => {
-            navigate("/forum/categories");
-          }, 2000);
-        }
+        () => navigate("/forum/categories")
       );
-    }
-    catch (err) {
+    } catch (err) {
       setError("An unexpected error occurred while updating the category");
     }
   };

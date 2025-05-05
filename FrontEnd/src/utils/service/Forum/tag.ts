@@ -8,7 +8,7 @@ import {
     updateTag,
     deleteTag,
 } from "../../../utils/api/Forum/tag";
-import { Tag, NewTag, TagPost, PostbyTag } from "../../../types/forum";
+import { Tag, NewTag, TagPost, PostbyTag, TagSummary } from "../../../types/forum";
 
 import { Dispatch, SetStateAction } from "react";
 
@@ -69,7 +69,7 @@ export const loadTagByID = async (
 
 export const loadTagsSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setTags: Dispatch<SetStateAction<Tag[]>>,
+    setTags: Dispatch<SetStateAction<TagSummary[]>>,
     setError: Dispatch<SetStateAction<string>>,
     setSuccess: Dispatch<SetStateAction<string>>
 ) => {

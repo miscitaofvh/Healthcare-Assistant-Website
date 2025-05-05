@@ -132,14 +132,14 @@ const UpdateThread: React.FC = () => {
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>
 
-                                <label htmlFor="threadCategory" className={styles.metaLabel}>
+                                <label htmlFor="threadCategory" className={styles.readOnlyField}>
                                     Category *
                                 </label>
 
-                                <p className={styles.categoryName}>
+                                <p className={styles.readOnlyValue}>
                                     {thread.category_name}
                                 </p>
-                                
+
                                 <label htmlFor="threadTitle" className={styles.metaLabel}>
                                     Thread Title *
                                 </label>

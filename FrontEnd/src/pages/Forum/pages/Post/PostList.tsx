@@ -14,7 +14,11 @@ const PostList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadPosts(setLoading, setPosts, setError, setSuccess);
+    try {
+      loadPosts(setLoading, setPosts, setError, setSuccess);
+    } catch (err: any) {
+      setError(err || "Failed to load posts.");
+    }
   }, []);
 
   useEffect(() => {
