@@ -5,30 +5,30 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
 import mainLogo from '../../assets/images/Logo/main_logo.png';
 import ReactMarkdown from 'react-markdown';
-import { streamChatMessage } from '../../utils/service/chat';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import useChatbot from '../../hooks/useChatbot';
+import { Message } from '../../types/chat';
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  
+  const {
+    messages,
+    isStreaming,
+    currentStreamingIndex,
+    error,
+    initializeChat,
+    sendMessage
+  } = useChatbot();
 
-  // List of paths where chatbot should NOT be available
+  // Danh sách đường dẫn không hiển thị chatbot
   const excludedPaths = ['/test', '/verify-pending', '/verify', '/error'];
-
-  // Check if current path is allowed
   const isChatbotAllowed = !excludedPaths.some(path => location.pathname.startsWith(path));
 
-  // Scroll to bottom whenever messages change
+  // Cuộn xuống dưới khi có tin nhắn mới
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -40,14 +40,9 @@ const ChatBot: React.FC = () => {
   const toggleChat = () => {
     setIsOpen(!isOpen);
     
-    // Add welcome message when opening an empty chat
+    // Khởi tạo chat khi mở lần đầu
     if (!isOpen && messages.length === 0) {
-      setMessages([
-        {
-          role: 'assistant',
-          content: 'Xin chào! Tôi là trợ lý y tế của bạn. Tôi có thể giúp gì cho bạn hôm nay?'
-        }
-      ]);
+      initializeChat();
     }
   };
 
@@ -64,84 +59,14 @@ const ChatBot: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!inputMessage.trim() || isStreaming) return;
     
-    if (!inputMessage.trim()) return;
-    
-    // Add user message
-    const userMessage: Message = {
-      role: 'user',
-      content: inputMessage
-    };
-    
-    // Save current message for API call
-    const currentInputMessage = inputMessage;
-    const currentMessages = [...messages];
-    
-    setMessages(prev => [...prev, userMessage]);
+    const message = inputMessage;
     setInputMessage('');
-    setIsStreaming(true);
-    
-    try {
-      // Create an empty assistant message that will be updated with streaming content
-      setMessages(prevMessages => {
-        const newMessages = [...prevMessages, {
-          role: 'assistant' as const,
-          content: ''
-        }];
-        
-        // Set the streaming index to the last message (the assistant response)
-        setCurrentStreamingIndex(newMessages.length - 1);
-        
-        return newMessages;
-      });
-      
-      // Use the streaming API with current message state (not the updated one)
-      await streamChatMessage(
-        currentInputMessage,
-        currentMessages,
-        conversationId,
-        // On each chunk received
-        (chunk) => {
-          setMessages(prevMessages => {
-            const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage && lastMessage.role === 'assistant') {
-              lastMessage.content += chunk;
-            }
-            return newMessages;
-          });
-          // Make sure we scroll as content comes in
-          scrollToBottom();
-        },
-        // When streaming is complete
-        (fullResponse, newConversationId) => {
-          console.log('onComplete called with newConversationId:', newConversationId);
-          console.log('Current conversationId state:', conversationId);
-          setIsStreaming(false);
-          setCurrentStreamingIndex(null);
-          
-          // If this is the first message and we got a new conversation ID back
-          if (newConversationId && !conversationId) {
-            setConversationId(newConversationId);
-            console.log('Cuộc trò chuyện đã được tự động lưu với ID:', newConversationId);
-          }
-        }
-      );
-    } catch (error) {
-      console.error('Error communicating with chatbot:', error);
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Xin lỗi, tôi đã gặp lỗi. Vui lòng thử lại sau.'
-        }
-      ]);
-      setIsStreaming(false);
-      setCurrentStreamingIndex(null);
-    }
+    await sendMessage(message);
   };
 
-  // Don't render if not allowed on this page
+  // Không hiển thị nếu không được phép trên trang này
   if (!isChatbotAllowed) {
     return null;
   }
@@ -156,12 +81,15 @@ const ChatBot: React.FC = () => {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <h3>Trợ lý Y tế AMH</h3>
-            <button onClick={toggleChat} className="close-button">
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
+            <div className="header-buttons">
+              <button onClick={toggleChat} className="close-button" title="Đóng">
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
           </div>
+          
           <div className="chatbot-messages">
-            {messages.map((msg, index) => (
+            {messages.map((msg: Message, index: number) => (
               <div 
                 key={index} 
                 className={`message ${msg.role === 'user' ? 'user-message' : 'bot-message'} 
@@ -173,8 +101,14 @@ const ChatBot: React.FC = () => {
                 </div>
               </div>
             ))}
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
+          
           <form onSubmit={handleSubmit} className="chatbot-input">
             <input
               type="text"

@@ -1,47 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { getChatHistory, deleteChat, updateConversationTitle, getChatById } from '../../utils/service/chat';
 import Navbar from '../../components/Navbar';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faComments } from '@fortawesome/free-solid-svg-icons';
 import styles from './ChatHistory.module.css';
-
-// Interface for conversation list items
-interface Conversation {
-  conversation_id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Interface for chat message
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
-
-// Interface for chat detail data
-interface ChatDetailData {
-  conversation_id: string;
-  title: string;
-  messages: ChatMessage[];
-}
+import { 
+  getChatHistory, 
+  getChatById, 
+  deleteChat, 
+  updateConversationTitle 
+} from '../../utils/api/chatbotApi';
+import { ChatConversation, ChatDetailData } from '../../types/chat';
 
 const ChatHistory = () => {
-  // State for the conversation list
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  // State cho danh sách cuộc trò chuyện
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State for currently selected conversation
+  // State cho cuộc trò chuyện đang chọn
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [chatData, setChatData] = useState<ChatDetailData | null>(null);
   const [loadingChat, setLoadingChat] = useState<boolean>(false);
   
-  // State for editing conversation titles
+  // State cho việc chỉnh sửa tiêu đề
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,11 +33,11 @@ const ChatHistory = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch conversation list on component mount
+  // Lấy danh sách cuộc trò chuyện khi component mount
   useEffect(() => {
     const fetchChatHistory = async () => {
       if (!user) {
-        navigate('/login');
+        navigate('/', { state: { from: '/user/chat-history' } });
         return;
       }
 
@@ -62,7 +46,7 @@ const ChatHistory = () => {
         const history = await getChatHistory();
         setConversations(history || []);
         
-        // If there are conversations, select the first one by default
+        // Nếu có cuộc trò chuyện, chọn cuộc trò chuyện đầu tiên mặc định
         if (history && history.length > 0) {
           setSelectedConversation(history[0].conversation_id);
           fetchChatDetail(history[0].conversation_id);
@@ -78,7 +62,6 @@ const ChatHistory = () => {
     fetchChatHistory();
   }, [user, navigate]);
 
-  // Fetch chat details when a conversation is selected
   const fetchChatDetail = async (conversationId: string) => {
     if (!conversationId) return;
     
@@ -86,7 +69,6 @@ const ChatHistory = () => {
       setLoadingChat(true);
       const data = await getChatById(conversationId);
       
-      // Check data validity
       if (!data || !data.messages || !Array.isArray(data.messages)) {
         throw new Error('Dữ liệu chat không hợp lệ');
       }
@@ -100,26 +82,23 @@ const ChatHistory = () => {
     }
   };
 
-  // Handle conversation selection
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversation(conversationId);
     fetchChatDetail(conversationId);
   };
 
-  // Handle delete conversation
   const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
-    e.stopPropagation(); // Prevent selecting the conversation
+    e.stopPropagation(); 
     
     if (window.confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?')) {
       try {
         await deleteChat(conversationId);
         
-        // Remove from conversation list
         setConversations(conversations.filter(
           conv => conv.conversation_id !== conversationId
         ));
         
-        // If currently selected conversation was deleted
+        // Nếu đang xem cuộc trò chuyện đó, xóa khỏi view
         if (selectedConversation === conversationId) {
           setSelectedConversation(null);
           setChatData(null);
@@ -131,36 +110,31 @@ const ChatHistory = () => {
     }
   };
 
-  // Open edit title modal
   const openEditModal = (e: React.MouseEvent, conversationId: string, currentTitle: string) => {
-    e.stopPropagation(); // Prevent selecting the conversation
+    e.stopPropagation(); 
     setEditingId(conversationId);
     setEditingTitle(currentTitle);
     setIsEditModalOpen(true);
   };
 
-  // Close edit title modal
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setEditingId(null);
     setEditingTitle("");
   };
 
-  // Save edited title
   const saveTitle = async () => {
     if (!editingId || editingTitle.trim() === '') return;
     
     try {
       await updateConversationTitle(editingId, editingTitle);
       
-      // Update conversation list
       setConversations(conversations.map(conv => 
         conv.conversation_id === editingId 
           ? { ...conv, title: editingTitle } 
           : conv
       ));
       
-      // Update current chat data if this is the selected conversation
       if (chatData && chatData.conversation_id === editingId) {
         setChatData({
           ...chatData,
@@ -175,7 +149,6 @@ const ChatHistory = () => {
     }
   };
 
-  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('vi-VN', {
@@ -187,16 +160,15 @@ const ChatHistory = () => {
     }).format(date);
   };
 
-  // Check if user is logged in
   if (!user) {
-    return <div>Redirecting to login...</div>;
+    return <div>Đang chuyển hướng đến trang đăng nhập...</div>;
   }
 
   return (
     <>
       <Navbar />
       <div className={styles.container}>
-        {/* Left Sidebar - Conversation List */}
+        {/* Sidebar bên trái - Danh sách cuộc trò chuyện */}
         <div className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
             <h2 className={styles.sidebarTitle}>Lịch sử trò chuyện</h2>
@@ -254,7 +226,7 @@ const ChatHistory = () => {
           )}
         </div>
         
-        {/* Main Content - Chat Display */}
+        {/* Nội dung chính - Chi tiết cuộc trò chuyện */}
         <div className={styles.main}>
           {!selectedConversation && (
             <div className={styles.emptyState}>
@@ -307,7 +279,7 @@ const ChatHistory = () => {
         </div>
       </div>
       
-      {/* Edit Title Modal */}
+      {/* Modal chỉnh sửa tiêu đề */}
       {isEditModalOpen && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>

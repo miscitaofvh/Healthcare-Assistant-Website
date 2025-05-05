@@ -59,29 +59,12 @@ export async function streamChatMessage(
       
       const text = decoder.decode(value);
       
-      // Check if this chunk contains a conversation ID marker
-      if (text.startsWith('CONVERSATION_ID:')) {
-        const parts = text.split('\n\n');
-        const idPart = parts[0];
-        const contentPart = parts.slice(1).join('\n\n');
-        
-        // Extract the conversation ID
-        newConversationId = idPart.replace('CONVERSATION_ID:', '');
-        console.log('New conversation ID from stream:', newConversationId);
-        
-        // Only send the actual content to the callback
-        if (contentPart) {
-          onChunk(contentPart);
-          fullResponse += contentPart;
-        }
-      } else {
-        // Regular message chunk, pass it through
-        onChunk(text);
-        fullResponse += text;
-      }
+      // Process all text chunks directly - no special handling needed for conversation ID
+      onChunk(text);
+      fullResponse += text;
     }
 
-    // If we have a conversation ID from either source, pass it to the completion handler
+    // If we have a conversation ID from the header, pass it to the completion handler
     onComplete(fullResponse, newConversationId || undefined);
   } catch (error: any) {
     console.error('Error in streamChatMessage:', error);

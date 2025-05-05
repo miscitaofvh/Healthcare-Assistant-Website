@@ -25,60 +25,49 @@ export const handleStreamingChat = async (req, res) => {
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Expose-Headers', 'X-Conversation-Id');
     
-    // Format the conversation history for the AI model
+    // Format history for the AI model
     const formattedHistory = history ? history.map(msg => ({
       role: msg.role,
       content: msg.content
     })) : [];
 
-    // Add the current message
     formattedHistory.push({
       role: 'user',
       content: message
     });
 
-    // Nếu người dùng đã đăng nhập và không có conversationId, tạo cuộc trò chuyện mới
+    // Create new conversation if needed
     if (req.user && !conversationId) {
       try {
-        // Tạo tiêu đề từ tin nhắn đầu tiên
         const title = message.length > 30 ? message.substring(0, 30) + '...' : message;
-        
-        // Tạo cuộc hội thoại mới và lưu tin nhắn đầu tiên
         responseConversationId = await createConversationDB(req.user.user_id, title);
         isNewConversation = true;
-        
-        // Lưu tin nhắn người dùng
         await addUserMessage(responseConversationId, req.user.user_id, message);
       } catch (error) {
         console.error('Error creating conversation:', error);
-        // Tiếp tục chat ngay cả khi lưu không thành công
       }
     }
     
-    // Lưu tin nhắn của người dùng nếu cuộc trò chuyện đã tồn tại
+    // Save message to existing conversation
     if (req.user && conversationId && !isNewConversation) {
       try {
-        // Kiểm tra conversationId có hợp lệ không
         const conversationExists = await checkConversationExistsQuery(conversationId);
         if (conversationExists) {
           await addUserMessage(conversationId, req.user.user_id, message);
         }
       } catch (error) {
         console.error('Error saving user message:', error);
-        // Tiếp tục chat ngay cả khi lưu không thành công
       }
     }
 
-    // Nếu đây là cuộc trò chuyện mới, gửi ID trong header
-    if (isNewConversation) {
+    // Send conversation ID in header
+    if (responseConversationId) {
       res.setHeader('X-Conversation-Id', responseConversationId);
-      
-      // Gửi ID cuộc trò chuyện như một thông điệp đặc biệt khi bắt đầu stream
-      res.write(`CONVERSATION_ID:${responseConversationId}\n\n`);
     }
 
-    // Stream phản hồi từ mô hình Ollama
+    // Process Ollama stream
     const stream = await ollama.chat({
       model: process.env.AI_MODEL_NAME || 'AMH_chatbot',
       messages: formattedHistory,
@@ -87,7 +76,6 @@ export const handleStreamingChat = async (req, res) => {
 
     let assistantResponse = '';
 
-    // Xử lý stream
     for await (const part of stream) {
       if (part.message?.content) {
         assistantResponse += part.message.content;
@@ -95,7 +83,7 @@ export const handleStreamingChat = async (req, res) => {
       }
     }
     
-    // Lưu phản hồi của trợ lý nếu người dùng đã đăng nhập
+    // Save assistant response
     if (req.user && (responseConversationId || conversationId)) {
       try {
         const chatId = responseConversationId || conversationId;
@@ -114,7 +102,7 @@ export const handleStreamingChat = async (req, res) => {
         error: 'Failed to process streaming chat request'
       });
     } else {
-      res.write('\n\nSorry, an error occurred while generating the response.');
+      res.write('\n\nXin lỗi, đã xảy ra lỗi khi tạo câu trả lời.');
       res.end();
     }
   }
