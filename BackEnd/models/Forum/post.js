@@ -154,7 +154,8 @@ export const getPostByIdDB = async (postId, options = {}) => {
     const {
         includeComments = false,
         includeAuthor = true,
-        includeStats = false
+        includeStats = false,
+        includeCommentReplies = false
     } = options;
 
     let conn;
@@ -162,6 +163,7 @@ export const getPostByIdDB = async (postId, options = {}) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
+        // Post query remains the same
         const postSql = `
         SELECT 
             p.post_id, p.title, p.content, p.image_url, 
@@ -180,7 +182,7 @@ export const getPostByIdDB = async (postId, options = {}) => {
         LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
         WHERE p.post_id = ?
         GROUP BY p.post_id;
-    `;
+        `;
 
         const [postRows] = await conn.execute(postSql, [postId]);
 
@@ -204,25 +206,51 @@ export const getPostByIdDB = async (postId, options = {}) => {
                     c.post_id,
                     c.comment_id, c.content, 
                     c.created_at, c.last_updated,
-                    u.username
+                    c.parent_comment_id, c.depth, c.thread_path,
+                    u.username,
+                    COUNT(cl.like_id) AS like_count,
+                    ${includeAuthor ? `EXISTS(
+                        SELECT 1 FROM forum_comment_likes 
+                        WHERE comment_id = c.comment_id AND user_id = u.user_id
+                    ) AS is_liked,` : 'false AS is_liked,'}
+                    ${includeAuthor ? `c.user_id = u.user_id AS is_owner` : 'false AS is_owner'}
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.user_id
+                LEFT JOIN forum_comment_likes cl ON c.comment_id = cl.comment_id
                 WHERE c.post_id = ?
-                ORDER BY c.created_at;
+                GROUP BY c.comment_id
+                ORDER BY c.thread_path, c.created_at;
             `;
+
             const [commentRows] = await conn.execute(commentSql, [postId]);
-            comments = commentRows.map(c => ({
-                post_id: c.post_id,
-                comment_id: c.comment_id,
-                username: c.username,
-                content: c.content,
-                created_at: c.created_at,
-                last_updated: c.last_updated
-            }));
+
+            // Convert flat comments to hierarchical structure
+            const buildCommentTree = (parentId = null) => {
+                return commentRows
+                    .filter(comment => comment.parent_comment_id === parentId)
+                    .map(comment => ({
+                        post_id: comment.post_id,
+                        comment_id: comment.comment_id,
+                        username: comment.username,
+                        content: comment.content,
+                        created_at: comment.created_at,
+                        last_updated: comment.last_updated,
+                        parent_comment_id: comment.parent_comment_id,
+                        depth: comment.depth,
+                        thread_path: comment.thread_path,
+                        like_count: comment.like_count,
+                        is_liked: comment.is_liked,
+                        is_owner: comment.is_owner,
+                        replies: includeCommentReplies ? buildCommentTree(comment.comment_id) : []
+                    }));
+            };
+            
+            comments = includeCommentReplies 
+                ? buildCommentTree() // Return nested structure
+                : commentRows;       // Return flat structure
         }
 
         await conn.commit();
-
         return {
             ...post,
             comments

@@ -164,11 +164,13 @@ export const getPostById = async (req, res) => {
         const includeComments = req.query.includeComments === 'true';
         const includeAuthor = req.query.includeAuthor !== 'false'; // true by default
         const includeStats = req.query.includeStats === 'true';
+        const includeCommentReplies = req.query.includeCommentReplies === 'true';
 
         const post = await getPostByIdDB(id, {
             includeComments,
             includeAuthor,
-            includeStats
+            includeStats,
+            includeCommentReplies
         });
 
         if (!post) {

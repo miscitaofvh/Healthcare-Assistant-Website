@@ -128,6 +128,7 @@ export const createCommentDB = async ({ userId, postId, content, parent_comment_
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
+        // Verify post exists
         const [post] = await conn.execute(
             "SELECT 1 FROM forum_posts WHERE post_id = ?",
             [postId]
@@ -137,14 +138,24 @@ export const createCommentDB = async ({ userId, postId, content, parent_comment_
             throw new Error("Post not found");
         }
 
+        let depth = 0;
+        let thread_path = null;
+
         if (parent_comment_id) {
+            // Get parent comment details
             const [parentComment] = await conn.execute(
-                "SELECT 1 FROM forum_comments WHERE comment_id = ? AND post_id = ?",
+                "SELECT depth, thread_path FROM forum_comments WHERE comment_id = ? AND post_id = ?",
                 [parent_comment_id, postId]
             );
+            
             if (!parentComment[0]) {
                 throw new Error("Parent comment not found in this post");
             }
+
+            depth = parentComment[0].depth + 1;
+            thread_path = parentComment[0].thread_path 
+                ? `${parentComment[0].thread_path}.${parent_comment_id}`
+                : parent_comment_id.toString();
         }
 
         const [result] = await conn.execute(`
@@ -153,24 +164,26 @@ export const createCommentDB = async ({ userId, postId, content, parent_comment_
                 user_id, 
                 content, 
                 parent_comment_id,
-                created_at,
-                thread_path
-            ) VALUES (?, ?, ?, ?, NOW(), ?)
+                depth,
+                thread_path,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
         `, [
             postId,
             userId,
             content,
             parent_comment_id,
-            parent_comment_id 
-                ? await generateThreadPath(conn, parent_comment_id)
-                : null
+            depth,
+            thread_path
         ]);
 
         await conn.commit();
         
         return {
             commentId: result.insertId,
-            parent_comment_id
+            parent_comment_id,
+            depth,
+            thread_path
         };
     } catch (error) {
         if (conn) await conn.rollback();

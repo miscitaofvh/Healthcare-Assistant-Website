@@ -57,7 +57,7 @@ export const loadPostPageById = async (
         setError('');
         setSuccess('');
 
-        const response = await getPostById(`${id}?includeComments=true&includeStats=true`);
+        const response = await getPostById(`${id}?includeComments=true&includeStats=true&includeCommentReplies=true`);
 
         const { status, data } = response;
 
@@ -170,7 +170,7 @@ export const createPostFE = async (
 
         const response = await createPost(postNew);
         const { status, data } = response;
-        alert(JSON.stringify(response));
+
         if (status !== 201 || !data?.success) {
             setError(data?.message || 'Failed to create post: Server error');
             setSuccess('');

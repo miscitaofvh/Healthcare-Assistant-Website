@@ -1,10 +1,11 @@
 
-import { createComment, deleteComment, likeComment } from "../../../utils/api/Forum/comment";
+import { createComment, deleteComment, likeComment, reportComment } from "../../../utils/api/Forum/comment";
 
 export const handleCommentSubmit = async (
     postId: string,
     commentText: string,
     parentCommentId: string | undefined,
+    depth: number | undefined,
     setCommentText: (text: string) => void,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
@@ -26,7 +27,8 @@ export const handleCommentSubmit = async (
         const commentData = {
             postId,
             content: trimmedComment,
-            parentCommentId
+            parent_comment_id: parentCommentId,
+            depth: depth || 0
         };
 
         const response = await createComment(postId, commentData);
@@ -41,12 +43,12 @@ export const handleCommentSubmit = async (
         await onSuccess();
 
     } catch (err: unknown) {
-        const errorMessage = err instanceof Error 
-            ? err.message 
-            : typeof err === 'string' 
-                ? err 
+        const errorMessage = err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+                ? err
                 : 'Failed to post comment';
-        
+
         setError(errorMessage);
         setSuccess('');
     }
@@ -120,6 +122,57 @@ export const likeCommentFE = async (
         } else if (typeof err === 'string') {
             errorMessage = err;
         }
+
+        setError(errorMessage);
+        setSuccess('');
+    }
+};
+
+export const reportCommentFE = async (
+    commentId: string,
+    reason: string,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    onSuccess: () => void
+): Promise<void> => {
+    try {
+        if (!commentId) {
+            throw new Error('Invalid comment ID');
+        }
+
+        const trimmedReason = reason.trim();
+        if (!trimmedReason) {
+            throw new Error('Reason cannot be empty');
+        }
+        if (trimmedReason.length < 10) {
+            throw new Error('Reason should be at least 10 characters');
+        }
+
+        setError('');
+        setSuccess('');
+
+        const reportData = {
+            commentId,
+            reason: trimmedReason
+        };
+
+        const response = await reportComment(commentId, reportData);
+        
+        const { status, data } = response;
+
+        if (status !== 200 || data?.success) {
+            throw new Error(response.data?.message || 'Failed to report comment');
+        }
+
+        setSuccess('Comment reported successfully');
+        onSuccess();
+
+    } catch (err: unknown) {
+        const errorMessage = err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+                ? err
+                : 'Failed to report comment';
 
         setError(errorMessage);
         setSuccess('');

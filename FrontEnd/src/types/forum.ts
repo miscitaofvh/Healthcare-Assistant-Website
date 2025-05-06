@@ -122,6 +122,7 @@ export interface PostComment {
     depth: number;
     is_owner?: boolean;
     is_liked?: boolean;
+    replies?: PostComment[]; // Nested comments
     like_count?: number;
     username: string;
     content: string;
@@ -173,23 +174,33 @@ export interface PostNew {
 }
 
 export interface Post {
-    author: string;
     post_id: number;
+    author: string;
+    author_id: number;  // Added: Useful for user profile links
     title: string;
     content: string;
     image_url: string | null;
     created_at: string;
     last_updated: string;
+    view_count: number;  // Added: Track post popularity
     thread_id: number;
     thread_name: string;
     category_id: number;
     category_name: string;
     like_count: number;
+    comment_count: number;  // Added: Quick access to comment count
+    is_sticky?: boolean;   // Added: For pinned/promoted posts
+    is_closed?: boolean;   // Added: For locked threads
     is_owner?: boolean;
     is_liked?: boolean;
+    is_reported?: boolean; // Added: For moderation
     tags: TagPost[];
     comments: PostComment[];
+    // For pagination/metadata:
+    total_pages?: number;
+    current_page?: number;
 }
+
 // Like Interfaces
 export interface PostLike {
     like_id: number;
