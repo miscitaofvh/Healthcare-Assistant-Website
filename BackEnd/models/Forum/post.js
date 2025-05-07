@@ -150,20 +150,18 @@ export const getSummaryPostsDB = async () => {
     }
 };
 
-export const getPostByIdDB = async (postId, options = {}) => {
+export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
     const {
         includeComments = false,
         includeAuthor = true,
         includeStats = false,
         includeCommentReplies = false
     } = options;
-
+    // 
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // Post query remains the same
         const postSql = `
         SELECT 
             p.post_id, p.title, p.content, p.image_url, 
@@ -171,7 +169,12 @@ export const getPostByIdDB = async (postId, options = {}) => {
             t.thread_id, t.thread_name, 
             c.category_id, c.category_name,
             ${includeAuthor ? 'u.username AS author,' : ''}
-            ${includeStats ? 'COUNT(DISTINCT l.like_id) AS like_count,' : '0 AS like_count,'}
+            ${includeStats ? 'p.like_count AS like_count,' : '0 AS like_count,'}
+            ${author_id ? `EXISTS(
+                SELECT 1 FROM forum_likes 
+                WHERE post_id = p.post_id AND user_id = ?
+            ) AS is_liked,` : 'false AS is_liked,'}
+            ${author_id ? `p.user_id = ? AS is_owner` : 'false AS is_owner'},
             GROUP_CONCAT(DISTINCT CONCAT(ft.tag_id, ':', ft.tag_name)) AS tags
         FROM forum_posts p
         JOIN forum_threads t ON p.thread_id = t.thread_id
@@ -184,7 +187,9 @@ export const getPostByIdDB = async (postId, options = {}) => {
         GROUP BY p.post_id;
         `;
 
-        const [postRows] = await conn.execute(postSql, [postId]);
+        const [postRows] = author_id 
+            ? await conn.execute(postSql, [author_id, author_id, postId])
+            : await conn.execute(postSql, [postId]);
 
         if (!postRows[0]) {
             throw new Error("Post not found");
@@ -213,7 +218,7 @@ export const getPostByIdDB = async (postId, options = {}) => {
                         SELECT 1 FROM forum_comment_likes 
                         WHERE comment_id = c.comment_id AND user_id = u.user_id
                     ) AS is_liked,` : 'false AS is_liked,'}
-                    ${includeAuthor ? `c.user_id = u.user_id AS is_owner` : 'false AS is_owner'}
+                    ${author_id ? `c.user_id = u.user_id AS is_owner` : 'false AS is_owner'}
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.user_id
                 LEFT JOIN forum_comment_likes cl ON c.comment_id = cl.comment_id
@@ -244,8 +249,8 @@ export const getPostByIdDB = async (postId, options = {}) => {
                         replies: includeCommentReplies ? buildCommentTree(comment.comment_id) : []
                     }));
             };
-            
-            comments = includeCommentReplies 
+
+            comments = includeCommentReplies
                 ? buildCommentTree() // Return nested structure
                 : commentRows;       // Return flat structure
         }

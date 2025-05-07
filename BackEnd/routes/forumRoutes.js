@@ -131,8 +131,8 @@ router.post("/posts/:id/tags", validatePostTag, asyncHandler(addTagsToPost));
 router.delete("/posts/:id/tags/:id", validateForumPostTagUnmap, asyncHandler(removeTagFromPost));  // unmap
 
 // Like Routes
-router.post("/posts/:id/likes", validateForumPostLike, asyncHandler(likePost));
-router.delete("/posts/:id/likes", validateForumPostLikeUnmap, asyncHandler(unlikePost));
+router.post("/posts/:postId/likes", validateForumPostLike, asyncHandler(likePost));
+router.delete("/posts/:postId/likes", validateForumPostLikeUnmap, asyncHandler(unlikePost));
 router.get("/posts/:id/likes", asyncHandler(getLikesOfPost));  // optional
 
 // Report Routes

@@ -363,6 +363,27 @@
     color: #ff0000;
 }
 
+/* Unlike Button Styles */
+.likeButton.unlike {
+    color: #ff0000;
+    font-weight: bold;
+}
+
+.likeButton.unlike:hover {
+    color: #cc0000;
+    transform: scale(1.05);
+}
+
+.likeButton.unlike .heartIcon {
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
 /* Comment Actions */
 .commentActions {
     display: flex;

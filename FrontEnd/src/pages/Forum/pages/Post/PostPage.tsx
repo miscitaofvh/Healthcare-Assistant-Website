@@ -7,15 +7,18 @@ import {
   loadPostPageById,
   deletePostFE,
   likePostFE,
+  unlikePostFE
 } from "../../../../utils/service/Forum/post";
 import {
   handleCommentSubmit,
   deleteCommentFE,
   likeCommentFE,
-  reportCommentFE
+  unlikeCommentFE,
+  reportCommentFE,
+  countTotalComments
 } from "../../../../utils/service/Forum/comment";
 import { formatDate } from "../../../../utils/helpers/dateFormatter";
-import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag } from 'react-icons/fa';
+import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
 
 const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +34,8 @@ const ForumPage: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [isLiking, setIsLiking] = useState<boolean>(false);
+  const [isPostLiking, setIsPostLiking] = useState<boolean>(false);
+  const [isCommentLiking, setIsCommentLiking] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!id) {
@@ -83,7 +87,6 @@ const ForumPage: React.FC = () => {
     if (!text || !post) return;
 
     try {
-      // Find the parent comment to get its depth if this is a reply
       const parentDepth = parentId
         ? comments.find(c => c.comment_id === parentId)?.depth || 0
         : 0;
@@ -117,7 +120,7 @@ const ForumPage: React.FC = () => {
         }
       );
     } catch (error) {
-      console.error("Comment submission error:", error);
+      alert("Comment submission error:");
     }
   };
 
@@ -139,16 +142,74 @@ const ForumPage: React.FC = () => {
         }
       );
     } catch (error) {
-      console.error("Failed to report comment:", error);
+      alert("Failed to report comment:");
     }
   };
 
-  const renderComments = (comments: PostComment[], level = 0) => {
+  const handlePostLike = async () => {
+    if (!post) {
+      setError("Post not found.");
+      return;
+    }
+
+    try {
+      setIsPostLiking(true);
+      if (post.is_liked) {
+        await unlikePostFE(
+          post.post_id.toString(),
+          setError,
+          setSuccess,
+          () => loadInitialData()
+        );
+      } else {
+        await likePostFE(
+          post.post_id.toString(),
+          setError,
+          setSuccess,
+          () => loadInitialData()
+        );
+      }
+    } catch (error) {
+      alert("Like action failed:");
+    } finally {
+      setIsPostLiking(false);
+    }
+  };
+
+  const handleCommentLike = async (comment: PostComment) => {
+    try {
+      setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: true }));
+
+      if (comment.is_liked) {
+        await unlikeCommentFE(
+          comment.comment_id.toString(),
+          post?.post_id.toString() || "",
+          setError,
+          setSuccess,
+          () => loadInitialData()
+        );
+      } else {
+        await likeCommentFE(
+          comment.comment_id.toString(),
+          post?.post_id.toString() || "",
+          setError,
+          setSuccess,
+          () => loadInitialData()
+        );
+      }
+    } catch (error) {
+      alert("Comment like action failed:");
+    } finally {
+      setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: false }));
+    }
+  };
+
+  const renderComments = (comments: PostComment[]) => {
     return comments.map((comment) => (
       <div
         key={comment.comment_id}
         className={`${styles.commentCard} ${comment.parent_comment_id ? styles.replyComment : ''}`}
-        style={{ marginLeft: `${comment.depth * 20}px` }} // Use comment.depth instead of level
+        style={{ marginLeft: `${comment.depth * 20}px` }}
       >
         <div className={styles.commentHeader}>
           <span className={styles.commentAuthor}>{comment.username}</span>
@@ -169,11 +230,22 @@ const ForumPage: React.FC = () => {
 
         <div className={styles.commentActions}>
           <button
-            className={styles.actionButton}
-            onClick={() => likeCommentFE(comment.comment_id.toString(), setError, setSuccess, () => loadInitialData())}
+            className={`${styles.actionButton} ${comment.is_liked ? styles.liked : styles.notLiked}`}
+            onClick={() => handleCommentLike(comment)}
+            disabled={isCommentLiking[comment.comment_id]}
+            aria-label={comment.is_liked ? "Unlike this comment" : "Like this comment"}
           >
-            <FaHeart className={comment.is_liked ? styles.liked : ''} />
-            {comment.like_count}
+            {comment.is_liked ? (
+              <FaHeart color="#ff0000" className={styles.heartIcon} />
+            ) : (
+              <FaRegHeart className={styles.heartIcon} />
+            )}
+            <span className={styles.likeCount}>
+              {comment.like_count || 0 > 0 ? comment.like_count : ''}
+            </span>
+            {isCommentLiking[comment.comment_id] && (
+              <span className={styles.spinner} aria-hidden="true" />
+            )}
           </button>
 
           <button
@@ -196,14 +268,14 @@ const ForumPage: React.FC = () => {
             <FaFlag /> Report
           </button>
 
-          {(comment.is_owner || post?.is_owner) && (
+          {(comment.is_owner || post?.is_owner) ? (
             <button
               className={`${styles.actionButton} ${styles.deleteButton}`}
               onClick={() => deleteCommentFE(comment.comment_id.toString(), setError, setSuccess, () => loadInitialData())}
             >
               <FaTrash /> Delete
             </button>
-          )}
+          ) : null}
         </div>
 
         {replyingTo?.commentId === comment.comment_id && (
@@ -269,7 +341,7 @@ const ForumPage: React.FC = () => {
 
         {comment.replies && comment.replies.length > 0 && (
           <div className={styles.commentReplies}>
-            {renderComments(comment.replies, comment.depth + 1)}
+            {renderComments(comment.replies)}
           </div>
         )}
       </div>
@@ -320,18 +392,6 @@ const ForumPage: React.FC = () => {
         </div>
 
         <div className={styles.postHeader}>
-          <div className={styles.postTitleRow}>
-            <h1 className={styles.postTitle}>{post.title}</h1>
-            {post.is_owner && (
-              <button
-                className={styles.editButton}
-                onClick={() => navigate(`/forum/posts/${post.post_id}/edit`)}
-              >
-                <FaEdit /> Edit
-              </button>
-            )}
-          </div>
-
           <div className={styles.postMeta}>
             <div className={styles.metaGroup}>
               <span className={styles.metaItem}>
@@ -363,13 +423,13 @@ const ForumPage: React.FC = () => {
 
           <div className={styles.postActions}>
             <button
-              className={`${styles.likeButton} ${post.is_liked ? styles.liked : ''}`}
-              onClick={() => likePostFE(id || "", setError, setSuccess, () => loadInitialData())}
-              disabled={isLiking}
+              className={`${styles.likeButton} ${post.is_liked ? styles.unlike : ''}`}
+              onClick={handlePostLike}
+              disabled={isPostLiking}
             >
-              <FaHeart />
+              <FaHeart className={post.is_liked ? styles.heartIcon : ''} />
               <span className={styles.likeCount}>{post.like_count}</span>
-              {isLiking && <span className={styles.spinner} aria-hidden="true" />}
+              {isPostLiking && <span className={styles.spinner} aria-hidden="true" />}
             </button>
 
             <div className={styles.tagContainer}>
@@ -385,6 +445,19 @@ const ForumPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <div className={styles.postTitleRow}>
+          <h1 className={styles.postTitle}>{post.title}</h1>
+          {post.is_owner ? (
+            <button
+              className={styles.editButton}
+              onClick={() => navigate(`/forum/posts/${post.post_id}/update`)}
+            >
+              <FaEdit /> Edit
+            </button>
+          ) : null}
+        </div>
+
         <div className={styles.postContent}>
           <p>{post.content}</p>
           {post.image_url && (
@@ -404,7 +477,7 @@ const ForumPage: React.FC = () => {
 
         {/* Comment section */}
         <div className={styles.commentsSection}>
-          <h2 className={styles.pageTitle}>Comments ({comments.length})</h2>
+          <h2 className={styles.pageTitle}>Comments ({countTotalComments(comments)})</h2>
 
           <form
             onSubmit={(e) => {

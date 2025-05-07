@@ -192,7 +192,7 @@ export interface Post {
     is_sticky?: boolean;   // Added: For pinned/promoted posts
     is_closed?: boolean;   // Added: For locked threads
     is_owner?: boolean;
-    is_liked?: boolean;
+    is_liked?: boolean;    // Added: For user interaction
     is_reported?: boolean; // Added: For moderation
     tags: TagPost[];
     comments: PostComment[];

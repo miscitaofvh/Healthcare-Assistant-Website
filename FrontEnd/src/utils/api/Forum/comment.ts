@@ -11,11 +11,6 @@ export async function createComment(id: string, comment: any) {
     return response;
 }   
 
-export async function likeComment(commentId: string) {
-    const response = await requestAPI(BASE_URL, `/comments/${commentId}/likes`, "POST");
-    return response;
-}
-
 export async function deleteComment(commentId: string) {
     const response = await requestAPI(BASE_URL, `/comments/${commentId}/likes`, "DELETE");
     return response;

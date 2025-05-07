@@ -370,45 +370,49 @@ export const deleteComment = async (req, res) => {
 
 export const likeComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const user_id = decoded.user_id;
+        const { commentId } = req.params;
+        const { postId } = req.body;
+        const user_id = req.user?.user_id; // Get user from auth middleware
 
         if (!user_id) {
             return res.status(401).json({
                 success: false,
-                message: "Unauthorized"
+                message: "Unauthorized - No user ID found"
             });
         }
 
-        const { postId, commentId } = req.params; // postId = post_id, commentId = comment_id
         const result = await likeCommentDB(user_id, commentId, postId);
-
-        res.status(200).json({
+        
+        return res.status(200).json({
             success: true,
-            message: result
+            data: result
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({
+        console.error("Error in likeComment:", error);
+        
+        const statusCode = error.message.includes("not found") ? 404 : 
+                          error.message.includes("already liked") ? 409 : 500;
+        
+        return res.status(statusCode).json({
             success: false,
-            message: "Error liking the comment"
+            message: error.message || "Error processing like"
         });
     }
 };
 
 export const unlikeComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const user_id = decoded.user_id;
+        const { commentId } = req.params;
+        const { postId } = req.body;
+        const user_id = req.user?.user_id; // Get user from auth middleware
 
         if (!user_id) {
             return res.status(401).json({
                 success: false,
-                message: "Unauthorized"
+                message: "Unauthorized - No user ID found"
             });
         }
 
-        const { postId, commentId } = req.params; // postId = post_id, commentId = comment_id
         const result = await unlikeCommentDB(user_id, commentId, postId);
 
         res.status(200).json({

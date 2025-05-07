@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import connection from "../config/connection.js";
 
 export const authenticateUser = (req, res, next) => {
     const token = req.cookies.auth_token;
@@ -51,25 +52,48 @@ const mockComments = {
 };
 
 export const auth = {
-    // Basic required authentication
-    required: (req, res, next) => {
-        // In a real app, this would check session/JWT/etc.
-        const userId = req.headers['x-user-id']; // Simplified for example
-
+    required: async (req, res, next) => {  
+        let decoded, userId;
+        try {
+            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+            userId = decoded.user_id;
+        } catch (jwtError) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid or expired token",
+                error: jwtError.message
+            });
+        }
+    
         if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
         }
-
-        const user = mockUsers[userId];
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid user' });
+    
+        try {
+            const [rows] = await connection.execute(
+                'SELECT user_id, username, role FROM users WHERE user_id = ?',
+                [userId]
+            );
+    
+            if (rows.length === 0) {
+                return res.status(401).json({ 
+                    success: false,
+                    error: 'User not found' 
+                });
+            }
+    
+            req.user = rows[0];
+            next();
+    
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            return res.status(500).json({
+                success: false,
+                error: 'Authentication failed'
+            });
         }
-
-        req.user = user; // Attach user to request
-        next();
     },
 
-    // Require moderator or admin role
     requireModerator: (req, res, next) => {
         auth.required(req, res, () => {
             if (req.user.role === 'moderator' || req.user.role === 'admin') {

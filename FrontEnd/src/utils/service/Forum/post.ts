@@ -4,9 +4,9 @@ import {
     createPost,
     updatePost,
     deletePost,
-    likePost,
     getTagByForumPost
 } from "../../../utils/api/Forum/post";
+import { likePost, unlikePost } from "../../../utils/api/Forum/like";
 import { Dispatch, SetStateAction } from "react";
 import { PostListResponse, Post, PostComment, PostNew, TagPost } from "../../../types/forum";
 import { CategorySummary, ThreadDropdown, TagSummary } from "../../../types/forum";
@@ -169,6 +169,7 @@ export const createPostFE = async (
         setSuccess('');
 
         const response = await createPost(postNew);
+
         const { status, data } = response;
 
         if (status !== 201 || !data?.success) {
@@ -211,7 +212,10 @@ export const updatePostFE = async (
         setSuccess('');
 
         const response = await updatePost(id || '', postData);
-        if (response.status !== 200 || !response.data?.success) {
+
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
             setError(response.data?.message || 'Failed to delete post: Server error');
             setSuccess('');
             return;
@@ -292,6 +296,45 @@ export const likePostFE = async (
         const response = await likePost(postId);
 
         if (response.status !== 200 || !response.data?.success) {
+            throw new Error(response.data?.message || 'Failed to like post');
+        }
+
+        setSuccess(response.data.message || 'Post like updated');
+        await refetchPost();
+
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to like post';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+        setSuccess('');
+    }
+};
+
+export const unlikePostFE = async (
+    postId: string,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    refetchPost: () => Promise<void>
+): Promise<void> => {
+    try {
+        if (!postId) {
+            throw new Error('Invalid post ID');
+        }
+
+        setError('');
+        setSuccess('');
+
+        const response = await unlikePost(postId);
+
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
             throw new Error(response.data?.message || 'Failed to like post');
         }
 

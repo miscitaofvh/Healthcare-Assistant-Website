@@ -1,5 +1,22 @@
 
-import { createComment, deleteComment, likeComment, reportComment } from "../../../utils/api/Forum/comment";
+import { createComment, deleteComment, reportComment } from "../../../utils/api/Forum/comment";
+import { likeComment, unlikeComment } from "../../../utils/api/Forum/like";
+import { PostComment } from "../../../types/forum";
+
+// For comment section
+
+export const countTotalComments = (comments: PostComment[]): number => {
+    let count = 0;
+
+    for (const comment of comments) {
+        count++; // Count the current comment
+        if (comment.replies) {
+            count += countTotalComments(comment.replies); // Count all replies
+        }
+    }
+
+    return count;
+};
 
 export const handleCommentSubmit = async (
     postId: string,
@@ -13,12 +30,12 @@ export const handleCommentSubmit = async (
 ): Promise<void> => {
     try {
         if (!postId) {
-            throw new Error('Invalid post ID');
+            setError('Invalid post ID');
         }
 
         const trimmedComment = commentText.trim();
         if (!trimmedComment) {
-            throw new Error('Comment cannot be empty');
+            setError('Comment cannot be empty');
         }
 
         setError('');
@@ -34,7 +51,7 @@ export const handleCommentSubmit = async (
         const response = await createComment(postId, commentData);
 
         if (response.status !== 201 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to create comment');
+            setError(response.data?.message || 'Failed to create comment');
         }
 
         setCommentText('');
@@ -62,7 +79,7 @@ export const deleteCommentFE = async (
 ): Promise<void> => {
     try {
         if (!commentId) {
-            throw new Error('Invalid comment ID');
+            setError('Invalid comment ID');
         }
 
         setError('');
@@ -71,7 +88,7 @@ export const deleteCommentFE = async (
         const response = await deleteComment(commentId);
 
         if (response.status !== 200 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to delete comment');
+            setError(response.data?.message || 'Failed to delete comment');
         }
 
         setSuccess('Comment deleted successfully');
@@ -93,22 +110,65 @@ export const deleteCommentFE = async (
 
 export const likeCommentFE = async (
     commentId: string,
+    postId: string,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
     refetchComments: () => Promise<void>
 ): Promise<void> => {
     try {
         if (!commentId) {
-            throw new Error('Invalid comment ID');
+            setError('Invalid comment ID');
         }
 
         setError('');
         setSuccess('');
 
-        const response = await likeComment(commentId);
+        const response = await likeComment(commentId, postId);
+        
+        const { status, data } = response;
 
-        if (response.status !== 200 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to like comment');
+        if (status !== 200 || !data?.success) {
+            setError(response.data?.message || 'Failed to like comment');
+        }
+
+        setSuccess(response.data.message || 'Comment like updated');
+        await refetchComments();
+
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to like comment';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+        setSuccess('');
+    }
+};
+
+export const unlikeCommentFE = async (
+    commentId: string,
+    postId: string,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    refetchComments: () => Promise<void>
+): Promise<void> => {
+    try {
+        if (!commentId) {
+            setError('Invalid comment ID');
+        }
+
+        setError('');
+        setSuccess('');
+
+        const response = await unlikeComment(commentId, postId);
+        
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            setError(response.data?.message || 'Failed to like comment');
         }
 
         setSuccess(response.data.message || 'Comment like updated');
@@ -137,15 +197,15 @@ export const reportCommentFE = async (
 ): Promise<void> => {
     try {
         if (!commentId) {
-            throw new Error('Invalid comment ID');
+            setError('Invalid comment ID');
         }
 
         const trimmedReason = reason.trim();
         if (!trimmedReason) {
-            throw new Error('Reason cannot be empty');
+            setError('Reason cannot be empty');
         }
         if (trimmedReason.length < 10) {
-            throw new Error('Reason should be at least 10 characters');
+            setError('Reason should be at least 10 characters');
         }
 
         setError('');
@@ -157,11 +217,11 @@ export const reportCommentFE = async (
         };
 
         const response = await reportComment(commentId, reportData);
-        
+
         const { status, data } = response;
 
         if (status !== 200 || data?.success) {
-            throw new Error(response.data?.message || 'Failed to report comment');
+            setError(response.data?.message || 'Failed to report comment');
         }
 
         setSuccess('Comment reported successfully');
@@ -178,3 +238,4 @@ export const reportCommentFE = async (
         setSuccess('');
     }
 };
+

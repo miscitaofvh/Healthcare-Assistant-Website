@@ -41,8 +41,3 @@ export async function getTagByForumPost(forum_post_id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${forum_post_id}/tags`, "GET");
     return response;
 }
-
-export async function likePost(postID: string) {
-    const response = await requestAPI(BASE_URL, `/posts/${postID}/likes`, "POST");
-    return response;
-} 

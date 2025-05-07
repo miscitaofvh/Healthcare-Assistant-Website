@@ -340,10 +340,6 @@ export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) =>
 export const likeCommentDB = async (userId, commentId, postId) => {
     let conn;
     try {
-        if (!userId || !commentId || !postId) {
-            throw new Error("Missing required fields");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
