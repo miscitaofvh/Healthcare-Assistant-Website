@@ -161,15 +161,33 @@ export const getPostById = async (req, res) => {
             });
         }
 
+        let author_id = null; 
+        let decoded;
+        if (req.cookies.auth_token) 
+        {
+            try {
+                decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+                author_id = decoded.user_id;
+            } catch (jwtError) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid or expired token",
+                    error: jwtError.message
+                });
+            }
+        }
+
         const includeComments = req.query.includeComments === 'true';
         const includeAuthor = req.query.includeAuthor !== 'false'; // true by default
         const includeStats = req.query.includeStats === 'true';
+        const includeCommentReplies = req.query.includeCommentReplies === 'true';
 
         const post = await getPostByIdDB(id, {
             includeComments,
             includeAuthor,
-            includeStats
-        });
+            includeStats,
+            includeCommentReplies
+        }, author_id);
 
         if (!post) {
             return res.status(404).json({

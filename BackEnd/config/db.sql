@@ -233,6 +233,7 @@ CREATE TABLE forum_posts (
     user_id CHAR(36) NOT NULL,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
+    like_count INT UNSIGNED DEFAULT 0 NOT NULL,
     image_url VARCHAR(2083) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -256,15 +257,22 @@ CREATE TABLE forum_tags_mapping (
 -- ========== FORUM COMMENTS ==========
 CREATE TABLE forum_comments (
     comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    parent_comment_id INT UNSIGNED DEFAULT NULL,
+    depth TINYINT UNSIGNED DEFAULT 0,
+    thread_path VARCHAR(255) DEFAULT NULL,
     post_id INT UNSIGNED NOT NULL,
     user_id CHAR(36) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES forum_posts(post_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_comment_id) REFERENCES forum_comments(comment_id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_comment_parent ON forum_comments(parent_comment_id);
+CREATE INDEX idx_comment_depth ON forum_comments(depth);
+CREATE INDEX idx_comment_thread ON forum_comments(thread_path);
 CREATE INDEX idx_comment_post ON forum_comments(post_id);
 CREATE INDEX idx_comment_user ON forum_comments(user_id);
 

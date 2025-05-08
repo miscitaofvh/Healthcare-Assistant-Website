@@ -150,18 +150,18 @@ export const getSummaryPostsDB = async () => {
     }
 };
 
-export const getPostByIdDB = async (postId, options = {}) => {
+export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
     const {
         includeComments = false,
         includeAuthor = true,
-        includeStats = false
+        includeStats = false,
+        includeCommentReplies = false
     } = options;
-
+    // 
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
         const postSql = `
         SELECT 
             p.post_id, p.title, p.content, p.image_url, 
@@ -169,7 +169,12 @@ export const getPostByIdDB = async (postId, options = {}) => {
             t.thread_id, t.thread_name, 
             c.category_id, c.category_name,
             ${includeAuthor ? 'u.username AS author,' : ''}
-            ${includeStats ? 'COUNT(DISTINCT l.like_id) AS like_count,' : '0 AS like_count,'}
+            ${includeStats ? 'p.like_count AS like_count,' : '0 AS like_count,'}
+            ${author_id ? `EXISTS(
+                SELECT 1 FROM forum_likes 
+                WHERE post_id = p.post_id AND user_id = ?
+            ) AS is_liked,` : 'false AS is_liked,'}
+            ${author_id ? `p.user_id = ? AS is_owner` : 'false AS is_owner'},
             GROUP_CONCAT(DISTINCT CONCAT(ft.tag_id, ':', ft.tag_name)) AS tags
         FROM forum_posts p
         JOIN forum_threads t ON p.thread_id = t.thread_id
@@ -180,9 +185,11 @@ export const getPostByIdDB = async (postId, options = {}) => {
         LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
         WHERE p.post_id = ?
         GROUP BY p.post_id;
-    `;
+        `;
 
-        const [postRows] = await conn.execute(postSql, [postId]);
+        const [postRows] = author_id 
+            ? await conn.execute(postSql, [author_id, author_id, postId])
+            : await conn.execute(postSql, [postId]);
 
         if (!postRows[0]) {
             throw new Error("Post not found");
@@ -204,25 +211,51 @@ export const getPostByIdDB = async (postId, options = {}) => {
                     c.post_id,
                     c.comment_id, c.content, 
                     c.created_at, c.last_updated,
-                    u.username
+                    c.parent_comment_id, c.depth, c.thread_path,
+                    u.username,
+                    COUNT(cl.like_id) AS like_count,
+                    ${includeAuthor ? `EXISTS(
+                        SELECT 1 FROM forum_comment_likes 
+                        WHERE comment_id = c.comment_id AND user_id = u.user_id
+                    ) AS is_liked,` : 'false AS is_liked,'}
+                    ${author_id ? `c.user_id = u.user_id AS is_owner` : 'false AS is_owner'}
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.user_id
+                LEFT JOIN forum_comment_likes cl ON c.comment_id = cl.comment_id
                 WHERE c.post_id = ?
-                ORDER BY c.created_at;
+                GROUP BY c.comment_id
+                ORDER BY c.thread_path, c.created_at;
             `;
+
             const [commentRows] = await conn.execute(commentSql, [postId]);
-            comments = commentRows.map(c => ({
-                post_id: c.post_id,
-                comment_id: c.comment_id,
-                username: c.username,
-                content: c.content,
-                created_at: c.created_at,
-                last_updated: c.last_updated
-            }));
+
+            // Convert flat comments to hierarchical structure
+            const buildCommentTree = (parentId = null) => {
+                return commentRows
+                    .filter(comment => comment.parent_comment_id === parentId)
+                    .map(comment => ({
+                        post_id: comment.post_id,
+                        comment_id: comment.comment_id,
+                        username: comment.username,
+                        content: comment.content,
+                        created_at: comment.created_at,
+                        last_updated: comment.last_updated,
+                        parent_comment_id: comment.parent_comment_id,
+                        depth: comment.depth,
+                        thread_path: comment.thread_path,
+                        like_count: comment.like_count,
+                        is_liked: comment.is_liked,
+                        is_owner: comment.is_owner,
+                        replies: includeCommentReplies ? buildCommentTree(comment.comment_id) : []
+                    }));
+            };
+
+            comments = includeCommentReplies
+                ? buildCommentTree() // Return nested structure
+                : commentRows;       // Return flat structure
         }
 
         await conn.commit();
-
         return {
             ...post,
             comments

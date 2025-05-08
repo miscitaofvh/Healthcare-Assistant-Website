@@ -4260,5 +4260,6 @@ INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_articl
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bệnh viện'));
 INSERT IGNORE INTO article_tag_mapping (article_id, tag_id) VALUES (@last_article_id, (SELECT tag_id FROM article_tags WHERE tag_name = 'bác sĩ'));
 
-UPDATE articles
-  SET last_updated = publication_date;
+-- UPDATE articles
+-- SET last_updated = publication_date
+-- WHERE last_updated IS NULL OR last_updated < publication_date;

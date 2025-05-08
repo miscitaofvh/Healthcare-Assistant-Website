@@ -10,39 +10,91 @@ dotenv.config();
 
 export const likePost = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { postId } = req.params;
 
-        if (!req.cookies.auth_token) {
-            return res.status(401).json({ message: "Unauthorized" });
+        if (!req.cookies?.auth_token) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication token required"
+            });
         }
 
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        let decoded;
+        try {
+            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid or expired authentication token"
+            });
+        }
+
         const user_id = decoded.user_id;
 
-        const result = await likePostDB(id, user_id);
-        res.status(200).json({ message: result });
+        if (!postId) {
+            return res.status(400).json({
+                success: false,
+                message: "Post ID is required"
+            });
+        }
+
+        const result = await likePostDB(postId, user_id);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message || "Error liking post" });
+        console.error("Error liking post:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            error: "Error liking post"
+        });
     }
 };
 
 export const unlikePost = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { postId } = req.params;
 
-        if (!req.cookies.auth_token) {
-            return res.status(401).json({ message: "Unauthorized" });
+        if (!req.cookies?.auth_token) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication token required"
+            });
         }
 
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        let decoded;
+        try {
+            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid or expired authentication token"
+            });
+        }
+
         const user_id = decoded.user_id;
 
-        const result = await unlikePostDB(id, user_id);
-        res.status(200).json({ message: result });
+        if (!postId) {
+            return res.status(400).json({
+                success: false,
+                message: "Post ID is required"
+            });
+        }
+
+        const result = await unlikePostDB(postId, user_id);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message || "Error unliking post" });
+        console.error("Error unliking post:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error unliking post",
+            error: error.message
+        });
     }
 };
 

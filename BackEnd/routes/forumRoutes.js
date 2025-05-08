@@ -9,7 +9,8 @@ import {
 } from "../controllers/forum/thread.js";
 import { getAllPosts, getSummaryPosts, getPostById, getPostsByUser, createPost, updatePost, deletePost } from "../controllers/forum/post.js";
 import {
-        getCommentsByPostId, getAllCommentsByUser, addCommentToPost, deleteCommentFromPost, updateCommentInPost,
+        getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
+        updateComment, deleteComment,
         likeComment, unlikeComment, reportComment, getReportsForComment, updateReportStatusForComment
 } from "../controllers/forum/comment.js";
 import {
@@ -47,6 +48,8 @@ import {
         validateActivity
 } from "../middleware/validation/forum.js";
 
+import { paginate } from "../middleware/paginate.js";
+import { auth } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 const asyncHandler = (fn) => (req, res, next) => {
@@ -86,18 +89,27 @@ router.post("/posts", validateForumPost, asyncHandler(createPost));
 router.put("/posts/:id", validateForumPostUpdate, asyncHandler(updatePost));
 router.delete("/posts/:id", validateForumPostComment, asyncHandler(deletePost));
 
+// ===================================================================================================================================
 // Comment Routes
-router.get("/posts/:id/comments", asyncHandler(getCommentsByPostId));
-router.get("/users/:id/posts/comments", asyncHandler(getAllCommentsByUser));
-router.post("/posts/:id/comments", validateForumPostComment, asyncHandler(addCommentToPost));
-router.put("/posts/:id/comments/:id", validateForumPostComment, asyncHandler(updateCommentInPost)); // optional
-router.delete("/posts/:id/comments/:id", validateForumPostCommentDelete, asyncHandler(deleteCommentFromPost));
-router.post("/posts/:id/comments/:id/likes", validateForumPostCommentLike, asyncHandler(likeComment));
-router.delete("/posts/:id/comments/:id/likes", validateForumPostCommentLikeUnmap, asyncHandler(unlikeComment));
-router.post("/posts/:id/comments/:id/reports", validateForumPostCommentReport, asyncHandler(reportComment));
-router.get("/posts/:id/comments/:id/reports", asyncHandler(getReportsForComment));
-router.put("/posts/:id/comments/:id/reports/:id", asyncHandler(updateReportStatusForComment));
+// GET routes that return lists (need pagination)
+router.get("/posts/:postId/comments", paginate(), asyncHandler(getCommentsByPostId)); 
+router.get("/comments/:commentId/replies", asyncHandler(getCommentReplies)); 
+router.get("/users/:userId/comments", paginate(), asyncHandler(getAllCommentsByUser)); 
 
+// GET routes for single items (no pagination needed)
+router.get("/comments/:commentId/reports", auth.requireModerator, asyncHandler(getReportsForComment));
+
+// POST/PUT/DELETE routes (actions, not lists)
+router.post("/posts/:postId/comments", validateForumPostComment, asyncHandler(addCommentToPost)); 
+router.post("/comments/:commentId/replies", validateForumPostComment, asyncHandler(addReplyToComment)); 
+router.put("/comments/:commentId", validateForumPostComment, asyncHandler(updateComment)); 
+router.delete("/comments/:commentId", auth.requireOwnerOrAdmin("comment"), asyncHandler(deleteComment)); 
+router.post("/comments/:commentId/likes", auth.required, asyncHandler(likeComment)); 
+router.delete("/comments/:commentId/likes", auth.required, asyncHandler(unlikeComment)); 
+router.post("/comments/:commentId/reports", auth.required, validateReport, asyncHandler(reportComment)); 
+router.put("/reports/:reportId", auth.requireModerator, asyncHandler(updateReportStatus)); 
+
+// ===================================================================================================================================
 // Tag Routes
 router.get("/tags", asyncHandler(getAllTags));
 router.get("/tags/summary", asyncHandler(getSummaryTags));
@@ -119,8 +131,8 @@ router.post("/posts/:id/tags", validatePostTag, asyncHandler(addTagsToPost));
 router.delete("/posts/:id/tags/:id", validateForumPostTagUnmap, asyncHandler(removeTagFromPost));  // unmap
 
 // Like Routes
-router.post("/posts/:id/likes", validateForumPostLike, asyncHandler(likePost));
-router.delete("/posts/:id/likes", validateForumPostLikeUnmap, asyncHandler(unlikePost));
+router.post("/posts/:postId/likes", validateForumPostLike, asyncHandler(likePost));
+router.delete("/posts/:postId/likes", validateForumPostLikeUnmap, asyncHandler(unlikePost));
 router.get("/posts/:id/likes", asyncHandler(getLikesOfPost));  // optional
 
 // Report Routes

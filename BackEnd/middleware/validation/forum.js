@@ -134,9 +134,14 @@ export const validateForumPostUpdate = [
         .isLength({ min: 10 })
         .withMessage("Nội dung phải có ít nhất 10 ký tự")
         .trim(),
-    body("image_url")
+        body("image_url")
         .optional()
-        .isURL()
+        .custom((value) => {
+            if (value === "" || value === null || value === undefined) {
+                return true; 
+            }
+            return validator.isURL(value);
+        })
         .withMessage("URL ảnh không hợp lệ")
         .trim(),
     body("tags")
@@ -212,10 +217,10 @@ export const validateForumPostUpdate = [
 
 // Like
 export const validateForumPostLike = [
-    body("postId")
+    param("postId")
         .notEmpty()
         .withMessage("ID bài viết là bắt buộc")
-        .isMongoId()
+        .isInt()
         .withMessage("ID bài viết không hợp lệ"),
     (req, res, next) => {
         const errors = validationResult(req);
@@ -231,10 +236,10 @@ export const validateForumPostLike = [
 ];
 
 export const validateForumPostLikeUnmap = [
-    body("postId")
+    param("postId")
         .notEmpty()
         .withMessage("ID bài viết là bắt buộc")
-        .isMongoId()
+        .isInt()
         .withMessage("ID bài viết không hợp lệ"),
     (req, res, next) => {
         const errors = validationResult(req);
@@ -254,7 +259,7 @@ export const validateForumPostComment = [
     body("postId")
         .notEmpty()
         .withMessage("ID bài viết là bắt buộc")
-        .isMongoId()
+        .isInt()
         .withMessage("ID bài viết không hợp lệ"),
     body("content")
         .notEmpty()

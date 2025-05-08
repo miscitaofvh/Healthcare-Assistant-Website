@@ -1,42 +1,66 @@
 import connection from '../../config/connection.js';
 
-export const getCommentsByPostIdDB = async (postId) => {
+export const getCommentsByPostIdDB = async (postId, page = 1, limit = 20) => {
     let conn;
     try {
-        if (!postId) {
-            throw new Error("Post ID is required");
-        }
-
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+        const offset = (page - 1) * limit;
 
-        const sql = `
+        const [comments] = await conn.execute(`
             SELECT 
-                c.comment_id, c.content, c.created_at, c.last_updated,
-                u.username AS author, u.user_id,
-                COUNT(DISTINCT l.like_id) AS like_count,
-                COUNT(DISTINCT r.report_id) AS report_count
+                c.comment_id,
+                c.content,
+                c.created_at,
+                u.username AS author,
+                COUNT(l.like_id) AS like_count
             FROM forum_comments c
             JOIN users u ON c.user_id = u.user_id
             LEFT JOIN forum_comment_likes l ON c.comment_id = l.comment_id
-            LEFT JOIN forum_comment_reports r ON c.comment_id = r.comment_id
-            WHERE c.post_id = ?
+            WHERE c.post_id = ? AND c.parent_comment_id IS NULL
             GROUP BY c.comment_id
             ORDER BY c.created_at DESC
-        `;
-        const [comments] = await conn.execute(sql, [postId]);
-        await conn.commit();
-        return comments;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting comments:", error);
-        throw error;
+            LIMIT ? OFFSET ?
+        `, [postId, limit.toString(), offset.toString()]);
+
+        const [total] = await conn.execute(`
+            SELECT COUNT(*) as count 
+            FROM forum_comments 
+            WHERE post_id = ? AND parent_comment_id IS NULL
+        `, [postId]);
+
+        return {
+            comments,
+            totalCount: total[0].count
+        };
     } finally {
         if (conn) conn.release();
     }
 };
 
-export const getAllCommentsByUserDB = async (userId) => {
+export const getCommentRepliesDB = async (commentId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        
+        const [replies] = await conn.execute(`
+            SELECT 
+                c.comment_id,
+                c.content,
+                c.created_at,
+                u.username AS author
+            FROM forum_comments c
+            JOIN users u ON c.user_id = u.user_id
+            WHERE c.parent_comment_id = ?
+            ORDER BY c.created_at ASC
+        `, [commentId]);
+
+        return replies;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
     let conn;
     try {
         if (!userId) {
@@ -44,12 +68,18 @@ export const getAllCommentsByUserDB = async (userId) => {
         }
 
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+        const offset = (page - 1) * limit;
 
-        const sql = `
+        // Main comments query with pagination
+        const [comments] = await conn.execute(`
             SELECT 
-                c.comment_id, c.content, c.created_at, c.last_updated,
-                p.post_id, p.content AS post_content, t.thread_name,
+                c.comment_id,
+                c.content,
+                c.created_at,
+                c.last_updated,
+                p.post_id,
+                SUBSTRING(p.content, 1, 100) AS post_preview,
+                t.thread_name,
                 COUNT(DISTINCT l.like_id) AS like_count,
                 COUNT(DISTINCT r.report_id) AS report_count
             FROM forum_comments c
@@ -60,13 +90,21 @@ export const getAllCommentsByUserDB = async (userId) => {
             WHERE c.user_id = ?
             GROUP BY c.comment_id
             ORDER BY c.created_at DESC
-        `;
-        
-        const [comments] = await conn.execute(sql, [userId]);
-        await conn.commit();
-        return comments;
+            LIMIT ? OFFSET ?
+        `, [userId, limit, offset]);
+
+        // Total count query
+        const [total] = await conn.execute(`
+            SELECT COUNT(*) as total 
+            FROM forum_comments 
+            WHERE user_id = ?
+        `, [userId]);
+
+        return {
+            comments,
+            totalCount: total[0].total
+        };
     } catch (error) {
-        if (conn) await conn.rollback();
         console.error("Error getting comments by user:", error);
         throw error;
     } finally {
@@ -74,23 +112,25 @@ export const getAllCommentsByUserDB = async (userId) => {
     }
 };
 
-export const createCommentDB = async (userId, postId, content) => {
+const generateThreadPath = async (conn, parent_comment_id) => {
+    const [parent] = await conn.execute(
+        "SELECT thread_path FROM forum_comments WHERE comment_id = ?",
+        [parent_comment_id]
+    );
+    return parent[0]?.thread_path 
+        ? `${parent[0].thread_path}-${parent_comment_id}`
+        : `${parent_comment_id}`;
+};
+
+export const createCommentDB = async ({ userId, postId, content, parent_comment_id = null }) => {
     let conn;
     try {
-        if (!userId || !postId || !content) {
-            throw new Error("Missing required fields");
-        }
-
-        if (content.length > 1000) {
-            throw new Error("Content must be less than 1000 characters");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Check if post exists
+        // Verify post exists
         const [post] = await conn.execute(
-            "SELECT post_id FROM forum_posts WHERE post_id = ?",
+            "SELECT 1 FROM forum_posts WHERE post_id = ?",
             [postId]
         );
 
@@ -98,101 +138,199 @@ export const createCommentDB = async (userId, postId, content) => {
             throw new Error("Post not found");
         }
 
-        const sql = `
-            INSERT INTO forum_comments (post_id, content, user_id, created_at)
-            VALUES (?, ?, ?, NOW())
-        `;
-        const [result] = await conn.execute(sql, [postId, content, userId]);
+        let depth = 0;
+        let thread_path = null;
+
+        if (parent_comment_id) {
+            // Get parent comment details
+            const [parentComment] = await conn.execute(
+                "SELECT depth, thread_path FROM forum_comments WHERE comment_id = ? AND post_id = ?",
+                [parent_comment_id, postId]
+            );
+            
+            if (!parentComment[0]) {
+                throw new Error("Parent comment not found in this post");
+            }
+
+            depth = parentComment[0].depth + 1;
+            thread_path = parentComment[0].thread_path 
+                ? `${parentComment[0].thread_path}.${parent_comment_id}`
+                : parent_comment_id.toString();
+        }
+
+        const [result] = await conn.execute(`
+            INSERT INTO forum_comments (
+                post_id, 
+                user_id, 
+                content, 
+                parent_comment_id,
+                depth,
+                thread_path,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `, [
+            postId,
+            userId,
+            content,
+            parent_comment_id,
+            depth,
+            thread_path
+        ]);
+
         await conn.commit();
-        return { commentId: result.insertId };
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error creating comment:", error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-export const updateCommentInPostDB = async (userId, commentId, postId, content) => {
-    let conn;
-    try {
-        if (!userId || !commentId || !postId || !content) {
-            throw new Error("Missing required fields");
-        }
-
-        if (content.length > 1000) {
-            throw new Error("Content must be less than 1000 characters");
-        }
-
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Check if comment exists and user is authorized
-        const [comment] = await conn.execute(
-            "SELECT user_id FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-            [commentId, postId]
-        );
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        if (comment[0].user_id !== userId) {
-            throw new Error("Unauthorized to update this comment");
-        }
-
-        const sql = `
-            UPDATE forum_comments
-            SET content = ?, last_updated = CURRENT_TIMESTAMP
-            WHERE comment_id = ? AND post_id = ?
-        `;
-        await conn.execute(sql, [content, commentId, postId]);
-        await conn.commit();
-        return "Comment updated successfully";
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error updating comment:", error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-export const deleteCommentDB = async (userId, commentId, postId) => {
-    let conn;
-    try {
-        if (!userId || !commentId || !postId) {
-            throw new Error("Missing required fields");
-        }
-
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Check if comment exists and user is authorized
-        const [comment] = await conn.execute(
-            "SELECT user_id FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-            [commentId, postId]
-        );
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        if (comment[0].user_id !== userId) {
-            throw new Error("Unauthorized to delete this comment");
-        }
-
-        // Delete related data first
-        await conn.execute("DELETE FROM forum_comment_likes WHERE comment_id = ?", [commentId]);
-        await conn.execute("DELETE FROM forum_comment_reports WHERE comment_id = ?", [commentId]);
-        await conn.execute("DELETE FROM forum_comments WHERE comment_id = ? AND post_id = ?", [commentId, postId]);
         
-        await conn.commit();
-        return "Comment deleted successfully";
+        return {
+            commentId: result.insertId,
+            parent_comment_id,
+            depth,
+            thread_path
+        };
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Error deleting comment:", error);
+        console.error("Database error in createCommentDB:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const addReplyToCommentDB = async ({ userId, parentCommentId, content }) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Get parent comment details
+        const [parent] = await conn.execute(`
+            SELECT post_id, depth, thread_path 
+            FROM forum_comments 
+            WHERE comment_id = ?
+        `, [parentCommentId]);
+
+        if (!parent[0]) {
+            throw new Error("Parent comment not found");
+        }
+
+        const newDepth = parent[0].depth + 1;
+        const newThreadPath = parent[0].thread_path 
+            ? `${parent[0].thread_path}-${parentCommentId}`
+            : `${parentCommentId}`;
+
+        // Insert reply
+        const [result] = await conn.execute(`
+            INSERT INTO forum_comments (
+                post_id,
+                user_id,
+                content,
+                parent_comment_id,
+                depth,
+                thread_path,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `, [
+            parent[0].post_id,
+            userId,
+            content,
+            parentCommentId,
+            newDepth,
+            newThreadPath
+        ]);
+
+        await conn.commit();
+        
+        return {
+            commentId: result.insertId,
+            parentCommentId,
+            depth: newDepth
+        };
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Database error in addReplyToCommentDB:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const updateCommentDB = async ({ commentId, userId, content }) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Verify comment ownership
+        const [comment] = await conn.execute(`
+            SELECT user_id FROM forum_comments 
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        if (!comment[0]) {
+            throw new Error("Comment not found");
+        }
+
+        if (comment[0].user_id !== userId) {
+            throw new Error("Unauthorized: You can only edit your own comments");
+        }
+
+        // Update comment
+        await conn.execute(`
+            UPDATE forum_comments 
+            SET content = ?, last_updated = NOW() 
+            WHERE comment_id = ?
+        `, [content, commentId]);
+
+        // Get updated comment
+        const [updated] = await conn.execute(`
+            SELECT 
+                comment_id,
+                content,
+                last_updated,
+                created_at
+            FROM forum_comments
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        await conn.commit();
+        return updated[0];
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Database error in updateCommentDB:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Verify comment exists and ownership
+        const [comment] = await conn.execute(`
+            SELECT user_id FROM forum_comments 
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        if (!comment[0]) {
+            throw new Error("Comment not found");
+        }
+
+        if (!isAdmin && comment[0].user_id !== userId) {
+            throw new Error("Unauthorized: You can only delete your own comments");
+        }
+
+        // Delete comment (CASCADE will handle likes/reports)
+        await conn.execute(`
+            DELETE FROM forum_comments 
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        await conn.commit();
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Database error in deleteCommentDB:", error);
         throw error;
     } finally {
         if (conn) conn.release();
@@ -202,10 +340,6 @@ export const deleteCommentDB = async (userId, commentId, postId) => {
 export const likeCommentDB = async (userId, commentId, postId) => {
     let conn;
     try {
-        if (!userId || !commentId || !postId) {
-            throw new Error("Missing required fields");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
@@ -343,29 +477,31 @@ export const reportCommentDB = async (userId, commentId, postId, reason) => {
 export const getReportsForCommentDB = async (commentId) => {
     let conn;
     try {
-        if (!commentId) {
-            throw new Error("Comment ID is required");
-        }
-
         conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = `
+        
+        const [reports] = await conn.execute(`
             SELECT 
-                r.report_id, r.reason, r.status, r.created_at,
-                u.username AS reported_by, u.user_id
+                r.report_id, 
+                r.reason, 
+                r.status, 
+                r.created_at,
+                r.reviewed_at,
+                u.username AS reported_by, 
+                u.user_id,
+                reviewer.username AS reviewed_by
             FROM forum_comment_reports r
             JOIN users u ON r.user_id = u.user_id
+            LEFT JOIN users reviewer ON r.reviewed_by = reviewer.user_id
             WHERE r.comment_id = ?
-            ORDER BY r.created_at DESC
-        `;
-        const [reports] = await conn.execute(sql, [commentId]);
-        await conn.commit();
+            ORDER BY 
+                CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END,
+                r.created_at DESC
+        `, [commentId]);
+
         return reports;
     } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting reports for comment:", error);
-        throw error;
+        console.error("Error in getReportsForCommentDB:", error);
+        throw error; 
     } finally {
         if (conn) conn.release();
     }
