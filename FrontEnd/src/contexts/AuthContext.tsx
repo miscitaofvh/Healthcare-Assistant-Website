@@ -1,93 +1,89 @@
-import { createContext, useState, ReactNode, useEffect } from "react";
-import { requestAPI } from "../utils/api/request";
-import { useContext } from "react";
-
-const BASE_URL = "http://localhost:5000/api";
-interface User {
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    ReactNode,
+  } from "react";
+  import { requestAPI } from "../utils/api/request";
+  
+  const BASE_URL = "http://localhost:5000/api";
+  
+  export interface User {
     user_id: string;
     username: string;
     email: string;
+    role: "User" | "Doctor" | "Admin" | "Moderator";
   }
-
-interface AuthContextType {
+  
+  interface AuthContextType {
     user: User | null;
+    authLoading: boolean;
     checkAuth: () => Promise<void>;
-    login: (identifier: string, password: string) => Promise<any>;
-    logout: () => void;
-}
-
-
-export function useAuth() {
+    login: (identifier: string, password: string) => Promise<{ success: boolean; message: string }>;
+    logout: () => Promise<void>;
+  }
+  
+  const AuthContext = createContext<AuthContextType | undefined>(undefined);
+  
+  export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
+    if (!context) throw new Error("useAuth must be used within an AuthProvider");
     return context;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
+  };
+  
+  export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-
+    const [authLoading, setAuthLoading] = useState(true);
+  
     const checkAuth = async () => {
-        try {
-            const response = await requestAPI(BASE_URL, "/auth/me", "GET");
-            const { data, status } = response;
-            //console.log(data);
-            if (data.success === true)
-                setUser(data.user);
-            else
-                setUser(null);
-        } catch (error) {
-            setUser(null);
+      setAuthLoading(true);
+      try {
+        const { data, status } = await requestAPI(BASE_URL, "/auth/me", "GET");
+        if (status === 200 && data.success) {
+          setUser(data.user);
+        } else {
+          setUser(null);
         }
+      } catch {
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
     };
-
+  
     useEffect(() => {
-        checkAuth();
+      checkAuth();
     }, []);
-
+  
     const login = async (identifier: string, password: string) => {
-        try {
-            const response = await requestAPI(BASE_URL, "/auth/login", "POST", { identifier, password });
-            const { data, status } = response;
-            if (status === 200 && data.success) {
-                await checkAuth();
-                return {
-                    success: true,
-                    message: data.message || "Login successful!",
-                    data: data
-                };
-            }
-            else {
-                return {
-                    success: false,
-                    message: data.errors[0].msg || "Login failed",
-                    data: data
-                };
-            }
-        } catch (error: any) {
-            return {
-                success: false,
-                message: error.response?.data?.error || "Login failed",
-                status: error.response?.status || 500,
-            };
+      try {
+        const { data, status } = await requestAPI(BASE_URL, "/auth/login", "POST", { identifier, password });
+        if (status === 200 && data.success) {
+          await checkAuth();
+          return { success: true, message: data.message || "Đăng nhập thành công" };
         }
+        return { success: false, message: data.errors?.[0]?.msg || "Đăng nhập thất bại" };
+      } catch (e: any) {
+        return {
+          success: false,
+          message: e.response?.data?.error || "Đăng nhập thất bại",
+        };
+      }
     };
-
+  
     const logout = async () => {
-        const response = await requestAPI(BASE_URL, "/auth/logout", "POST", {});
-        const { data, status } = response;
-        if (status === 200 && data.success) 
-            setUser(null);
-        else 
-            console.error("Logout failed", data);
+      try {
+        const { data, status } = await requestAPI(BASE_URL, "/auth/logout", "POST", {});
+        if (status === 200 && data.success) setUser(null);
+      } catch (e) {
+        console.error("Logout error", e);
+      }
     };
-
+  
     return (
-        <AuthContext.Provider value={{ checkAuth, user, login, logout }}>
-            {children}
-        </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, authLoading, checkAuth, login, logout }}>
+        {children}
+      </AuthContext.Provider>
     );
-}
+  };

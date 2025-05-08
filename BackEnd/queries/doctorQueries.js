@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 export async function listDoctorsQuery() {
   const sql = `
     SELECT 
-      d.id           AS doctor_id,
+      d.user_id      AS doctor_id,
       u.full_name    AS name,
       u.profile_picture_url AS avatar,
       d.specialty,

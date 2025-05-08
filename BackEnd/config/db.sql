@@ -25,11 +25,11 @@ CREATE INDEX idx_username ON users(username);
 
 -- ========== DOCTORS ==========
 CREATE TABLE doctors (
-    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    user_id CHAR(36) NOT NULL UNIQUE,
+    doctor_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id   CHAR(36) NOT NULL UNIQUE,
     specialty VARCHAR(255) NOT NULL,
-    license VARCHAR(50) NOT NULL UNIQUE,
-    hospital VARCHAR(255) NOT NULL,
+    license   VARCHAR(50)  NOT NULL UNIQUE,
+    hospital  VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -59,15 +59,13 @@ CREATE TABLE appointments (
     appointment_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     patient_id     CHAR(36) NOT NULL,
     doctor_id      CHAR(36) NOT NULL,
-    appointment_time DATETIME   NOT NULL,
-    status         ENUM('Pending','Confirmed','Cancelled')
-                   DEFAULT 'Pending',
-    notes          TEXT        DEFAULT NULL,
-    created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
-                   ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (patient_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (doctor_id)  REFERENCES users(user_id) ON DELETE CASCADE
+    appointment_time DATETIME NOT NULL,
+    status         ENUM('Pending','Confirmed','Cancelled') DEFAULT 'Pending',
+    notes          TEXT DEFAULT NULL,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES users(user_id)   ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id)  REFERENCES doctors(doctor_id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_doctor   ON appointments(doctor_id);
