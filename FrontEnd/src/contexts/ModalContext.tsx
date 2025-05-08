@@ -38,7 +38,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [modalType, setModalType] = useState<ModalType>(null);
 
     return (
-        <ModalContext.Provider value={{ openModal: setModalType, closeModal: () => setModalType(null) }}>
+        <ModalContext.Provider value={{ openModal: setModalType, closeModal: () => {setModalType(null); window.location.reload();}}}>
             {children}
             {modalType && (
                 <Overlay onClick={() => setModalType(null)}>

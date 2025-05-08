@@ -25,7 +25,7 @@ VALUES
 
 -- ===============================================
 
-INSERT INTO doctors (id, user_id, specialty, license, hospital)
+INSERT INTO doctors (doctor_id, user_id, specialty, license, hospital)
 SELECT UUID(), u.user_id, d.specialty, d.license, d.hospital
 FROM (
   SELECT 'drnguyenvanan' AS username, 'Nội Tim mạch'       AS specialty, 'LIC1001' AS license, 'Bệnh viện Bạch Mai'         AS hospital UNION ALL
