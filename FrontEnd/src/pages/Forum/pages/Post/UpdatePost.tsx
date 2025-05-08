@@ -212,20 +212,6 @@ const UpdatePost: React.FC = () => {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="imageUrl" className={styles.metaLabel}>
-                Image URL (optional)
-              </label>
-              <input
-                id="imageUrl"
-                type="text"
-                className={styles.formInput}
-                value={post.image_url || ""}
-                onChange={(e) => handleInputChange("image_url", e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
               <label htmlFor="tags" className={styles.metaLabel}>Tags</label>
               <select
                 id="tags"

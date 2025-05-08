@@ -47,7 +47,6 @@ export const getAllPostsDB = async (
                 p.post_id, 
                 p.content,  
                 p.title, 
-                p.image_url, 
                 p.created_at, 
                 p.last_updated,
                 IFNULL(l.like_count, 0) AS like_count,
@@ -70,7 +69,7 @@ export const getAllPostsDB = async (
             LEFT JOIN forum_tags ft ON ftm.tag_id = ft.tag_id
             ${whereClause}
             GROUP BY 
-                p.post_id, p.content, p.title, p.image_url, p.created_at, p.last_updated,
+                p.post_id, p.content, p.title, p.created_at, p.last_updated,
                 u.username,
                 c.category_id, c.category_name,
                 t.thread_id, t.thread_name,
@@ -116,7 +115,6 @@ export const getSummaryPostsDB = async () => {
                 u.username AS author,
                 p.post_id, p.title,
                 LEFT(p.content, 100) AS content,  -- Truncate content to 100 characters
-                p.image_url,
                 p.created_at, p.last_updated,
                 COUNT(DISTINCT l.like_id) AS like_count,
                 GROUP_CONCAT(DISTINCT ft.tag_name) AS tags  -- Add tags as a concatenated string
@@ -157,19 +155,21 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
         includeStats = false,
         includeCommentReplies = false
     } = options;
-    // 
+    
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
+
+        // Main post query
         const postSql = `
         SELECT 
-            p.post_id, p.title, p.content, p.image_url, 
-            p.created_at, p.last_updated,
+            p.post_id, p.title, p.content, 
+            p.created_at, p.last_updated, p.user_id AS author_id,
             t.thread_id, t.thread_name, 
             c.category_id, c.category_name,
             ${includeAuthor ? 'u.username AS author,' : ''}
-            ${includeStats ? 'p.like_count AS like_count,' : '0 AS like_count,'}
+            ${includeStats ? 'COUNT(DISTINCT l.like_id) AS like_count,' : '0 AS like_count,'}
             ${author_id ? `EXISTS(
                 SELECT 1 FROM forum_likes 
                 WHERE post_id = p.post_id AND user_id = ?
@@ -187,16 +187,14 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
         GROUP BY p.post_id;
         `;
 
-        const [postRows] = author_id 
-            ? await conn.execute(postSql, [author_id, author_id, postId])
-            : await conn.execute(postSql, [postId]);
+        const postParams = author_id ? [author_id, author_id, postId] : [postId];
+        const [postRows] = await conn.execute(postSql, postParams);
 
         if (!postRows[0]) {
             throw new Error("Post not found");
         }
 
         const post = postRows[0];
-
         post.tags = post.tags
             ? post.tags.split(',').map(tag => {
                 const [tag_id, tag_name] = tag.split(':');
@@ -204,6 +202,7 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
             })
             : [];
 
+        // Comments handling
         let comments = [];
         if (includeComments) {
             const commentSql = `
@@ -212,13 +211,13 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
                     c.comment_id, c.content, 
                     c.created_at, c.last_updated,
                     c.parent_comment_id, c.depth, c.thread_path,
-                    u.username,
-                    COUNT(cl.like_id) AS like_count,
-                    ${includeAuthor ? `EXISTS(
+                    u.username, u.user_id AS author_id,
+                    COUNT(DISTINCT cl.like_id) AS like_count,
+                    ${author_id ? `EXISTS(
                         SELECT 1 FROM forum_comment_likes 
-                        WHERE comment_id = c.comment_id AND user_id = u.user_id
+                        WHERE comment_id = c.comment_id AND user_id = ?
                     ) AS is_liked,` : 'false AS is_liked,'}
-                    ${author_id ? `c.user_id = u.user_id AS is_owner` : 'false AS is_owner'}
+                    ${author_id ? `c.user_id = ? AS is_owner` : 'false AS is_owner'}
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.user_id
                 LEFT JOIN forum_comment_likes cl ON c.comment_id = cl.comment_id
@@ -227,32 +226,22 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
                 ORDER BY c.thread_path, c.created_at;
             `;
 
-            const [commentRows] = await conn.execute(commentSql, [postId]);
+            const commentParams = author_id ? [author_id, author_id, postId] : [postId];
+            const [commentRows] = await conn.execute(commentSql, commentParams);
 
             // Convert flat comments to hierarchical structure
             const buildCommentTree = (parentId = null) => {
                 return commentRows
                     .filter(comment => comment.parent_comment_id === parentId)
                     .map(comment => ({
-                        post_id: comment.post_id,
-                        comment_id: comment.comment_id,
-                        username: comment.username,
-                        content: comment.content,
-                        created_at: comment.created_at,
-                        last_updated: comment.last_updated,
-                        parent_comment_id: comment.parent_comment_id,
-                        depth: comment.depth,
-                        thread_path: comment.thread_path,
-                        like_count: comment.like_count,
-                        is_liked: comment.is_liked,
-                        is_owner: comment.is_owner,
+                        ...comment,
                         replies: includeCommentReplies ? buildCommentTree(comment.comment_id) : []
                     }));
             };
 
-            comments = includeCommentReplies
-                ? buildCommentTree() // Return nested structure
-                : commentRows;       // Return flat structure
+            comments = includeCommentReplies 
+                ? buildCommentTree()
+                : commentRows;
         }
 
         await conn.commit();
@@ -263,7 +252,7 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Error in getPostByIdDB:", error.message);
-        throw new Error(error.message || "Failed to get post");
+        throw error;
     } finally {
         if (conn) conn.release();
     }
@@ -278,7 +267,7 @@ export const getPostsByUserDB = async (username) => {
         const sql = `
             SELECT 
                 u.username AS author,
-                p.post_id, p.content, p.image_url, p.created_at, p.last_updated,
+                p.post_id, p.content, p.created_at, p.last_updated,
                 c.category_id, c.category_name, 
                 t.thread_id, t.thread_name, 
                 COUNT(DISTINCT l.like_id) AS like_count,
@@ -315,7 +304,7 @@ export const getPostsByUserDB = async (username) => {
     }
 };
 
-export const createPostDB = async (user_id, thread_id, title, content, tag_names = [], image_url = null) => {
+export const createPostDB = async (user_id, thread_id, title, content, tag_names = []) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -331,15 +320,14 @@ export const createPostDB = async (user_id, thread_id, title, content, tag_names
         const category_id = threadCheck[0].category_id;
 
         const insertPostQuery = `
-            INSERT INTO forum_posts (thread_id, user_id, title, content, image_url, created_at)
-            VALUES (?, ?, ?, ?, ?, NOW())
+            INSERT INTO forum_posts (thread_id, user_id, title, content, created_at)
+            VALUES (?, ?, ?, ?, NOW())
         `;
         const [postResult] = await conn.execute(insertPostQuery, [
             thread_id,
             user_id,
             title,
-            content,
-            image_url || null
+            content
         ]);
 
         const post_id = postResult.insertId;
@@ -398,7 +386,7 @@ export const createPostDB = async (user_id, thread_id, title, content, tag_names
     }
 };
 
-export const updatePostDB = async (postId, user_id, title, content, image_url = null, tags = []) => {
+export const updatePostDB = async (postId, user_id, title, content, tags = []) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -427,10 +415,10 @@ export const updatePostDB = async (postId, user_id, title, content, image_url = 
 
         const updateSql = `
             UPDATE forum_posts
-            SET title = ?, content = ?, image_url = ?, last_updated = CURRENT_TIMESTAMP
+            SET title = ?, content = ?, last_updated = CURRENT_TIMESTAMP
             WHERE post_id = ?
         `;
-        await conn.execute(updateSql, [title, content, image_url, postId]);
+        await conn.execute(updateSql, [title, content, postId]);
 
         await conn.execute(
             "DELETE FROM forum_tags_mapping WHERE post_id = ?",

@@ -189,7 +189,6 @@ export const getPostsByThreadDB = async (threadId) => {
                 p.post_id,
                 p.title,
                 p.content,
-                p.image_url,
                 p.created_at,
                 p.last_updated,
                 u.username AS author

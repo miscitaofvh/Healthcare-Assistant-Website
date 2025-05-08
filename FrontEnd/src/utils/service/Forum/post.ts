@@ -74,7 +74,7 @@ export const loadPostPageById = async (
         const comments = Array.isArray(post.comments) ? post.comments : [];
         setPost(post);
         setComments(comments);
-        setSuccess('Post loaded successfully');
+        // setSuccess('Post loaded successfully');
 
         if (onSuccess) {
             onSuccess();

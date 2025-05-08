@@ -106,16 +106,6 @@ const PostList: React.FC = () => {
                       : post.content}
                   </div>
 
-                  {post.image_url && (
-                    <div className={styles.postImage}>
-                      <img
-                        src={post.image_url}
-                        alt="Post"
-                        className={styles.responsiveImage}
-                      />
-                    </div>
-                  )}
-
                   <div className={styles.tagMeta}>
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>Category:</span>

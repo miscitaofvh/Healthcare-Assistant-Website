@@ -132,19 +132,6 @@ const ThreadPage: React.FC = () => {
                     </div>
                     <div className={styles.postContent}>
                       <p>{post.content}</p>
-                      {post.image_url && (
-                        <div className={styles.postImage}>
-                          <img
-                            src={post.image_url}
-                            alt="Post content"
-                            className={styles.responsiveImage}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
                     </div>
                     <div className={styles.postActions}>
                       <button

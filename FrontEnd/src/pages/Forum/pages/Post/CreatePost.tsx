@@ -19,7 +19,6 @@ const CreatePost: React.FC = () => {
     thread_id: 0,
     title: "",
     content: "",
-    image_url: null,
     tag_name: [],
   });
   const [categories, setCategories] = useState<CategorySummary[]>([]);
@@ -212,23 +211,6 @@ const CreatePost: React.FC = () => {
               <small className={styles.characterCount}>
                 {post.content.length}/5000 characters
               </small>
-            </div>
-
-            {/* Image URL */}
-            <div className={styles.formGroup}>
-              <label htmlFor="imageUrl" className={styles.metaLabel}>
-                Image URL (optional)
-              </label>
-              <input
-                id="imageUrl"
-                type="text"
-                className={styles.formInput}
-                value={post.image_url || ""}
-                onChange={(e) =>
-                  setPost({ ...post, image_url: e.target.value })
-                }
-                disabled={loading}
-              />
             </div>
 
             {/* Tags */}

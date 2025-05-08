@@ -369,15 +369,14 @@ export const createPost = async (req, res) => {
             });
         }
 
-        const { thread_id, title, content, tag_name = [], image_url } = req.body;
+        const { thread_id, title, content, tag_name = [] } = req.body;
 
         const result = await createPostDB(
             author_id,
             thread_id,
             title.trim(),
             content.trim(),
-            tag_name && tag_name.length > 0 ? tag_name : null,
-            image_url?.trim()
+            tag_name && tag_name.length > 0 ? tag_name : null
         );
 
         res.status(201).json({
@@ -452,7 +451,7 @@ export const updatePost = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { title, content, image_url, edit_reason, tags } = req.body;
+        const { title, content, edit_reason, tags } = req.body;
         if (!id) {
             return res.status(400).json({
                 success: false,
@@ -468,7 +467,6 @@ export const updatePost = async (req, res) => {
             author_id,
             title,
             content.trim(),
-            image_url?.trim(),
             tags // Add tags parameter
         );
 

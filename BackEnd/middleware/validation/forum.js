@@ -49,12 +49,6 @@ export const validateThread = [
         .withMessage("Mô tả phải từ 10 đến 200 ký tự.")
         .trim(),
 
-    body("image_url")
-        .optional()
-        .isURL()
-        .withMessage("URL ảnh không hợp lệ.")
-        .trim(),
-
     (req, res, next) => {
         const errors = validationResult(req);
 
@@ -133,16 +127,6 @@ export const validateForumPostUpdate = [
         .optional()
         .isLength({ min: 10 })
         .withMessage("Nội dung phải có ít nhất 10 ký tự")
-        .trim(),
-        body("image_url")
-        .optional()
-        .custom((value) => {
-            if (value === "" || value === null || value === undefined) {
-                return true; 
-            }
-            return validator.isURL(value);
-        })
-        .withMessage("URL ảnh không hợp lệ")
         .trim(),
     body("tags")
         .optional()

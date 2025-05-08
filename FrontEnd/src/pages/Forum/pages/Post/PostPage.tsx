@@ -268,7 +268,7 @@ const ForumPage: React.FC = () => {
             <FaFlag /> Report
           </button>
 
-          {(comment.is_owner || post?.is_owner) ? (
+          {(comment.is_owner) ? (
             <button
               className={`${styles.actionButton} ${styles.deleteButton}`}
               onClick={() => deleteCommentFE(comment.comment_id.toString(), setError, setSuccess, () => loadInitialData())}
@@ -460,19 +460,6 @@ const ForumPage: React.FC = () => {
 
         <div className={styles.postContent}>
           <p>{post.content}</p>
-          {post.image_url && (
-            <div className={styles.postImage}>
-              <img
-                src={post.image_url}
-                alt="Post content"
-                className={styles.responsiveImage}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            </div>
-          )}
         </div>
 
         {/* Comment section */}

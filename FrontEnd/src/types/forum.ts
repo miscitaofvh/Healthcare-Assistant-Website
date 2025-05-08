@@ -145,7 +145,6 @@ export interface PostListResponse {
     post_id: number;
     title: string;
     content: string;
-    image_url: string | null;
     created_at: string;
     last_updated: string;
     like_count: number;
@@ -157,7 +156,6 @@ export interface PostSummary {
     post_id: number;
     title: string;
     content: string;
-    image_url: string | null;
     created_at: string;
     last_updated: string;
     like_count: number;
@@ -169,7 +167,6 @@ export interface PostNew {
     thread_id: number;
     title: string;
     content: string;
-    image_url?: string | null;
     tag_name: string[];
 }
 
@@ -179,7 +176,6 @@ export interface Post {
     author_id: number;  // Added: Useful for user profile links
     title: string;
     content: string;
-    image_url: string | null;
     created_at: string;
     last_updated: string;
     view_count: number;  // Added: Track post popularity
