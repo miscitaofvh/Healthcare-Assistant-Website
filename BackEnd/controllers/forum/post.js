@@ -450,9 +450,9 @@ export const updatePost = async (req, res) => {
             });
         }
 
-        const { id } = req.params;
+        const { postId } = req.params;
         const { title, content, edit_reason, tags } = req.body;
-        if (!id) {
+        if (!postId) {
             return res.status(400).json({
                 success: false,
                 message: "Post ID is required",
@@ -463,7 +463,7 @@ export const updatePost = async (req, res) => {
         }
 
         const result = await updatePostDB(
-            id,
+            postId,
             author_id,
             title,
             content.trim(),
@@ -545,10 +545,10 @@ export const deletePost = async (req, res) => {
             });
         }
 
-        const { id } = req.params;
+        const { postId } = req.params;
         const { delete_reason } = req.body;
 
-        if (!id) {
+        if (!postId) {
             return res.status(400).json({
                 success: false,
                 message: "Post ID is required",
@@ -559,7 +559,7 @@ export const deletePost = async (req, res) => {
         }
 
         const result = await deletePostDB(
-            id,
+            postId,
             author_id,
             is_moderator,
             delete_reason?.trim()
@@ -567,9 +567,9 @@ export const deletePost = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Post deleted successfully",
+            message: result || "Post deleted successfully",
             data: {
-                postId: id,
+                postId: postId,
                 deletedAt: new Date().toISOString(),
                 ...(is_moderator && { deletedBy: `moderator:${author_id}` }),
                 ...(delete_reason && { deleteReason: delete_reason.trim() })

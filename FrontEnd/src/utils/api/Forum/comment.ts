@@ -12,7 +12,7 @@ export async function createComment(id: string, comment: any) {
 }   
 
 export async function deleteComment(commentId: string) {
-    const response = await requestAPI(BASE_URL, `/comments/${commentId}/likes`, "DELETE");
+    const response = await requestAPI(BASE_URL, `/comments/${commentId}`, "DELETE");
     return response;
 }
 

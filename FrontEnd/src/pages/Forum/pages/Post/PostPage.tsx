@@ -20,6 +20,8 @@ import {
 import ReactMarkdown from "react-markdown";
 import { formatDate } from "../../../../utils/helpers/dateFormatter";
 import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
+import { AiFillDelete } from "react-icons/ai";
+import { FiMoreVertical } from "react-icons/fi";
 
 const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -204,6 +206,44 @@ const ForumPage: React.FC = () => {
       setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: false }));
     }
   };
+  
+  const handleDeletePost = async (postId: string) => {
+    if (!postId) return;
+    setIsDeleting(true);
+    try {
+      await deletePostFE(
+        postId,
+        setLoading,
+        setError,
+        setSuccess,
+        () => navigate("/forum")
+      );
+    } catch (error) {
+      setError("Failed to delete post:");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!commentId) return;
+    setIsDeleting(true);
+    try {
+      await deleteCommentFE(
+        commentId,
+        setLoading,
+        setError,
+        setSuccess,
+        () => loadInitialData()
+      );
+    } catch (error) {
+      setError("Failed to delete comment:");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+
 
   const renderComments = (comments: PostComment[]) => {
     return comments.map((comment) => (
@@ -272,7 +312,7 @@ const ForumPage: React.FC = () => {
           {(comment.is_owner) ? (
             <button
               className={`${styles.actionButton} ${styles.deleteButton}`}
-              onClick={() => deleteCommentFE(comment.comment_id.toString(), setError, setSuccess, () => loadInitialData())}
+              onClick={() => handleDeleteComment(comment.comment_id.toString())}
             >
               <FaTrash /> Delete
             </button>
@@ -449,14 +489,31 @@ const ForumPage: React.FC = () => {
 
         <div className={styles.postTitleRow}>
           <h1 className={styles.postTitle}>{post.title}</h1>
-          {post.is_owner ? (
-            <button
-              className={styles.editButton}
-              onClick={() => navigate(`/forum/posts/${post.post_id}/update`)}
-            >
-              <FaEdit /> Edit
-            </button>
-          ) : null}
+          {post.is_owner && (
+            <div className={styles.dropdown}>
+              <button className={styles.dropdownToggle}>
+                <FiMoreVertical /> {/* Three dots icon */}
+              </button>
+              <div className={styles.dropdownMenu}>
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => navigate(`/forum/posts/${post.post_id}/update`)}
+                >
+                  <FaEdit className={styles.dropdownIcon} /> Edit Post
+                </button>
+                <button
+                  className={`${styles.dropdownItem} ${styles.deleteItem}`}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this post?')) {
+                      handleDeletePost(post.post_id.toString());
+                    }
+                  }}
+                >
+                  <AiFillDelete className={styles.dropdownIcon} /> Delete Post
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.postContent}>

@@ -35,7 +35,7 @@ import {
         // Thread
         validateThread,
         // Post
-        validateForumPost, validateForumPostUpdate,
+        validateForumPost, validateForumPostUpdate, validateForumPostDelete,
         // Like
         validateForumPostLike, validateForumPostLikeUnmap,
         // Comment
@@ -93,8 +93,8 @@ router.get("/posts/summary", asyncHandler(getSummaryPosts));
 router.get("/posts/:id", asyncHandler(getPostById));
 router.get("/users/:username/posts", asyncHandler(getPostsByUser));
 router.post("/posts", validateForumPost, asyncHandler(createPost));
-router.put("/posts/:id", validateForumPostUpdate, asyncHandler(updatePost));
-router.delete("/posts/:id", validateForumPostComment, asyncHandler(deletePost));
+router.put("/posts/:postId", validateForumPostUpdate, asyncHandler(updatePost));
+router.delete("/posts/:postId", validateForumPostDelete, asyncHandler(deletePost));
 
 // ===================================================================================================================================
 // Comment Routes

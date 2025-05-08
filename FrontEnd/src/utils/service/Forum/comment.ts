@@ -73,20 +73,18 @@ export const handleCommentSubmit = async (
 
 export const deleteCommentFE = async (
     commentId: string,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
     refetchComments: () => Promise<void>
 ): Promise<void> => {
     try {
-        if (!commentId) {
-            setError('Invalid comment ID');
-        }
-
+        setLoading(true);
         setError('');
         setSuccess('');
 
         const response = await deleteComment(commentId);
-
+        alert(JSON.stringify(response));
         if (response.status !== 200 || !response.data?.success) {
             setError(response.data?.message || 'Failed to delete comment');
         }
@@ -105,6 +103,8 @@ export const deleteCommentFE = async (
 
         setError(errorMessage);
         setSuccess('');
+    } finally {
+        setLoading(false);
     }
 };
 

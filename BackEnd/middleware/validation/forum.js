@@ -117,6 +117,25 @@ export const validateForumPost = [
     }
 ];
 
+export const validateForumPostDelete = [
+    param("postId")
+        .notEmpty()
+        .withMessage("Post ID là bắt buộc")
+        .isInt({ min: 1 })
+        .withMessage("Post ID phải là số nguyên dương"),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Dữ liệu không hợp lệ",
+                errors: errors.array()
+            });
+        }
+        next();
+    }
+];
+
 export const validateForumPostUpdate = [
     body("title")
         .optional()
