@@ -17,6 +17,7 @@ import {
   reportCommentFE,
   countTotalComments
 } from "../../../../utils/service/Forum/comment";
+import ReactMarkdown from "react-markdown";
 import { formatDate } from "../../../../utils/helpers/dateFormatter";
 import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
 
@@ -459,7 +460,7 @@ const ForumPage: React.FC = () => {
         </div>
 
         <div className={styles.postContent}>
-          <p>{post.content}</p>
+          <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
         </div>
 
         {/* Comment section */}

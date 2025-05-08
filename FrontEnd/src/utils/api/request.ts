@@ -9,6 +9,12 @@ const apiClient = axios.create({
     },
 });
 
+const apiClientFormData = axios.create({
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+});
+
 /**
  * Make an API request with proper configuration.
  * 
@@ -38,6 +44,39 @@ export async function requestAPI(
             withCredentials: true,
         };
         const response: AxiosResponse = await apiClient(config);
+
+        return {
+            data: response.data,
+            status: response.status,
+        };
+    } catch (error: any) {
+        return {
+            error: error.message,
+            status: error.response?.status || 500,
+            data: error.response?.data || null,
+        };
+    }
+}
+
+export async function requestAPIFormdata(
+    baseURL: string,
+    endpoint: string,
+    method: "GET" | "POST" | "PUT" | "DELETE",
+    payload?: any,
+    token?: string | null
+) {
+    try {
+        const config: AxiosRequestConfig = {
+            baseURL,
+            url: endpoint,
+            method,
+            data: payload,
+            headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            withCredentials: true,
+        };
+        const response: AxiosResponse = await apiClientFormData(config);
 
         return {
             data: response.data,

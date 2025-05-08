@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
+import { toast } from "react-toastify";
+import ReactMarkdown from "react-markdown";
 import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
 import { loadThreadsByCategory } from "../../../../utils/service/Forum/thread";
 import { loadTagsSummary } from "../../../../utils/service/Forum/tag";
-import { createPostFE } from "../../../../utils/service/Forum/post";
+import { createPostFE, uploadPostImageFE } from "../../../../utils/service/Forum/post";
 import {
   CategorySummary,
   ThreadDropdown,
@@ -29,7 +31,9 @@ const CreatePost: React.FC = () => {
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [tagsLoading, setTagsLoading] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const navigate = useNavigate();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     try {
@@ -94,6 +98,63 @@ const CreatePost: React.FC = () => {
       setError("Failed to create post. Please try again.");
     }
   };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        e.preventDefault();
+
+        const file = item.getAsFile();
+        if (!file) {
+          toast.error("Không thể đọc ảnh từ clipboard.");
+          console.warn("Clipboard item exists but file is null.");
+          return;
+        }
+        const maxSizeMB = 5;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+        if (file.size > maxSizeBytes) {
+          toast.error(`Kích thước file quá lớn. Giới hạn ${maxSizeMB}MB.`);
+          return;
+        }
+
+        try {
+          toast.info('Đang tải hình ảnh lên...');
+
+          const formData = new FormData();
+          formData.append('forumImage', file);
+          formData.append('folder', 'forum-images');
+          formData.append('subfolder', 'forum-posts');
+          formData.append('fileName', file.name || 'image.png' + Math.random().toString(36).substring(2, 15));
+
+          const markdownImage = await uploadPostImageFE(formData);
+
+          if (markdownImage) {
+            const cursorPos = textareaRef.current?.selectionStart || 0;
+
+            setPost(prev => ({
+              ...prev,
+              content:
+                prev.content.substring(0, cursorPos) +
+                markdownImage +
+                prev.content.substring(cursorPos),
+            }));
+
+            toast.success('Hình ảnh đã được chèn vào bài viết!');
+          } else {
+            throw new Error('Lỗi khi tải ảnh lên');
+          }
+        } catch (error: any) {
+          console.error('Error uploading image:', error);
+          toast.error(error.response?.data?.message || 'Không thể tải lên hình ảnh');
+        }
+      }
+    }
+  };
+
 
   return (
     <div className={styles.forumContainer}>
@@ -195,23 +256,52 @@ const CreatePost: React.FC = () => {
 
             {/* Content */}
             <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.metaLabel}>
-                Content *
-              </label>
-              <textarea
-                id="content"
-                className={styles.formTextarea}
-                value={post.content}
-                onChange={(e) => setPost({ ...post, content: e.target.value })}
-                required
-                rows={8}
-                maxLength={5000}
-                disabled={loading}
-              />
+              <label htmlFor="content" className={styles.metaLabel}>Content *</label>
+
+              {/* Tab Buttons */}
+              <div className={styles.tabButtons}>
+                <button
+                  type="button"
+                  className={`${styles.tabButton} ${activeTab === "write" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("write")}
+                >
+                  ✏️ Write
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.tabButton} ${activeTab === "preview" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("preview")}
+                >
+                  👁️ Preview
+                </button>
+              </div>
+
+              {/* Content Area */}
+              {activeTab === "write" ? (
+                <textarea
+                  id="content"
+                  ref={textareaRef}
+                  className={styles.formTextarea}
+                  value={post.content}
+                  onChange={(e) => setPost({ ...post, content: e.target.value })}
+                  onPaste={handlePaste}
+                  required
+                  rows={8}
+                  maxLength={5000}
+                  disabled={loading}
+                  placeholder="Viết nội dung bài đăng của bạn (có thể dán ảnh trực tiếp vào đây)..."
+                />
+              ) : (
+                <div className={styles.markdownPreview}>
+                  <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
+                </div>
+              )}
+
               <small className={styles.characterCount}>
                 {post.content.length}/5000 characters
               </small>
             </div>
+
 
             {/* Tags */}
             <div className={styles.formGroup}>

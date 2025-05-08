@@ -4,7 +4,7 @@ import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { PostListResponse } from "../../../../types/forum";
 import { loadPosts } from "../../../../utils/service/Forum/post";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import { formatDate, stripMarkdown } from "../../../../utils/helpers/dateFormatter";
 
 const PostList: React.FC = () => {
   const [posts, setPosts] = useState<PostListResponse[]>([]);
@@ -101,10 +101,11 @@ const PostList: React.FC = () => {
                   </div>
 
                   <div className={styles.tagDescription}>
-                    {post.content.length > 200
-                      ? `${post.content.substring(0, 200)}...`
-                      : post.content}
+                    {stripMarkdown(post.content).length > 200
+                      ? `${stripMarkdown(post.content).substring(0, 200)}...`
+                      : stripMarkdown(post.content)}
                   </div>
+
 
                   <div className={styles.tagMeta}>
                     <div className={styles.metaItem}>

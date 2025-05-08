@@ -4,7 +4,8 @@ import {
     createPost,
     updatePost,
     deletePost,
-    getTagByForumPost
+    getTagByForumPost,
+    uploadImage
 } from "../../../utils/api/Forum/post";
 import { likePost, unlikePost } from "../../../utils/api/Forum/like";
 import { Dispatch, SetStateAction } from "react";
@@ -354,3 +355,33 @@ export const unlikePostFE = async (
         setSuccess('');
     }
 };
+
+export const uploadPostImageFE = async (
+    formData: FormData
+): Promise<string> => { 
+    try {
+        const response = await uploadImage(formData);
+
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            throw new Error(data?.message || 'Failed to upload image');
+        }
+        let markdownImage = '';
+        if(data && data.imageUrl){
+            markdownImage = `![image](${data.imageUrl})`;
+        }
+
+        return markdownImage;
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to upload image';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        throw new Error(errorMessage);
+    }
+}

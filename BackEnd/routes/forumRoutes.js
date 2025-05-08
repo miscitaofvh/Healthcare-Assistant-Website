@@ -28,6 +28,7 @@ import {
         createActivity, deleteActivityById, getActivitiesByTarget, getActivityStatsByid
 } from "../controllers/forum/activity.js";
 
+import { uploadImage } from "../controllers/forum/uploadImage.js";
 import {
         // Category
         validateCategory,
@@ -50,11 +51,17 @@ import {
 
 import { paginate } from "../middleware/paginate.js";
 import { auth } from "../middleware/authMiddleware.js";
+import multer from 'multer';
+
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 const asyncHandler = (fn) => (req, res, next) => {
         Promise.resolve(fn(req, res, next)).catch(next);
 };
+
+// Upload image
+router.post('/upload-image', upload.single('forumImage'), uploadImage);
 
 // Category Routes
 router.get("/categories", asyncHandler(getAllCategories)); // get all information in categories table
