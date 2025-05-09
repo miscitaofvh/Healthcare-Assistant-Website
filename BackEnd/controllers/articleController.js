@@ -91,11 +91,9 @@ export const createArticle = async (req, res) => {
     if (!token) return res.status(401).json({ message: "Unauthorized" });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const author_id = decoded.user_id;
-    const author_name = decoded.username;
     const { title, content, category_name, tag_name, image_url } = req.body;
     const articleId = await ArticleModel.createArticle(
       author_id,
-      author_name,
       title,
       content,
       category_name,

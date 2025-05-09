@@ -76,7 +76,6 @@ export const getArticleById = async (articleId) => {
 
 export const createArticle = async (
   author_id,
-  author_name,
   title,
   content,
   category_name,
@@ -110,16 +109,14 @@ export const createArticle = async (
     }
 
     const insertArticleQuery = `
-            INSERT INTO articles (title, content, author_id, author_name, category_id, category_name, publication_date, image_url)
-            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+            INSERT INTO articles (title, content, author_id, category_id, publication_date, image_url)
+            VALUES (?, ?, ?, ?, NOW(), ?)
         `;
     const [articleResult] = await conn.execute(insertArticleQuery, [
       title,
       content,
       author_id,
-      author_name,
       category_id,
-      category_name,
       image_url || null,
     ]);
     const article_id = articleResult.insertId;
