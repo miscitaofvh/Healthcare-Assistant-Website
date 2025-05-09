@@ -1,5 +1,4 @@
 import { body, validationResult } from "express-validator";
-import { isTagandCategoryValid } from "../../utils/format/article.js";
 
 export const validateArticle = [
     body("title")
@@ -23,24 +22,10 @@ export const validateArticle = [
                 throw new Error("Số lượng tag không được vượt quá 5");
             }
             return true;
-        })
-        .custom((value) => {
-            for (const tag of value) {
-                if (!isTagandCategoryValid(tag)) {
-                    throw new Error("Tag chỉ được chứa chữ cái, số, khoảng trắng và dấu gạch dưới");
-                }
-            }
-            return true;
         }),
     body("category_name")
         .notEmpty()
         .withMessage("Category là bắt buộc")
-        .custom((value) => {
-            if (!isTagandCategoryValid(value)) {
-                throw new Error("Category chỉ được chứa chữ cái, số, khoảng trắng và dấu gạch dưới");
-            }
-            return true;
-        })
         .isLength({ min: 3, max: 30 })
         .trim(),
     body("image_url")
