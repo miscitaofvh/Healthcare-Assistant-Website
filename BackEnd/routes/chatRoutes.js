@@ -12,7 +12,7 @@ import {
 } from '../controllers/chatController.js';
 
 import { validateChatRequest, validateSaveChatRequest } from '../middleware/chatMiddleware.js';
-import { authenticateUser, decodeTokenIfExists } from '../middleware/authMiddleware.js';
+import { authenticateUser, decodeTokenIfExists } from '../security/authMiddleware.js';
 
 const router = express.Router();
 

@@ -11,7 +11,7 @@ export const likePostDB = async (postId, userId) => {
             'SELECT 1 FROM forum_posts WHERE post_id = ?',
             [postId]
         );
-        
+
         if (!postCheck.length) {
             throw new Error("Post not found");
         }
@@ -70,7 +70,7 @@ export const unlikePostDB = async (postId, userId) => {
             'SELECT 1 FROM forum_posts WHERE post_id = ?',
             [postId]
         );
-        
+
         if (!postCheck.length) {
             throw new Error("Post not found");
         }
@@ -113,6 +113,60 @@ export const unlikePostDB = async (postId, userId) => {
         if (conn) await conn.rollback();
         console.error("Database error in unlikePostDB:", error);
         throw error; // Re-throw the error to be handled by the controller
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const likeCommentDB = async (userId, commentId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        const sql = `
+            INSERT INTO forum_comment_likes (user_id, comment_id, created_at)
+            VALUES (?, ?, NOW())
+        `;
+        await conn.execute(sql, [userId, commentId]);
+        await conn.commit();
+        return "Comment liked successfully";
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error liking comment:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const unlikeCommentDB = async (userId, commentId, postId) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Check if liked
+        const [existingLike] = await conn.execute(
+            "SELECT like_id FROM forum_comment_likes WHERE user_id = ? AND comment_id = ?",
+            [userId, commentId]
+        );
+
+        if (!existingLike[0]) {
+            throw new Error("Comment not liked");
+        }
+
+        await conn.execute(
+            "DELETE FROM forum_comment_likes WHERE user_id = ? AND comment_id = ?",
+            [userId, commentId]
+        );
+
+        await conn.commit();
+        return "Comment unliked successfully";
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error unliking comment:", error);
+        throw error;
     } finally {
         if (conn) conn.release();
     }

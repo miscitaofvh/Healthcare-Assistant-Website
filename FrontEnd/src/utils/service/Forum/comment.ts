@@ -49,9 +49,11 @@ export const handleCommentSubmit = async (
         };
 
         const response = await createComment(postId, commentData);
+        const { status, data } = response;
 
-        if (response.status !== 201 || !response.data?.success) {
-            setError(response.data?.message || 'Failed to create comment');
+        if (status !== 201 || !data?.success) {
+            setError(data?.message || 'Failed to create comment');
+            return;
         }
 
         setCommentText('');

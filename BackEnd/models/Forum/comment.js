@@ -122,21 +122,11 @@ const generateThreadPath = async (conn, parent_comment_id) => {
         : `${parent_comment_id}`;
 };
 
-export const createCommentDB = async ({ userId, postId, content, parent_comment_id = null }) => {
+export const addCommentToPostDB = async ({ userId, postId, content, parent_comment_id = null }) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // Verify post exists
-        const [post] = await conn.execute(
-            "SELECT 1 FROM forum_posts WHERE post_id = ?",
-            [postId]
-        );
-
-        if (!post[0]) {
-            throw new Error("Post not found");
-        }
 
         let depth = 0;
         let thread_path = null;
@@ -258,20 +248,6 @@ export const updateCommentDB = async ({ commentId, userId, content }) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Verify comment ownership
-        const [comment] = await conn.execute(`
-            SELECT user_id FROM forum_comments 
-            WHERE comment_id = ?
-        `, [commentId]);
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        if (comment[0].user_id !== userId) {
-            throw new Error("Unauthorized: You can only edit your own comments");
-        }
-
         // Update comment
         await conn.execute(`
             UPDATE forum_comments 
@@ -307,21 +283,6 @@ export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) =>
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Verify comment exists and ownership
-        const [comment] = await conn.execute(`
-            SELECT user_id FROM forum_comments 
-            WHERE comment_id = ?
-        `, [commentId]);
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        if (!isAdmin && comment[0].user_id !== userId) {
-            throw new Error("Unauthorized: You can only delete your own comments");
-        }
-
-        // Delete comment (CASCADE will handle likes/reports)
         await conn.execute(`
             DELETE FROM forum_comments 
             WHERE comment_id = ?
@@ -337,127 +298,11 @@ export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) =>
     }
 };
 
-export const likeCommentDB = async (userId, commentId, postId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Check if comment exists
-        const [comment] = await conn.execute(
-            "SELECT comment_id FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-            [commentId, postId]
-        );
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        // Check if already liked
-        const [existingLike] = await conn.execute(
-            "SELECT like_id FROM forum_comment_likes WHERE user_id = ? AND comment_id = ?",
-            [userId, commentId]
-        );
-
-        if (existingLike[0]) {
-            throw new Error("Comment already liked");
-        }
-
-        const sql = `
-            INSERT INTO forum_comment_likes (user_id, comment_id, created_at)
-            VALUES (?, ?, NOW())
-        `;
-        await conn.execute(sql, [userId, commentId]);
-        await conn.commit();
-        return "Comment liked successfully";
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error liking comment:", error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-export const unlikeCommentDB = async (userId, commentId, postId) => {
-    let conn;
-    try {
-        if (!userId || !commentId || !postId) {
-            throw new Error("Missing required fields");
-        }
-
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Check if comment exists
-        const [comment] = await conn.execute(
-            "SELECT comment_id FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-            [commentId, postId]
-        );
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        // Check if liked
-        const [existingLike] = await conn.execute(
-            "SELECT like_id FROM forum_comment_likes WHERE user_id = ? AND comment_id = ?",
-            [userId, commentId]
-        );
-
-        if (!existingLike[0]) {
-            throw new Error("Comment not liked");
-        }
-
-        await conn.execute(
-            "DELETE FROM forum_comment_likes WHERE user_id = ? AND comment_id = ?",
-            [userId, commentId]
-        );
-        await conn.commit();
-        return "Comment unliked successfully";
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error unliking comment:", error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
 export const reportCommentDB = async (userId, commentId, reason) => {
     let conn;
     try {
-        if (!userId || !commentId || !reason) {
-            throw new Error("Missing required fields");
-        }
-
-        if (reason.length > 500) {
-            throw new Error("Reason must be less than 500 characters");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // Check if comment exists
-        const [comment] = await conn.execute(
-            "SELECT comment_id FROM forum_comments WHERE comment_id = ?",
-            [commentId]
-        );
-
-        if (!comment[0]) {
-            throw new Error("Comment not found");
-        }
-
-        // Check if already reported
-        const [existingReport] = await conn.execute(
-            "SELECT report_id FROM forum_comment_reports WHERE user_id = ? AND comment_id = ? AND reason = ?",
-            [userId, commentId, reason]
-        );
-
-        if (existingReport[0]) {
-            throw new Error("Comment already reported with this reason");
-        }
-
         const sql = `
             INSERT INTO forum_comment_reports (user_id, comment_id, reason, status, created_at)
             VALUES (?, ?, ?, 'pending', NOW())

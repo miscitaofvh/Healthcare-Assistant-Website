@@ -6,7 +6,8 @@ import {
     getReportsByUserDB,
     getReportsByPostDB,
     createReportDB,
-    updateReportStatusDB,
+    updateReportDB,
+    updateReportAdminDB,
     deleteReportDB,
     getReportsByStatusDB,
     deleteReportByIdDB
@@ -158,18 +159,10 @@ export const createReport = async (req, res) => {
     }
 };
 
-export const updateReportStatus = async (req, res) => {
+export const updateReport = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
-
-        if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User ID not found"
-            });
-        }
-
         const { id } = req.params;
         const { status, resolutionNotes } = req.body;
 
@@ -180,7 +173,36 @@ export const updateReportStatus = async (req, res) => {
             });
         }
 
-        const result = await updateReportStatusDB(id, status, userId, resolutionNotes);
+        const result = await updateReportDB(id, status, userId, resolutionNotes);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error("Error updating report status:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error updating report status",
+            error: error.message
+        });
+    }
+};
+
+export const updateReportAdmin = async (req, res) => {
+    try {
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        const userId = decoded.user_id;
+        const { id } = req.params;
+        const { status, resolutionNotes } = req.body;
+
+        if (!id || !status) {
+            return res.status(400).json({
+                success: false,
+                message: "Report ID and status are required"
+            });
+        }
+
+        const result = await updateReportAdminDB(id, status, userId, resolutionNotes);
         res.status(200).json({
             success: true,
             data: result

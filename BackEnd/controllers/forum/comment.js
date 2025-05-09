@@ -5,11 +5,10 @@ import {
     getCommentsByPostIdDB,
     getCommentRepliesDB,
     getAllCommentsByUserDB,
-    createCommentDB,
+    addCommentToPostDB,
+    addReplyToCommentDB,
     updateCommentDB,
     deleteCommentDB,
-    likeCommentDB, 
-    unlikeCommentDB,
     reportCommentDB,
     getReportsForCommentDB,
     updateReportStatusForCommentDB
@@ -165,35 +164,13 @@ export const getAllCommentsByUser = async (req, res) => {
 
 export const addCommentToPost = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const author_id = decoded.user_id;
-
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: Invalid authentication token"
-            });
-        }
+        const userId = req.user.user_id;
 
         const { postId } = req.params;
         const { content, parent_comment_id = null } = req.body;
 
-        if (!postId || !content) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID and content are required"
-            });
-        }
-
-        if (content.length > 1000) {
-            return res.status(400).json({
-                success: false,
-                message: "Comment must be less than 1000 characters"
-            });
-        }
-
-        const result = await createCommentDB({
-            userId: author_id,
+        const result = await addCommentToPostDB({
+            userId: userId,
             postId,
             content,
             parent_comment_id
@@ -235,28 +212,12 @@ export const addCommentToPost = async (req, res) => {
 
 export const addReplyToComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const author_id = decoded.user_id;
-
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: Invalid authentication token"
-            });
-        }
-
+        const userId = req.user.user_id;
         const { commentId } = req.params;
         const { content } = req.body;
 
-        if (!content || content.length > 1000) {
-            return res.status(400).json({
-                success: false,
-                message: "Content is required and must be under 1000 characters"
-            });
-        }
-
         const result = await addReplyToCommentDB({
-            userId: author_id,
+            userId: userId,
             parentCommentId: commentId,
             content
         });
@@ -291,17 +252,9 @@ export const addReplyToComment = async (req, res) => {
 
 export const updateComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const userId = decoded.user_id;
+        const userId = req.user.user_id;
         const { commentId } = req.params;
         const { content } = req.body;
-
-        if (!content || content.length > 1000) {
-            return res.status(400).json({
-                success: false,
-                message: "Content is required and must be under 1000 characters"
-            });
-        }
 
         const result = await updateCommentDB({
             commentId,
@@ -335,9 +288,8 @@ export const updateComment = async (req, res) => {
 
 export const deleteComment = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { commentId } = req.params;
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const userId = decoded.user_id;
 
         const result = await deleteCommentDB({
             commentId,
@@ -368,82 +320,13 @@ export const deleteComment = async (req, res) => {
     }
 };
 
-export const likeComment = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const { postId } = req.body;
-        const user_id = req.user?.user_id; // Get user from auth middleware
-
-        if (!user_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized - No user ID found"
-            });
-        }
-
-        const result = await likeCommentDB(user_id, commentId, postId);
-        
-        return res.status(200).json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        console.error("Error in likeComment:", error);
-        
-        const statusCode = error.message.includes("not found") ? 404 : 
-                          error.message.includes("already liked") ? 409 : 500;
-        
-        return res.status(statusCode).json({
-            success: false,
-            message: error.message || "Error processing like"
-        });
-    }
-};
-
-export const unlikeComment = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const { postId } = req.body;
-        const user_id = req.user?.user_id; // Get user from auth middleware
-
-        if (!user_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized - No user ID found"
-            });
-        }
-
-        const result = await unlikeCommentDB(user_id, commentId, postId);
-
-        res.status(200).json({
-            success: true,
-            message: result
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Error unliking the comment"
-        });
-    }
-};
-
 export const reportComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const user_id = decoded.user_id;
+        const userId = req.user.user_id;
+        const { commentId } = req.params;
+        const { reason } = req.body;
 
-        if (!user_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized"
-            });
-        }
-
-        const { commentId } = req.params; // postId = post_id, commentId = comment_id
-        const { reason } = req.body; // Reason for reporting
-
-        const result = await reportCommentDB(user_id, commentId, reason);
+        const result = await reportCommentDB(userId, commentId, reason);
 
         res.status(200).json({
             success: true,

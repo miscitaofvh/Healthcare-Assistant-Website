@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/authMiddleware.js';
+import { authenticateUser } from '../security/authMiddleware.js';
 import { validateAppointmentBody } from '../middleware/validateAppointmentBody.js';
 import { createAppointment, getAppointments} from '../controllers/appointmentController.js';
 

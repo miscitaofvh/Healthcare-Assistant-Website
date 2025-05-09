@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 
 import {
     likePostDB,
-    unlikePostDB
+    unlikePostDB,
+    likeCommentDB,
+    unlikeCommentDB
 } from "../../models/Forum/like.js";
 
 dotenv.config();
@@ -94,6 +96,51 @@ export const unlikePost = async (req, res) => {
             success: false,
             message: "Error unliking post",
             error: error.message
+        });
+    }
+};
+
+export const likeComment = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { commentId } = req.params;
+
+        const result = await likeCommentDB(userId, commentId);
+        
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error("Error in likeComment:", error);
+        
+        const statusCode = error.message.includes("not found") ? 404 : 
+                          error.message.includes("already liked") ? 409 : 500;
+        
+        return res.status(statusCode).json({
+            success: false,
+            message: error.message || "Error processing like"
+        });
+    }
+};
+
+export const unlikeComment = async (req, res) => {
+    try {
+        const user_id = req.user.user_id;
+        const { commentId } = req.params;
+        const { postId } = req.body;
+
+        const result = await unlikeCommentDB(user_id, commentId, postId);
+
+        res.status(200).json({
+            success: true,
+            message: result
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Error unliking the comment"
         });
     }
 };

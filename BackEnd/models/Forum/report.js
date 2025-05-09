@@ -192,7 +192,48 @@ export const createReportDB = async (postId, userId, reason) => {
     }
 };
 
-export const updateReportStatusDB = async (reportId, status, resolvedBy, resolutionNotes) => {
+export const updateReportDB = async (reportId, status, resolvedBy, resolutionNotes) => {
+    let conn;
+    try {
+        if (!reportId || !status || !resolvedBy) {
+            throw new Error("Report ID, status, and resolver ID are required");
+        }
+
+        if (resolutionNotes && resolutionNotes.length > 1000) {
+            throw new Error("Resolution notes must be less than 1000 characters");
+        }
+
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Check if report exists
+        const [report] = await conn.execute(
+            "SELECT report_id FROM forum_reports WHERE report_id = ?",
+            [reportId]
+        );
+
+        if (!report[0]) {
+            throw new Error("Report not found");
+        }
+
+        const sql = `
+            UPDATE forum_reports
+            SET status = ?, resolved_by = ?, resolution_notes = ?, resolved_at = NOW()
+            WHERE report_id = ?
+        `;
+        await conn.execute(sql, [status, resolvedBy, resolutionNotes, reportId]);
+        await conn.commit();
+        return "Report status updated successfully";
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Error updating report status:", error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+export const updateReportAdminDB = async (reportId, status, resolvedBy, resolutionNotes) => {
     let conn;
     try {
         if (!reportId || !status || !resolvedBy) {
