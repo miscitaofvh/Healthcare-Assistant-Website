@@ -66,11 +66,11 @@ export const login = async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { user_id: user.user_id, username: user.username },
+            { user_id: user.user_id, username: user.username, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn }
         );
-
+        
         // Set token as HTTP-only cookie
         // res.cookie('token', token, {
         //     httpOnly: true,

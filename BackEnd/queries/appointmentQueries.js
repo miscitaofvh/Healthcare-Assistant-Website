@@ -1,21 +1,15 @@
-// src/queries/appointmentQueries.js
 import pool from "../config/db.js";
 
-/**
- * Tạo lịch hẹn mới
- */
-export const createAppointmentQuery = async ({ appointment_id, patient_id, doctor_id, appointment_time, notes }) => {
+export const createAppointmentQuery = async ({appointment_id, patient_id, doctor_id, appointment_time, patient_notes,}) => 
+{
   const sql = `
     INSERT INTO appointments
-      (appointment_id, patient_id, doctor_id, appointment_time, notes)
+      (appointment_id, patient_id, doctor_id, appointment_time, patient_notes)
     VALUES (?, ?, ?, ?, ?)
   `;
-  await pool.execute(sql, [appointment_id, patient_id, doctor_id, appointment_time, notes]);
+  await pool.execute(sql, [appointment_id, patient_id, doctor_id, appointment_time, patient_notes,]);
 };
 
-/**
- * Lấy một lịch hẹn theo ID (bao gồm tên bệnh nhân và bác sĩ)
- */
 export const getAppointmentByIdQuery = async (appointment_id) => {
   const sql = `
     SELECT
@@ -26,7 +20,8 @@ export const getAppointmentByIdQuery = async (appointment_id) => {
       u.full_name AS doctor_name,
       a.appointment_time,
       a.status,
-      a.notes,
+      a.patient_notes,
+      a.doctor_notes,
       a.created_at,
       a.updated_at
     FROM appointments a
@@ -39,10 +34,8 @@ export const getAppointmentByIdQuery = async (appointment_id) => {
   return rows[0];
 };
 
-/**
- * Lấy danh sách lịch hẹn cho bác sĩ (theo user_id của bác sĩ)
- */
-export const listAppointmentsForDoctorQuery = async (doctor_user_id) => {
+export const listAppointmentsForDoctorQuery = async (doctor_user_id) => 
+  {
   const sql = `
     SELECT
       a.appointment_id,
@@ -52,7 +45,8 @@ export const listAppointmentsForDoctorQuery = async (doctor_user_id) => {
       u.full_name AS doctor_name,
       a.appointment_time,
       a.status,
-      a.notes
+      a.patient_notes,
+      a.doctor_notes
     FROM appointments a
     JOIN doctors d  ON d.doctor_id = a.doctor_id
     JOIN users p    ON p.user_id   = a.patient_id
@@ -64,9 +58,6 @@ export const listAppointmentsForDoctorQuery = async (doctor_user_id) => {
   return rows;
 };
 
-/**
- * Lấy danh sách lịch hẹn cho bệnh nhân
- */
 export const listAppointmentsForPatientQuery = async (patient_id) => {
   const sql = `
     SELECT
@@ -77,14 +68,26 @@ export const listAppointmentsForPatientQuery = async (patient_id) => {
       u.full_name AS doctor_name,
       a.appointment_time,
       a.status,
-      a.notes
+      a.patient_notes,
+      a.doctor_notes
     FROM appointments a
     JOIN users p    ON p.user_id    = a.patient_id
     JOIN doctors d  ON d.doctor_id  = a.doctor_id
     JOIN users u    ON u.user_id    = d.user_id
     WHERE a.patient_id = ?
+      AND a.appointment_time > NOW()
     ORDER BY a.appointment_time
   `;
   const [rows] = await pool.execute(sql, [patient_id]);
   return rows;
+};
+
+export const updateAppointmentQuery = async ({ appointment_id, status, doctor_notes }) => {
+  const sql = `
+    UPDATE appointments
+    SET status = ?, doctor_notes = ?
+    WHERE appointment_id = ?
+  `;
+  const [result] = await pool.execute(sql, [status, doctor_notes, appointment_id]);
+  return result.affectedRows > 0;
 };

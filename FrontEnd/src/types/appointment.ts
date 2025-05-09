@@ -5,5 +5,6 @@ export interface Appointment {
     patient_name: string;
     appointment_time: string;
     status: string;
-    notes?: string;
+    patient_notes: string;
+    doctor_notes: string;
 }

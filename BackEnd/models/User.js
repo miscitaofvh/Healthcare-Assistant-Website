@@ -27,8 +27,8 @@ export const findUserByLoginField = async (loginField) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
         const sql = loginField.includes("@")
-            ? `SELECT user_id, email, password_hash FROM users WHERE email = ?`
-            : `SELECT user_id, username, password_hash FROM users WHERE username = ?`;
+            ? `SELECT user_id, email, role, password_hash FROM users WHERE email = ?`
+            : `SELECT user_id, username, role, password_hash FROM users WHERE username = ?`;
         const [rows] = await conn.execute(sql, [loginField]);
 
         await conn.commit();
