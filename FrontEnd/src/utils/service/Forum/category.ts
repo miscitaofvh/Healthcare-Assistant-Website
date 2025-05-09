@@ -172,6 +172,7 @@ export const handleUpdateCategory = async (
         setFormLoading(true);
 
         const response = await updateCategory(categoryId, updatedCategory);
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

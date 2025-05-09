@@ -68,8 +68,9 @@ export const loadPostPageById = async (
             return;
         }
         const post = data.post;
+
         if (!post) {
-            throw new Error("Post not found");
+            alert("Post not found");
         }
 
         const comments = Array.isArray(post.comments) ? post.comments : [];

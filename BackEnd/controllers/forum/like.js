@@ -12,35 +12,10 @@ dotenv.config();
 
 export const likePost = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { postId } = req.params;
 
-        if (!req.cookies?.auth_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication token required"
-            });
-        }
-
-        let decoded;
-        try {
-            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        } catch (jwtError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired authentication token"
-            });
-        }
-
-        const user_id = decoded.user_id;
-
-        if (!postId) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID is required"
-            });
-        }
-
-        const result = await likePostDB(postId, user_id);
+        const result = await likePostDB(userId, postId);
         res.status(200).json({
             success: true,
             data: result
@@ -57,35 +32,10 @@ export const likePost = async (req, res) => {
 
 export const unlikePost = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { postId } = req.params;
 
-        if (!req.cookies?.auth_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication token required"
-            });
-        }
-
-        let decoded;
-        try {
-            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        } catch (jwtError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired authentication token"
-            });
-        }
-
-        const user_id = decoded.user_id;
-
-        if (!postId) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID is required"
-            });
-        }
-
-        const result = await unlikePostDB(postId, user_id);
+        const result = await unlikePostDB(userId, postId);
         res.status(200).json({
             success: true,
             data: result

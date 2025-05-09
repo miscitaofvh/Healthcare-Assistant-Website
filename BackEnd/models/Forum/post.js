@@ -155,7 +155,7 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
         includeStats = false,
         includeCommentReplies = false
     } = options;
-    
+
     let conn;
     try {
         conn = await connection.getConnection();
@@ -239,7 +239,7 @@ export const getPostByIdDB = async (postId, options = {}, author_id = null) => {
                     }));
             };
 
-            comments = includeCommentReplies 
+            comments = includeCommentReplies
                 ? buildCommentTree()
                 : commentRows;
         }
@@ -392,19 +392,6 @@ export const updatePostDB = async (postId, user_id, title, content, tags = []) =
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        const [post] = await conn.execute(
-            "SELECT user_id FROM forum_posts WHERE post_id = ?",
-            [postId]
-        );
-
-        if (!post[0]) {
-            throw new Error("Post not found");
-        }
-
-        if (post[0].user_id !== user_id) {
-            throw new Error("Unauthorized to update this post");
-        }
-
         const normalizedTags = tags.map(tag =>
             typeof tag === 'string' ? tag :
                 (tag?.tag_name ? tag.tag_name : null)
@@ -480,34 +467,25 @@ export const updatePostDB = async (postId, user_id, title, content, tags = []) =
     }
 };
 
-export const deletePostDB = async (postId, user_id) => {
+export const deletePostDB = async (postId, user_id, is_moderator = false, delete_reason = null) => {
     let conn;
     try {
-        if (!postId || !user_id) {
-            throw new Error("Missing required fields");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // Check if post exists and user is authorized
-        const [post] = await conn.execute(
-            "SELECT user_id FROM forum_posts WHERE post_id = ?",
-            [postId]
-        );
-
-        if (!post[0]) {
-            throw new Error("Post not found");
-        }
-
-        if (post[0].user_id !== user_id) {
-            throw new Error("Unauthorized to delete this post");
-        }
 
         // Delete post and related data
         await conn.execute("DELETE FROM forum_tags_mapping WHERE post_id = ?", [postId]);
         await conn.execute("DELETE FROM forum_likes WHERE post_id = ?", [postId]);
         await conn.execute("DELETE FROM forum_posts WHERE post_id = ?", [postId]);
+        await conn.execute("DELETE FROM forum_comments WHERE post_id = ?", [postId]);
+        // Log the deletion if there's a reason or it's by a moderator
+        if (is_moderator || delete_reason) {
+            await conn.execute(
+                `INSERT INTO forum_post_deletions (post_id, deleted_by, reason)
+         VALUES (?, ?, ?)`,
+                [postId, user_id, delete_reason || null]
+            );
+        }
 
         await conn.commit();
         return "Post deleted successfully";

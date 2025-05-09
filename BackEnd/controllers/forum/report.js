@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import {
+    reportCommentDB,
+    getReportsForCommentDB,
+    updateReportStatusForCommentDB,
     getAllReportsDB,
     getReportByIdDB,
     getReportsByUserDB,
@@ -15,18 +18,103 @@ import {
 
 dotenv.config();
 
-export const getAllReports = async (req, res) => {
+export const reportComment = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const userId = decoded.user_id;
+        const userId = req.user.user_id;
+        const { commentId } = req.params;
+        const { reason } = req.body;
 
-        if (!userId) {
-            return res.status(401).json({
+        const result = await reportCommentDB(userId, commentId, reason);
+
+        res.status(200).json({
+            success: true,
+            message: result
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Error reporting the comment"
+        });
+    }
+};
+
+export const getReportsForComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+
+        if (!commentId || typeof commentId !== 'string' || commentId.trim() === '') {
+            return res.status(400).json({
                 success: false,
-                message: "Unauthorized: User ID not found"
+                message: "Comment ID is required and must be a non-empty string"
             });
         }
 
+        if (!/^\d+$/.test(commentId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid Comment ID format"
+            });
+        }
+
+        const reports = await getReportsForCommentDB(commentId.trim());
+
+        res.status(200).json({
+            success: true,
+            data: reports,
+            count: reports.length
+        });
+
+    } catch (error) {
+        console.error("Error in getReportsForComment:", error);
+        
+        if (error.message.includes("not found")) {
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching reports",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+export const updateReportStatusForComment = async (req, res) => {
+    try {
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        const admin_id = decoded.user_id;
+
+        if (!admin_id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const { commentId, reportId } = req.params; // commentId = comment_id, reportId = report_id
+        const { status } = req.body; // status (e.g., "resolved", "pending", "dismissed")
+
+        const result = await updateReportStatusForCommentDB(admin_id, reportId, status, commentId);
+
+        res.status(200).json({
+            success: true,
+            message: result
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Error updating report status for comment"
+        });
+    }
+};
+
+export const getAllReports = async (req, res) => {
+    try {
         const reports = await getAllReportsDB();
         res.status(200).json({
             success: true,
@@ -44,14 +132,6 @@ export const getAllReports = async (req, res) => {
 
 export const getReportById = async (req, res) => {
     try {
-        const { id } = req.params;
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: "Report ID is required"
-            });
-        }
-
         const report = await getReportByIdDB(id);
         if (!report) {
             return res.status(404).json({

@@ -1,20 +1,10 @@
 import connection from '../../config/connection.js';
 
-export const likePostDB = async (postId, userId) => {
+export const likePostDB = async (userId, postId) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // First check if the post exists
-        const [postCheck] = await conn.execute(
-            'SELECT 1 FROM forum_posts WHERE post_id = ?',
-            [postId]
-        );
-
-        if (!postCheck.length) {
-            throw new Error("Post not found");
-        }
 
         // Check if user already liked the post
         const [likeCheck] = await conn.execute(
@@ -59,21 +49,11 @@ export const likePostDB = async (postId, userId) => {
     }
 };
 
-export const unlikePostDB = async (postId, userId) => {
+export const unlikePostDB = async (userId, postId) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        // First check if the post exists
-        const [postCheck] = await conn.execute(
-            'SELECT 1 FROM forum_posts WHERE post_id = ?',
-            [postId]
-        );
-
-        if (!postCheck.length) {
-            throw new Error("Post not found");
-        }
 
         // Check if user has liked the post
         const [likeCheck] = await conn.execute(

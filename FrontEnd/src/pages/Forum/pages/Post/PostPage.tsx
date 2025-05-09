@@ -201,7 +201,6 @@ const ForumPage: React.FC = () => {
       } else {
         await likeCommentFE(
           comment.comment_id.toString(),
-          post?.post_id.toString() || "",
           setError,
           setSuccess,
           () => loadInitialData()

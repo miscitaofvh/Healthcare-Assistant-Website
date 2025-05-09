@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { StatusCodes } from "http-status-codes";
 
 import {
     getCommentsByPostIdDB,
@@ -8,409 +9,318 @@ import {
     addCommentToPostDB,
     addReplyToCommentDB,
     updateCommentDB,
-    deleteCommentDB,
-    reportCommentDB,
-    getReportsForCommentDB,
-    updateReportStatusForCommentDB
+    deleteCommentDB
 } from "../../models/Forum/comment.js";
 
 dotenv.config();
-/**
- * Handles comment-related errors consistently across all routes
- * @param {Error} error - The error object
- * @param {Response} res - Express response object
- * @param {string} action - The action being performed (e.g., 'create', 'update', 'delete')
- */
-export const handleCommentError = (error, res, action = 'process') => {
-    console.error(`Error while trying to ${action} comment:`, error);
 
-    // JWT Authentication Errors
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-        return res.status(401).json({
-            success: false,
-            message: "Authentication failed",
-            error: "Invalid or expired token"
-        });
+// Helper functions
+const validateId = (id, name = 'ID') => {
+    if (!id || isNaN(Number(id))) {
+        throw new Error(`Invalid ${name}: Must be a numeric value`);
     }
-
-    // Input Validation Errors
-    if (error.message.includes("required") || 
-        error.message.includes("Invalid") || 
-        error.message.includes("must be")) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
-
-    // Not Found Errors
-    if (error.message.includes("not found")) {
-        return res.status(404).json({
-            success: false,
-            message: error.message
-        });
-    }
-
-    // Authorization Errors
-    if (error.message.includes("Unauthorized") || 
-        error.message.includes("own comments") ||
-        error.message.includes("permission")) {
-        return res.status(403).json({
-            success: false,
-            message: error.message
-        });
-    }
-
-    // Database Constraint Errors
-    if (error.code === 'ER_NO_REFERENCED_ROW' || 
-        error.code === 'ER_DUP_ENTRY' ||
-        error.code === 'ER_DATA_TOO_LONG') {
-        return res.status(409).json({
-            success: false,
-            message: "Database constraint error",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-
-    // Default Server Error
-    res.status(500).json({
-        success: false,
-        message: `Failed to ${action} comment`,
-        error: process.env.NODE_ENV === 'development' ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-        } : undefined
-    });
+    return Number(id);
 };
 
+const validateContent = (content, fieldName = 'Content', maxLength = 2000) => {
+    if (!content || typeof content !== 'string' || content.trim() === '') {
+        throw new Error(`${fieldName} is required and must be a non-empty string`);
+    }
+    const trimmed = content.trim();
+    if (trimmed.length > maxLength) {
+        throw new Error(`${fieldName} must be less than ${maxLength} characters`);
+    }
+    return trimmed;
+};
+
+const validatePagination = (page, limit, maxLimit = 50) => {
+    if (page < 1 || limit < 1 || limit > maxLimit) {
+        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
+    }
+    return { page: parseInt(page), limit: parseInt(limit) };
+};
+
+const validateToken = (token) => {
+    if (!token) {
+        throw new Error("No authentication token provided");
+    }
+    return jwt.verify(token, process.env.JWT_SECRET);
+};
+
+const handleError = (error, req, res, action = 'process') => {
+    console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
+
+    const errorMap = {
+        // Authentication errors
+        "No authentication token provided": StatusCodes.UNAUTHORIZED,
+        "Invalid or expired token": StatusCodes.UNAUTHORIZED,
+        "Invalid token payload": StatusCodes.UNAUTHORIZED,
+        "Authentication required": StatusCodes.UNAUTHORIZED,
+
+        // Validation errors
+        "Invalid Post ID": StatusCodes.BAD_REQUEST,
+        "Invalid Comment ID": StatusCodes.BAD_REQUEST,
+        "Invalid User ID": StatusCodes.BAD_REQUEST,
+        "Invalid Parent comment ID": StatusCodes.BAD_REQUEST,
+        "Content is required and must be a non-empty string": StatusCodes.BAD_REQUEST,
+        "Content must be less than 2000 characters": StatusCodes.BAD_REQUEST,
+        "Invalid pagination": StatusCodes.BAD_REQUEST,
+
+        // Authorization errors
+        "Forbidden: You don't have permission": StatusCodes.FORBIDDEN,
+        "Cannot update this comment": StatusCodes.FORBIDDEN,
+        "Cannot delete this comment": StatusCodes.FORBIDDEN,
+
+        // Not found errors
+        "Post not found": StatusCodes.NOT_FOUND,
+        "Comment not found": StatusCodes.NOT_FOUND,
+        "Parent comment not found": StatusCodes.NOT_FOUND,
+        "No comments found for this post": StatusCodes.NOT_FOUND,
+        "No replies found for this comment": StatusCodes.NOT_FOUND,
+        "No comments found for this user": StatusCodes.NOT_FOUND
+    };
+
+    const statusCode = errorMap[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
+    const response = {
+        success: false,
+        message: error.message || `Failed to ${action} comment`,
+        timestamp: new Date().toISOString()
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+        response.debug = {
+            message: error.message,
+            stack: error.stack?.split("\n")[0]
+        };
+    }
+
+    return res.status(statusCode).json(response);
+};
+
+// Controller methods
 export const getCommentsByPostId = async (req, res) => {
     try {
         const { postId } = req.params;
-        const { page = 1, limit = 20 } = req.pagination;
+        const validatedPostId = validateId(postId, "Post ID");
+        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
-        if (!postId || typeof postId !== 'string' || postId.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID is required and must be a non-empty string"
-            });
-        }
+        const { comments, totalCount } = await getCommentsByPostIdDB(validatedPostId, page, limit);
 
-        const { comments, totalCount } = await getCommentsByPostIdDB(
-            postId.trim(), 
-            parseInt(page), 
-            parseInt(limit)
-        );
-
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: comments,
             pagination: {
                 currentPage: page,
-                itemsPerPage: limit,
+                totalPages: Math.ceil(totalCount / limit),
                 totalItems: totalCount,
-                totalPages: Math.ceil(totalCount / limit)
+                itemsPerPage: limit
+            },
+            metadata: {
+                postId: validatedPostId,
+                retrievedAt: new Date().toISOString(),
+                cacheHint: {
+                    recommended: true,
+                    duration: "5m"
+                }
             }
         });
 
     } catch (error) {
-        console.error("Error in getCommentsByPostId:", error);
-        handleCommentError(error, res);
+        handleError(error, req, res, 'fetch comments by post');
     }
 };
 
 export const getCommentReplies = async (req, res) => {
     try {
         const { commentId } = req.params;
+        const validatedCommentId = validateId(commentId, "Comment ID");
 
-        const replies = await getCommentRepliesDB(commentId.trim());
-        
-        res.status(200).json({
+        const replies = await getCommentRepliesDB(validatedCommentId);
+
+        res.status(StatusCodes.OK).json({
             success: true,
-            data: replies
+            data: replies,
+            metadata: {
+                parentCommentId: validatedCommentId,
+                count: replies.length,
+                retrievedAt: new Date().toISOString()
+            }
         });
+
     } catch (error) {
-        console.error("Error in getCommentReplies:", error);
-        handleCommentError(error, res);
+        handleError(error, req, res, 'fetch comment replies');
     }
 };
 
 export const getAllCommentsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { page = 1, limit = 20 } = req.pagination;
+        const validatedUserId = validateId(userId, "User ID");
+        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
-        const { comments, totalCount } = await getAllCommentsByUserDB(
-            userId.trim(),
-            parseInt(page),
-            parseInt(limit)
-        );
+        const { comments, totalCount } = await getAllCommentsByUserDB(validatedUserId, page, limit);
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: comments,
             pagination: {
                 currentPage: page,
-                itemsPerPage: limit,
+                totalPages: Math.ceil(totalCount / limit),
                 totalItems: totalCount,
-                totalPages: Math.ceil(totalCount / limit)
+                itemsPerPage: limit
+            },
+            metadata: {
+                userId: validatedUserId,
+                retrievedAt: new Date().toISOString(),
+                cacheHint: {
+                    recommended: false,
+                    reason: "User-specific data changes frequently"
+                }
             }
         });
+
     } catch (error) {
-        console.error("Error in getAllCommentsByUser:", error);
-        handleCommentError(error, res);
+        handleError(error, req, res, 'fetch comments by user');
     }
 };
 
 export const addCommentToPost = async (req, res) => {
     try {
-        const userId = req.user.user_id;
+        const decoded = validateToken(req.cookies?.auth_token);
+        const userId = decoded.user_id;
+        if (!userId) throw new Error("Invalid token payload");
 
         const { postId } = req.params;
-        const { content, parent_comment_id = null } = req.body;
+        const validatedPostId = validateId(postId, "Post ID");
 
-        const result = await addCommentToPostDB({
-            userId: userId,
-            postId,
-            content,
+        const { content, parent_comment_id = null } = req.body;
+        const validatedContent = validateContent(content);
+
+        if (parent_comment_id) {
+            validateId(parent_comment_id, "Parent comment ID");
+        }
+
+        const commentId = await addCommentToPostDB({
+            userId,
+            postId: validatedPostId,
+            content: validatedContent,
             parent_comment_id
         });
 
-        res.status(201).json({
+        res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Comment created successfully",
-            data: {
-                commentId: result.commentId,
-                parentCommentId: result.parent_comment_id
+            data: { commentId },
+            metadata: {
+                createdBy: userId,
+                createdAt: new Date().toISOString(),
+                isReply: parent_comment_id !== null
             }
         });
 
     } catch (error) {
-        console.error("Error in addCommentToPost:", error);
-
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid authentication token"
-            });
-        }
-
-        if (error.message.includes("not found")) {
-            return res.status(404).json({
-                success: false,
-                message: error.message
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error while creating comment",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        handleError(error, req, res, 'create comment');
     }
 };
 
 export const addReplyToComment = async (req, res) => {
     try {
-        const userId = req.user.user_id;
+        const decoded = validateToken(req.cookies?.auth_token);
+        const userId = decoded.user_id;
+        if (!userId) throw new Error("Invalid token payload");
+
         const { commentId } = req.params;
+        const validatedCommentId = validateId(commentId, "Comment ID");
+
         const { content } = req.body;
+        const validatedContent = validateContent(content);
 
         const result = await addReplyToCommentDB({
-            userId: userId,
-            parentCommentId: commentId,
-            content
+            userId,
+            parentCommentId: validatedCommentId,
+            content: validatedContent
         });
 
-        res.status(201).json({
+        res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Reply added successfully",
             data: {
                 commentId: result.commentId,
                 parentCommentId: result.parentCommentId,
                 depth: result.depth
+            },
+            metadata: {
+                createdBy: userId,
+                createdAt: new Date().toISOString()
             }
         });
 
     } catch (error) {
-        console.error("Error in addReplyToComment:", error);
-        
-        if (error.message.includes("not found")) {
-            return res.status(404).json({
-                success: false,
-                message: error.message
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error while adding reply",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        handleError(error, req, res, 'add reply');
     }
 };
 
 export const updateComment = async (req, res) => {
     try {
-        const userId = req.user.user_id;
+        const decoded = validateToken(req.cookies?.auth_token);
+        const userId = decoded.user_id;
+        if (!userId) throw new Error("Invalid token payload");
+
         const { commentId } = req.params;
+        const validatedCommentId = validateId(commentId, "Comment ID");
+
         const { content } = req.body;
+        const validatedContent = validateContent(content);
 
         const result = await updateCommentDB({
-            commentId,
+            commentId: validatedCommentId,
             userId,
-            content
+            content: validatedContent
         });
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             message: "Comment updated successfully",
-            data: result
+            data: result,
+            metadata: {
+                updatedAt: new Date().toISOString(),
+                updatedBy: userId
+            }
         });
 
     } catch (error) {
-        console.error("Error in updateComment:", error);
-        
-        if (error.message.includes("not found") || error.message.includes("Unauthorized")) {
-            return res.status(403).json({
-                success: false,
-                message: error.message
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error while updating comment",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        handleError(error, req, res, 'update comment');
     }
 };
 
 export const deleteComment = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-        const { commentId } = req.params;
+        const decoded = validateToken(req.cookies?.auth_token);
+        const userId = decoded.user_id;
+        if (!userId) throw new Error("Invalid token payload");
 
-        const result = await deleteCommentDB({
-            commentId,
+        const { commentId } = req.params;
+        const validatedCommentId = validateId(commentId, "Comment ID");
+
+        const isAdmin = decoded.role === 'admin';
+
+        await deleteCommentDB({
+            commentId: validatedCommentId,
             userId,
-            isAdmin: decoded.role === 'admin'
+            isAdmin
         });
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
-            message: "Comment deleted successfully"
+            message: "Comment deleted successfully",
+            metadata: {
+                deletedAt: new Date().toISOString(),
+                deletedBy: userId,
+                deletedAsAdmin: isAdmin
+            }
         });
 
     } catch (error) {
-        console.error("Error in deleteComment:", error);
-        
-        if (error.message.includes("not found") || error.message.includes("Unauthorized")) {
-            return res.status(403).json({
-                success: false,
-                message: error.message
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error while deleting comment",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-
-export const reportComment = async (req, res) => {
-    try {
-        const userId = req.user.user_id;
-        const { commentId } = req.params;
-        const { reason } = req.body;
-
-        const result = await reportCommentDB(userId, commentId, reason);
-
-        res.status(200).json({
-            success: true,
-            message: result
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Error reporting the comment"
-        });
-    }
-};
-
-export const getReportsForComment = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-
-        if (!commentId || typeof commentId !== 'string' || commentId.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: "Comment ID is required and must be a non-empty string"
-            });
-        }
-
-        if (!/^\d+$/.test(commentId)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid Comment ID format"
-            });
-        }
-
-        const reports = await getReportsForCommentDB(commentId.trim());
-
-        res.status(200).json({
-            success: true,
-            data: reports,
-            count: reports.length
-        });
-
-    } catch (error) {
-        console.error("Error in getReportsForComment:", error);
-        
-        if (error.message.includes("not found")) {
-            return res.status(404).json({
-                success: false,
-                message: error.message
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error while fetching reports",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-
-export const updateReportStatusForComment = async (req, res) => {
-    try {
-        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        const admin_id = decoded.user_id;
-
-        if (!admin_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized"
-            });
-        }
-
-        const { commentId, reportId } = req.params; // commentId = comment_id, reportId = report_id
-        const { status } = req.body; // status (e.g., "resolved", "pending", "dismissed")
-
-        const result = await updateReportStatusForCommentDB(admin_id, reportId, status, commentId);
-
-        res.status(200).json({
-            success: true,
-            message: result
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Error updating report status for comment"
-        });
+        handleError(error, req, res, 'delete comment');
     }
 };

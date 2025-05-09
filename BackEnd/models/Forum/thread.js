@@ -97,7 +97,7 @@ export const getThreadByIdDB = async (threadId) => {
     }
 };
 
-export const getThreadNameDB = async (threadName) => {
+export const getThreadByNameDB = async (threadName) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -215,39 +215,42 @@ export const getPostsByThreadDB = async (threadId) => {
     }
 };
 
-export const getAllThreadsByUserDB = async (userId) => {
+export const getAllThreadsByUserDB = async (username, page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
     let conn;
+
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        if (!userId) {
-            throw new Error("Invalid user ID");
-        }
 
         const sql = `
             SELECT 
-                t.thread_id, t.thread_name, t.description, t.created_at, t.last_updated,
-                c.category_name, c.category_id,
+                t.thread_id, 
+                t.thread_name, 
+                t.description, 
+                t.created_at, 
+                t.last_updated,
+                c.category_name, 
+                c.category_id,
                 COUNT(DISTINCT p.post_id) AS post_count
             FROM forum_threads t
             JOIN forum_categories c ON t.category_id = c.category_id
             LEFT JOIN forum_posts p ON t.thread_id = p.thread_id
-            WHERE t.user_id = ?
+            WHERE t.username = ?
             GROUP BY t.thread_id
             ORDER BY t.created_at DESC
+            LIMIT ? OFFSET ?
         `;
-        const [threads] = await conn.execute(sql, [userId]);
-        await conn.commit();
+
+        const [threads] = await conn.execute(sql, [username, limit, offset]);
         return threads;
     } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting threads by user:", error);
-        throw new Error("Failed to get threads by user");
+        console.error("Database error in getAllThreadsByUserDB:", error.message);
+        throw new Error("Unable to retrieve threads for user.");
     } finally {
         if (conn) conn.release();
     }
 };
+
 
 export const createThreadDB = async (author_id, category_id, thread_name, description = null) => {
     let conn;

@@ -4,14 +4,13 @@ import {
         getThreadsSummaryByCategory, getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
 } from "../controllers/forum/category.js"
 import {
-        getAllThreads, getSummaryThreads, getThreadById, getThreadName, getPostsByThread,
+        getAllThreads, getSummaryThreads, getThreadById, getThreadByName, getPostsByThread,
         getThreadsByUser, createThread, updateThread, deleteThread
 } from "../controllers/forum/thread.js";
 import { getAllPosts, getSummaryPosts, getPostById, getPostsByUser, createPost, updatePost, deletePost } from "../controllers/forum/post.js";
 import {
         getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
-        updateComment, deleteComment,
-        reportComment, getReportsForComment, updateReportStatusForComment
+        updateComment, deleteComment
 } from "../controllers/forum/comment.js";
 import {
         getAllTags, getSummaryTags, getSummaryLittleTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
@@ -20,8 +19,9 @@ import {
 } from "../controllers/forum/tag.js";
 import { likePost, unlikePost, getLikesOfPost, likeComment, unlikeComment } from "../controllers/forum/like.js";
 import {
-        getAllReports, getReportById, getReportsByUser, getReportsByPost, createReport,
-        updateReport, deleteReport, getReportsByStatus, deleteReportById
+        reportComment, getAllReports, getReportById, getReportsByUser, getReportsByPost, createReport,
+        updateReport, deleteReport, getReportsByStatus, deleteReportById,
+        getReportsForComment, updateReportStatusForComment
 } from "../controllers/forum/report.js";
 import {
         getAllActivities, getForumActivityByUser, getActivitiesByUserAndType, getActivitiesByType,
@@ -29,21 +29,20 @@ import {
 } from "../controllers/forum/activity.js";
 
 import { uploadImage } from "../controllers/forum/uploadImage.js";
-import { validateCategory } from "../middleware/validation/Forum/category.js";
-import { validateThread } from "../middleware/validation/Forum/thread.js";
-import { validateForumPost, validateForumPostUpdate, validateForumPostDelete } from "../middleware/validation/Forum/post.js";
-import { validateForumPostLike, validateForumPostLikeUnmap, validateForumPostCommentLike, validateForumPostCommentLikeUnmap } from "../middleware/validation/Forum/like.js";
-import { validatecommentPost, validatereplyComment, validateupdateComment, 
-        validateComment, validateForumPostCommentDelete, validateForumPostCommentReport } from "../middleware/validation/Forum/comment.js";
-import { validateTag, validatePostTag, validateForumPostTag, validateForumPostTagUnmap } from "../middleware/validation/Forum/tag.js";
-import { validateReportPost, validateReportComment, validateForumPostReportDelete, validateReportUpdate } from "../middleware/validation/Forum/report.js";
+import forumValidatorsUser from "../middleware/validation/user.js"
+import forumValidatorsCategory from "../middleware/validation/Forum/category.js";
+import forumValidatorsThread from "../middleware/validation/Forum/thread.js";
+import forumValidatorsPost from "../middleware/validation/Forum/post.js";
+import forumValidatorsComment from "../middleware/validation/Forum/comment.js";
+import forumValidatorsTag from "../middleware/validation/Forum/tag.js";
+import forumValidatorsReport from "../middleware/validation/Forum/report.js";
 import { validateActivity } from "../middleware/validation/Forum/activity.js";
 
 
 import { paginate } from "../middleware/paginate.js";
 import { auth } from "../security/authMiddleware.js";
 import multer from 'multer';
-import { commentLimiter, likeLimiter, reportLimiter } from "../security/rateLimit.js";
+import { categoryLimiter, threadLimiter, commentLimiter, likeLimiter, reportLimiter, postLimiter, tagLimiter  } from "../security/rateLimit.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -52,42 +51,185 @@ const asyncHandler = (fn) => (req, res, next) => {
         Promise.resolve(fn(req, res, next)).catch(next);
 };
 
+// ===================================================================================================================================
+// ===================================================================================================================================
 // Upload image
 router.post('/upload-image', upload.single('forumImage'), uploadImage);
 
+// ===================================================================================================================================
+// ===================================================================================================================================
 // Category Routes
-router.get("/categories", asyncHandler(getAllCategories)); // get all information in categories table
-router.get("/categories/summary", asyncHandler(getSummaryCategories)); // get all categories with id and name
-router.get("/categories/name/:name", asyncHandler(getCategoryByName));
-router.get("/categories/:id/threads", asyncHandler(getThreadsByCategory)); // Get all threads in a category
-router.get("/categories/:id/threads/summary", asyncHandler(getThreadsSummaryByCategory)); // Get all threads in a category
-router.get("/categories/:id/posts", asyncHandler(getPostsByCategory)); // Get all posts in a category
-router.get("/categories/:id", asyncHandler(getCategoryById));
-router.get("/users/:username/categories", asyncHandler(getCategoriesByUser)); // Get all categories a user has interacted with
-router.post("/categories", validateCategory, asyncHandler(createCategory));
-router.put("/categories/:id", validateCategory, asyncHandler(updateCategory));
-router.delete("/categories/:id", asyncHandler(deleteCategory));
+router.get("/categories",
+        paginate(),
+        asyncHandler(getAllCategories)
+);
 
+router.get("/categories/summary",
+        paginate({ limit: 5 }),
+        asyncHandler(getSummaryCategories)
+);
+
+router.get("/categories/:categoryId",
+        forumValidatorsCategory.validateCategoryExists,
+        asyncHandler(getCategoryById)
+);
+
+router.get("/categories/name/:categoryName",
+        forumValidatorsCategory.validateCategoryExistsByName,
+        asyncHandler(getCategoryByName)
+);
+
+router.get("/categories/:categoryId/threads",
+        forumValidatorsCategory.validateCategoryExists,
+        paginate(),
+        asyncHandler(getThreadsByCategory)
+);
+
+router.get("/categories/:categoryId/threads/summary",
+        forumValidatorsCategory.validateCategoryExists,
+        paginate({ limit: 5 }),
+        asyncHandler(getThreadsSummaryByCategory)
+);
+
+router.get("/categories/:categoryId/posts",
+        forumValidatorsCategory.validateCategoryExists,
+        paginate(),
+        asyncHandler(getPostsByCategory)
+);
+
+router.get("/users/:username/categories",
+        forumValidatorsUser.validateUserExists,
+        paginate(),
+        asyncHandler(getCategoriesByUser)
+);
+
+router.post("/categories",
+        auth.required,
+        categoryLimiter,
+        forumValidatorsCategory.validateCategoryCreate,
+        asyncHandler(createCategory)
+);
+
+router.put("/categories/:categoryId",
+        auth.required,
+        forumValidatorsCategory.validateCategoryExists,
+        forumValidatorsCategory.validateCategoryUpdate,
+        auth.requireOwnerOrAdmin("category"),
+        asyncHandler(updateCategory)
+);
+
+router.delete("/categories/:categoryId",
+        auth.required,
+        forumValidatorsCategory.validateCategoryExists,
+        forumValidatorsCategory.validateCategoryDelete,
+        auth.requireOwnerOrAdmin("category"),
+        asyncHandler(deleteCategory)
+);
+
+// ===================================================================================================================================
+// ===================================================================================================================================
 // Thread Routes
-router.get("/threads", asyncHandler(getAllThreads));
-router.get("/threads/summary", asyncHandler(getSummaryThreads));
-router.get("/threads/:id", asyncHandler(getThreadById));
-router.get("/threads/:id/name", asyncHandler(getThreadName));
-router.get("/threads/:id/posts", asyncHandler(getPostsByThread));
-router.get("/users/:id/threads", asyncHandler(getThreadsByUser));
-router.post("/threads", validateThread, asyncHandler(createThread));
-router.put("/threads/:id", validateThread, asyncHandler(updateThread));
-router.delete("/threads/:id", asyncHandler(deleteThread));
+router.get("/threads",
+        paginate(),
+        asyncHandler(getAllThreads)
+);
 
+router.get("/threads/summary",
+        paginate({ limit: 5 }),
+        asyncHandler(getSummaryThreads)
+);
+
+router.get("/threads/:threadId",
+        forumValidatorsThread.validateThreadExists,
+        asyncHandler(getThreadById)
+);
+
+router.get("/threads/name/:threadName",
+        forumValidatorsThread.validateThreadExists,
+        asyncHandler(getThreadByName)
+);
+
+router.get("/threads/:threadId/posts",
+        forumValidatorsThread.validateThreadExists,
+        paginate(),
+        asyncHandler(getPostsByThread)
+);
+
+router.get("/users/:username/threads",
+        forumValidatorsUser.validateUserExists,
+        paginate(),
+        asyncHandler(getThreadsByUser)
+);
+
+router.post("/threads",
+        auth.required,
+        threadLimiter,
+        forumValidatorsThread.validateThreadCreate,
+        asyncHandler(createThread)
+);
+
+router.put("/threads/:threadId",
+        auth.required,
+        forumValidatorsThread.validateThreadExists,
+        forumValidatorsThread.validateThreadUpdate,
+        auth.requireOwnerOrAdmin("thread"),
+        asyncHandler(updateThread)
+);
+
+router.delete("/threads/:threadId",
+        auth.required,
+        forumValidatorsThread.validateThreadExists,
+        forumValidatorsThread.validateThreadDelete,
+        auth.requireOwnerOrAdmin("thread"),
+        asyncHandler(deleteThread)
+);
+// ===================================================================================================================================
+// ===================================================================================================================================
 // Post Routes
-router.get("/posts", asyncHandler(getAllPosts));
-router.get("/posts/summary", asyncHandler(getSummaryPosts));
-router.get("/posts/:id", asyncHandler(getPostById));
-router.get("/users/:username/posts", asyncHandler(getPostsByUser));
-router.post("/posts", validateForumPost, asyncHandler(createPost));
-router.put("/posts/:postId", validateForumPostUpdate, asyncHandler(updatePost));
-router.delete("/posts/:postId", validateForumPostDelete, asyncHandler(deletePost));
+router.get("/posts",
+        paginate(),
+        asyncHandler(getAllPosts)
+);
 
+router.get("/posts/summary",
+        paginate({ limit: 5 }),
+        asyncHandler(getSummaryPosts)
+);
+
+router.get("/posts/:postId",
+        forumValidatorsPost.validatePostExists,
+        asyncHandler(getPostById)
+);
+
+router.get("/users/:username/posts",
+        forumValidatorsUser.validateUserExists,
+        paginate(),
+        asyncHandler(getPostsByUser)
+);
+
+router.post("/posts",
+        auth.required,
+        postLimiter,
+        forumValidatorsPost.validateCreatePost,
+        asyncHandler(createPost)
+);
+
+router.put("/posts/:postId",
+        auth.required,
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsPost.validateUpdatePost,
+        auth.requireOwnerOrAdmin("post"),
+        asyncHandler(updatePost)
+);
+
+router.delete("/posts/:postId",
+        auth.required,
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsPost.validateDeletePost,
+        auth.requireOwnerOrAdmin("post"),
+        asyncHandler(deletePost)
+);
+// ===================================================================================================================================
 // ===================================================================================================================================
 // Comment Routes
 router.get("/posts/:postId/comments",
@@ -104,96 +246,257 @@ router.get("/users/:userId/comments",
 router.post("/posts/:postId/comments",
         auth.required,
         commentLimiter,
-        validatecommentPost,
+        forumValidatorsComment.validateCommentPost,
         asyncHandler(addCommentToPost)
 );
 
 router.post("/comments/:commentId/replies",
         auth.required,
         commentLimiter,
-        validatereplyComment,
+        forumValidatorsComment.validateReplyComment,
         asyncHandler(addReplyToComment)
 );
 
 router.put("/comments/:commentId",
         auth.required,
-        validateupdateComment,
+        forumValidatorsComment.validateUpdateComment,
         auth.requireOwnerOrAdmin("comment"),
         asyncHandler(updateComment)
 );
 
 router.delete("/comments/:commentId",
         auth.required,
-        validateComment,
+        forumValidatorsComment.validateCommentExists,
         auth.requireOwnerOrAdmin("comment"),
         asyncHandler(deleteComment)
 );
 
+// ===================================================================================================================================
+// ===================================================================================================================================
+// Like Routes
+router.post("/posts/:postId/likes",
+        auth.required,
+        likeLimiter,
+        forumValidatorsPost.validatePostExists,
+        asyncHandler(likePost)
+);
+
+router.delete("/posts/:postId/likes",
+        auth.required,
+        forumValidatorsPost.validatePostExists,
+        asyncHandler(unlikePost)
+);
+
+router.get("/posts/:postId/likes",
+        forumValidatorsPost.validatePostExists,
+        paginate(),
+        asyncHandler(getLikesOfPost)
+);
+
 router.post("/comments/:commentId/likes",
         auth.required,
-        validateComment,
-        likeLimiter, 
+        forumValidatorsComment.validateCommentExists,
+        likeLimiter,
         asyncHandler(likeComment)
 );
 
 router.delete("/comments/:commentId/likes",
         auth.required,
-        validateComment,
+        forumValidatorsComment.validateCommentExists,
         asyncHandler(unlikeComment)
 );
+
+// ===================================================================================================================================
+// ===================================================================================================================================
+// Report Routes
+
+router.get("/reports",
+        auth.required,
+        auth.requireModerator,
+        paginate(),
+        asyncHandler(getAllReports)
+);
+
+router.get("/reports/:reportId",
+        auth.required,
+        auth.requireModerator,
+        forumValidatorsReport.validateReportExists,
+        asyncHandler(getReportById)
+);
+
+router.put("/reports/:reportId",
+        auth.required,
+        auth.requireModerator,
+        forumValidatorsReport.validateReportExists,
+        forumValidatorsReport.validateReportUpdate,
+        asyncHandler(updateReport)
+);
+
+router.delete("/reports/:reportId",
+        auth.required,
+        auth.requireModerator,
+        forumValidatorsReport.validateReportExists,
+        asyncHandler(deleteReportById)
+);
+
+router.get("/reports/status/:status",
+        auth.required,
+        auth.requireModerator,
+        forumValidatorsReport.validateReportStatus,
+        paginate(),
+        asyncHandler(getReportsByStatus)
+);
+
+// user report
+router.get("/users/:userId/reports",
+        auth.required,
+        auth.requireModerator,
+        paginate(),
+        asyncHandler(getReportsByUser)
+);
+
+// report post
+router.get("/posts/:postId/reports",
+        auth.required,
+        auth.requireModerator,
+        forumValidatorsPost.validatePostExists,
+        paginate(),
+        asyncHandler(getReportsByPost)
+);
+
+router.post("/posts/:postId/reports",
+        auth.required,
+        reportLimiter,
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsReport.validateReportPost,
+        asyncHandler(createReport)
+);
+
+// report comment
+router.get("/comments/:commentId/reports",
+        auth.required,
+        auth.requireModerator,
+        asyncHandler(getReportsForComment));
 
 router.post("/comments/:commentId/reports",
         auth.required,
         reportLimiter,
-        validateReportComment,
+        forumValidatorsComment.validateCommentExists,
+        forumValidatorsReport.validateReportComment,
         asyncHandler(reportComment)
 );
 
 router.put("/reports/:reportId",
         auth.required,
-        validateReportUpdate,
+        forumValidatorsReport.validateReportUpdate,
         auth.requireOwnerOrAdmin("report"),
         asyncHandler(updateReport)
 );
 
 // ===================================================================================================================================
+// ===================================================================================================================================
 // Tag Routes
-router.get("/tags", asyncHandler(getAllTags));
-router.get("/tags/summary", asyncHandler(getSummaryTags));
-router.get("/tags/summary/little", asyncHandler(getSummaryLittleTags));
-router.get("/tags/summary/:id", asyncHandler(getSummaryTagById));
-router.get("/tags/popular", asyncHandler(getPopularTags));
-router.get("/tags/:id", asyncHandler(getTagById));
-router.get("/tags/search", asyncHandler(getTagByName));
-router.get("/tags/:id/posts", asyncHandler(getPostsByTag));
-router.get("/users/:id/tags", asyncHandler(getTagsByUser));
-router.post("/tags", validateTag, asyncHandler(createTag));
-router.put("/tags/:id", validateTag, asyncHandler(updateTagById));
-router.delete("/tags/:id", asyncHandler(deleteTagById));
+router.get("/tags",
+        paginate(),
+        asyncHandler(getAllTags)
+);
 
+router.get("/tags/summary",
+        paginate({ limit: 5 }),
+        asyncHandler(getSummaryTags)
+);
 
-router.get("/posts/:id/tags", asyncHandler(getTagsForPost));
-router.get("/posts/:id/tags/:id", validateForumPostTag, asyncHandler(getTagOfPostById));
-router.post("/posts/:id/tags", validatePostTag, asyncHandler(addTagsToPost));
-router.delete("/posts/:id/tags/:id", validateForumPostTagUnmap, asyncHandler(removeTagFromPost));  // unmap
+router.get("/tags/summary/little",
+        paginate({ limit: 3 }),
+        asyncHandler(getSummaryLittleTags)
+);
 
-// Like Routes
-router.post("/posts/:postId/likes", validateForumPostLike, asyncHandler(likePost));
-router.delete("/posts/:postId/likes", validateForumPostLikeUnmap, asyncHandler(unlikePost));
-router.get("/posts/:id/likes", asyncHandler(getLikesOfPost));  // optional
+router.get("/tags/summary/:tagId",
+        forumValidatorsTag.validateTagExists,
+        asyncHandler(getSummaryTagById)
+);
 
-// Report Routes
-router.get("/reports", asyncHandler(getAllReports));  // admin/moderator view
-router.get("/reports/:id", asyncHandler(getReportById));
-router.get("/posts/:id/reports", asyncHandler(getReportsByPost));
-router.post("/posts/:postId/reports", validateReportPost, asyncHandler(createReport));
-router.put("/reports/:id", asyncHandler(updateReport)); // update status
-router.delete("/posts/:id/reports", validateForumPostReportDelete, asyncHandler(deleteReport)); // delete report from post
+router.get("/tags/popular",
+        paginate({ limit: 10 }),
+        asyncHandler(getPopularTags)
+);
 
-router.get("/users/:id/reports", asyncHandler(getReportsByUser));
-router.get("/reports/status/:status", asyncHandler(getReportsByStatus));
-router.delete("/reports/:id", asyncHandler(deleteReportById));
+router.get("/tags/:tagId",
+        forumValidatorsTag.validateTagExists,
+        asyncHandler(getTagById)
+);
 
+router.get("/tags/search",
+        forumValidatorsTag.validateTagQuery,
+        asyncHandler(getTagByName)
+);
+
+router.get("/tags/:tagId/posts",
+        forumValidatorsTag.validateTagExists,
+        paginate(),
+        asyncHandler(getPostsByTag)
+);
+
+router.get("/users/:userId/tags",
+        forumValidatorsUser.validateUserExists,
+        paginate(),
+        asyncHandler(getTagsByUser)
+);
+
+router.post("/tags",
+        auth.required,
+        tagLimiter,
+        forumValidatorsTag.validateTagCreate,
+        asyncHandler(createTag)
+);
+
+router.put("/tags/:tagId",
+        auth.required,
+        forumValidatorsTag.validateTagExists,
+        forumValidatorsTag.validateTagUpdate,
+        auth.requireOwnerOrAdmin("tag"),
+        asyncHandler(updateTagById)
+);
+
+router.delete("/tags/:tagId",
+        auth.required,
+        forumValidatorsTag.validateTagExists,
+        auth.requireOwnerOrAdmin("tag"),
+        asyncHandler(deleteTagById)
+);
+
+// Post-Tag Relationship Routes
+router.get("/posts/:postId/tags",
+        forumValidatorsPost.validatePostExists,
+        paginate(),
+        asyncHandler(getTagsForPost)
+);
+
+router.get("/posts/:postId/tags/:tagId",
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsTag.validateTagExists,
+        forumValidatorsTag.validatePostTagMapping,
+        asyncHandler(getTagOfPostById)
+);
+
+router.post("/posts/:postId/tags",
+        auth.required,
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsTag.validatePostTags,
+        asyncHandler(addTagsToPost)
+);
+
+router.delete("/posts/:postId/tags/:tagId",
+        auth.required,
+        forumValidatorsPost.validatePostExists,
+        forumValidatorsTag.validateTagExists,
+        forumValidatorsTag.validatePostTagMapping,
+        forumValidatorsTag.validatePostTagUnmapping,
+        asyncHandler(removeTagFromPost)
+);
+
+// ===================================================================================================================================
+// ===================================================================================================================================
 // Forum Activities Routes
 router.get("/activities", asyncHandler(getAllActivities)); // Get all activities (admin/moderator dashboard)
 router.get("/activities/user/:id", asyncHandler(getForumActivityByUser)); // Get all activities by a specific user
@@ -204,10 +507,7 @@ router.delete("/activities/:activityId", asyncHandler(deleteActivityById)); // D
 router.get("/activities/target/:targetType/:targetId", asyncHandler(getActivitiesByTarget)); // Get activities by target (example: all likes on a post, all comments to a post, etc.)
 router.get("/activities/user/:id/count", asyncHandler(getActivityStatsByid)); // Get count statistics: how many posts, comments, likes the user has done
 
-// Admin / moderator 
 
-router.get("/comments/:commentId/reports",
-        auth.requireModerator,
-        asyncHandler(getReportsForComment));
+
 
 export default router;

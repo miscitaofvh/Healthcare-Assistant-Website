@@ -162,6 +162,21 @@ export const auth = {
                         );
                         isOwner = article[0]?.author_id === req.user.user_id;
                         break;
+                    
+                    case 'category':
+                        const [category] = await connection.execute(
+                            'SELECT user_id FROM forum_categories WHERE category_id = ?',
+                            [resourceId]
+                        );
+                        isOwner = category[0]?.user_id === req.user.user_id;
+                        break;      
+                    case 'thread':
+                        const [thread] = await connection.execute(
+                            'SELECT user_id FROM forum_threads WHERE thread_id = ?',
+                            [resourceId]
+                        );
+                        isOwner = thread[0]?.user_id === req.user.user_id;
+                        break;  
 
                     case 'post':
                         const [post] = await connection.execute(

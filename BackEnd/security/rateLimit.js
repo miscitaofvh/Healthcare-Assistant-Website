@@ -28,6 +28,19 @@ export const apiLimiter = rateLimit({
     max: 100 // 100 requests per minute
 });
 
+export const categoryLimiter =  rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 15, // 15 categories per day
+    message: 'You have exceeded your daily category limit'
+});
+
+export const threadLimiter =  rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 15, // 5 threads per day
+    message: 'You have exceeded your daily thread limit'
+});
+
+
 export const likeLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 30, // 30 likes per user
@@ -38,4 +51,17 @@ export const reportLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
     max: 5, // 5 reports per day
     message: 'You have exceeded your daily report limit'
+});
+
+// In security/rateLimit.js
+export const postLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // 10 posts per hour
+    message: 'Bạn đã tạo quá nhiều bài viết, vui lòng thử lại sau 1 giờ'
+});
+
+export const tagLimiter =  rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 15, // 15 tags per day
+    message: 'You have exceeded your daily tag limit'
 });

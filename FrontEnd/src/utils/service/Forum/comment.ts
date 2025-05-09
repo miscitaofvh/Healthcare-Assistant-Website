@@ -114,7 +114,6 @@ export const deleteCommentFE = async (
 
 export const likeCommentFE = async (
     commentId: string,
-    postId: string,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
     refetchComments: () => Promise<void>
@@ -127,8 +126,8 @@ export const likeCommentFE = async (
         setError('');
         setSuccess('');
 
-        const response = await likeComment(commentId, postId);
-        
+        const response = await likeComment(commentId);
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

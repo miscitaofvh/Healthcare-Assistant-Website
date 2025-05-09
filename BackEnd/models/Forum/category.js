@@ -109,9 +109,7 @@ export const getCategoryByIdDB = async (categoryId) => {
             JOIN users as u
             WHERE fc.category_id = ?
         `;
-        if (!categoryId || isNaN(categoryId)) {
-            throw new Error("Invalid category ID");
-        }
+
         const [category] = await conn.execute(sql, [categoryId]);
 
         await conn.commit();
