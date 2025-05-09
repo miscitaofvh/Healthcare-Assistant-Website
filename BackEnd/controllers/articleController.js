@@ -87,7 +87,6 @@ export const getArticleById = async (req, res) => {
 
 export const createArticle = async (req, res) => {
   try {
-    console.log("createArticle body:", req.body);
     const token = req.cookies?.auth_token;
     if (!token) return res.status(401).json({ message: "Unauthorized" });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
