@@ -424,10 +424,10 @@ export const unlikeCommentDB = async (userId, commentId, postId) => {
     }
 };
 
-export const reportCommentDB = async (userId, commentId, postId, reason) => {
+export const reportCommentDB = async (userId, commentId, reason) => {
     let conn;
     try {
-        if (!userId || !commentId || !postId || !reason) {
+        if (!userId || !commentId || !reason) {
             throw new Error("Missing required fields");
         }
 
@@ -440,8 +440,8 @@ export const reportCommentDB = async (userId, commentId, postId, reason) => {
 
         // Check if comment exists
         const [comment] = await conn.execute(
-            "SELECT comment_id FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-            [commentId, postId]
+            "SELECT comment_id FROM forum_comments WHERE comment_id = ?",
+            [commentId]
         );
 
         if (!comment[0]) {
@@ -450,12 +450,12 @@ export const reportCommentDB = async (userId, commentId, postId, reason) => {
 
         // Check if already reported
         const [existingReport] = await conn.execute(
-            "SELECT report_id FROM forum_comment_reports WHERE user_id = ? AND comment_id = ?",
-            [userId, commentId]
+            "SELECT report_id FROM forum_comment_reports WHERE user_id = ? AND comment_id = ? AND reason = ?",
+            [userId, commentId, reason]
         );
 
         if (existingReport[0]) {
-            throw new Error("Comment already reported");
+            throw new Error("Comment already reported with this reason");
         }
 
         const sql = `

@@ -440,10 +440,10 @@ export const reportComment = async (req, res) => {
             });
         }
 
-        const { postId, commentId } = req.params; // postId = post_id, commentId = comment_id
+        const { commentId } = req.params; // postId = post_id, commentId = comment_id
         const { reason } = req.body; // Reason for reporting
 
-        const result = await reportCommentDB(user_id, commentId, postId, reason);
+        const result = await reportCommentDB(user_id, commentId, reason);
 
         res.status(200).json({
             success: true,

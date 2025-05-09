@@ -84,12 +84,14 @@ export const deleteCommentFE = async (
         setSuccess('');
 
         const response = await deleteComment(commentId);
-        alert(JSON.stringify(response));
-        if (response.status !== 200 || !response.data?.success) {
-            setError(response.data?.message || 'Failed to delete comment');
+
+        const { data, status } =  response;
+
+        if (status !== 200 || !data?.success) {
+            setError(data?.message || 'Failed to delete comment');
         }
 
-        setSuccess('Comment deleted successfully');
+        setSuccess(data.message || 'Comment deleted successfully');
         await refetchComments();
 
     } catch (err: unknown) {
@@ -217,7 +219,7 @@ export const reportCommentFE = async (
         };
 
         const response = await reportComment(commentId, reportData);
-
+        alert(JSON.stringify(response)); // Debugging line
         const { status, data } = response;
 
         if (status !== 200 || data?.success) {

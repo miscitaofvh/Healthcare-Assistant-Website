@@ -22,6 +22,13 @@ export async function likePost(postId: string) {
 }
 
 export async function unlikePost(postId: string) {
-    const response = await requestAPI(BASE_URL, `/posts/${postId}/likes`, "DELETE");
+    const response = await requestAPI(BASE_URL, `/posts/${postId}/reports`, "DELETE");
+    return response;
+}
+
+export async function reportPost(postId: string, reportReason: string) {
+    const response = await requestAPI(BASE_URL, `/posts/${postId}/reports`, "POST", {
+        reason: reportReason,
+    });
     return response;
 }

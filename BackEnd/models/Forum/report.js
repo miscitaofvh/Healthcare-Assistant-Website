@@ -142,14 +142,14 @@ export const getReportsByPostDB = async (postId) => {
     }
 };
 
-export const createReportDB = async (postId, userId, reportType, reportContent) => {
+export const createReportDB = async (postId, userId, reason) => {
     let conn;
     try {
-        if (!postId || !userId || !reportType || !reportContent) {
+        if (!postId || !userId || !reason) {
             throw new Error("Post ID, user ID, report type, and content are required");
         }
 
-        if (reportContent.length > 1000) {
+        if (reason.length > 1000) {
             throw new Error("Report content must be less than 1000 characters");
         }
 
@@ -168,19 +168,19 @@ export const createReportDB = async (postId, userId, reportType, reportContent) 
 
         // Check if user has already reported this post
         const [existingReport] = await conn.execute(
-            "SELECT report_id FROM forum_reports WHERE post_id = ? AND user_id = ? AND status = 'Pending'",
-            [postId, userId]
+            "SELECT report_id FROM forum_reports WHERE post_id = ? AND reported_by = ? AND status = 'Pending' AND reason = ?",
+            [postId, userId, reason]
         );
 
         if (existingReport[0]) {
-            throw new Error("You have already reported this post");
+            throw new Error("You have already reported this post with this reason");
         }
 
         const sql = `
-            INSERT INTO forum_reports (post_id, user_id, report_type, report_content, created_at)
-            VALUES (?, ?, ?, ?, NOW())
+            INSERT INTO forum_reports (post_id, reported_by, reason, created_at)
+            VALUES (?, ?, ?, NOW())
         `;
-        const [result] = await conn.execute(sql, [postId, userId, reportType, reportContent]);
+        const [result] = await conn.execute(sql, [postId, userId, reason]);
         await conn.commit();
         return { reportId: result.insertId };
     } catch (error) {
@@ -443,39 +443,6 @@ export const getReportsByPost = async (req, res) => {
     }
 };
 
-export const createReport = async (req, res) => {
-    try {
-        const { postId, reportType, reportContent } = req.body;
-        const userId = req.user.user_id;
-
-        if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User ID not found"
-            });
-        }
-
-        if (!postId || !reportType || !reportContent) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID, report type, and content are required"
-            });
-        }
-
-        const result = await createReportDB(postId, userId, reportType, reportContent);
-        res.status(201).json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        console.error("Error creating report:", error);
-        res.status(500).json({
-            success: false,
-            message: "Error creating report",
-            error: error.message
-        });
-    }
-};
 
 export const updateReportStatus = async (req, res) => {
     try {

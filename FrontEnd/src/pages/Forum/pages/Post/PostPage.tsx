@@ -7,7 +7,8 @@ import {
   loadPostPageById,
   deletePostFE,
   likePostFE,
-  unlikePostFE
+  unlikePostFE,
+  reportPostFE
 } from "../../../../utils/service/Forum/post";
 import {
   handleCommentSubmit,
@@ -22,6 +23,7 @@ import { formatDate } from "../../../../utils/helpers/dateFormatter";
 import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
 import { AiFillDelete } from "react-icons/ai";
 import { FiMoreVertical } from "react-icons/fi";
+import { MdReportProblem } from "react-icons/md";
 
 const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,13 +34,18 @@ const ForumPage: React.FC = () => {
   const [replyCommentTexts, setReplyCommentTexts] = useState<Record<number, string>>({});
   const [replyingTo, setReplyingTo] = useState<{ commentId: number; username: string } | null>(null);
   const [reportingComment, setReportingComment] = useState<number | null>(null);
-  const [reportReason, setReportReason] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isPostLiking, setIsPostLiking] = useState<boolean>(false);
   const [isCommentLiking, setIsCommentLiking] = useState<Record<number, boolean>>({});
+  const [showReportPopup, setShowReportPopup] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState("");
+  const [reportError, setReportError] = useState("");
+
 
   useEffect(() => {
     if (!id) {
@@ -206,7 +213,7 @@ const ForumPage: React.FC = () => {
       setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: false }));
     }
   };
-  
+
   const handleDeletePost = async (postId: string) => {
     if (!postId) return;
     setIsDeleting(true);
@@ -243,6 +250,36 @@ const ForumPage: React.FC = () => {
     }
   };
 
+  const handleReportSubmit = async () => {
+    if (!post) return;
+    if (!reportReason.trim()) {
+      setReportError("Reason is required.");
+      return;
+    }
+
+    setReportSubmitting(true);
+    try {
+      const res = reportPostFE(
+        post.post_id.toString(),
+        reportReason,
+        setReportError,
+        setReportSuccess,
+        () => {
+          setShowReportPopup(false);
+          setReportReason("");
+        }
+      );
+
+
+      setReportSuccess("Report submitted successfully.");
+      setShowReportPopup(false);
+      setReportReason("");
+    } catch (err: any) {
+      setReportError(err.message || "Failed to report post.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
 
   const renderComments = (comments: PostComment[]) => {
@@ -489,7 +526,7 @@ const ForumPage: React.FC = () => {
 
         <div className={styles.postTitleRow}>
           <h1 className={styles.postTitle}>{post.title}</h1>
-          {post.is_owner && (
+          {post.is_owner ? (
             <div className={styles.dropdown}>
               <button className={styles.dropdownToggle}>
                 <FiMoreVertical /> {/* Three dots icon */}
@@ -511,14 +548,46 @@ const ForumPage: React.FC = () => {
                 >
                   <AiFillDelete className={styles.dropdownIcon} /> Delete Post
                 </button>
+
+                <button className={styles.reportButton} onClick={() => setShowReportPopup(true)}>
+                  <MdReportProblem className={styles.reportIcon} /> Report
+                </button>
               </div>
             </div>
-          )}
+          ) : null }
         </div>
 
         <div className={styles.postContent}>
           <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
         </div>
+
+        {showReportPopup && (
+          <div className={styles.popupOverlay}>
+            <div className={styles.popup}>
+              <h3>Report Post</h3>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Enter reason for reporting"
+                className={styles.textarea}
+              />
+              {reportError && <div className={styles.errorText}>{reportError}</div>}
+              <div className={styles.popupActions}>
+                <button
+                  className={styles.primaryButton}
+                  onClick={handleReportSubmit}
+                  disabled={reportSubmitting}
+                >
+                  {reportSubmitting ? "Submitting..." : "Submit Report"}
+                </button>
+                <button className={styles.cancelButton} onClick={() => setShowReportPopup(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Comment section */}
         <div className={styles.commentsSection}>

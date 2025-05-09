@@ -134,16 +134,16 @@ export const createReport = async (req, res) => {
                 message: "Unauthorized: User ID not found"
             });
         }
-
-        const { postId, reportType, reportContent } = req.body;
-        if (!postId || !reportType || !reportContent) {
+        const { postId } = req.params;
+        const { reason } = req.body;
+        if (!postId || !reason) {
             return res.status(400).json({
                 success: false,
                 message: "Post ID, report type, and content are required"
             });
         }
 
-        const result = await createReportDB(postId, userId, reportType, reportContent);
+        const result = await createReportDB(postId, userId, reason);
         res.status(201).json({
             success: true,
             data: result

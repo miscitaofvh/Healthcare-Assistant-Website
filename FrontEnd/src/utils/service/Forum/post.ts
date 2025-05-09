@@ -7,7 +7,7 @@ import {
     getTagByForumPost,
     uploadImage
 } from "../../../utils/api/Forum/post";
-import { likePost, unlikePost } from "../../../utils/api/Forum/like";
+import { likePost, unlikePost, reportPost } from "../../../utils/api/Forum/like";
 import { Dispatch, SetStateAction } from "react";
 import { PostListResponse, Post, PostComment, PostNew, TagPost } from "../../../types/forum";
 import { CategorySummary, ThreadDropdown, TagSummary } from "../../../types/forum";
@@ -333,6 +333,46 @@ export const unlikePostFE = async (
 
         const response = await unlikePost(postId);
 
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            throw new Error(response.data?.message || 'Failed to like post');
+        }
+
+        setSuccess(response.data.message || 'Post like updated');
+        await refetchPost();
+
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to like post';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        setError(errorMessage);
+        setSuccess('');
+    }
+};
+
+export const reportPostFE = async (
+    postId: string,
+    reportReason: string,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    refetchPost: () => void
+): Promise<void> => {
+    try {
+        if (!postId) {
+            throw new Error('Invalid post ID');
+        }
+
+        setError('');
+        setSuccess('');
+
+        const response = await reportPost(postId, reportReason);
+        alert(JSON.stringify(response));
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

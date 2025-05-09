@@ -29,25 +29,15 @@ import {
 } from "../controllers/forum/activity.js";
 
 import { uploadImage } from "../controllers/forum/uploadImage.js";
-import {
-        // Category
-        validateCategory,
-        // Thread
-        validateThread,
-        // Post
-        validateForumPost, validateForumPostUpdate, validateForumPostDelete,
-        // Like
-        validateForumPostLike, validateForumPostLikeUnmap,
-        // Comment
-        validateForumPostComment, validateForumPostCommentDelete, validateForumPostCommentLike,
-        validateForumPostCommentLikeUnmap, validateForumPostCommentReport,
-        // Tag
-        validateTag, validatePostTag, validateForumPostTag, validateForumPostTagUnmap,
-        // Report
-        validateReport, validateForumPostReportDelete,
-        // Forum Activity
-        validateActivity
-} from "../middleware/validation/forum.js";
+import { validateCategory } from "../middleware/validation/Forum/category.js";
+import { validateThread } from "../middleware/validation/Forum/thread.js";
+import { validateForumPost, validateForumPostUpdate, validateForumPostDelete } from "../middleware/validation/Forum/post.js";
+import { validateForumPostLike, validateForumPostLikeUnmap, validateForumPostCommentLike, validateForumPostCommentLikeUnmap } from "../middleware/validation/Forum/like.js";
+import { validateForumPostComment, validateForumPostCommentDelete, validateForumPostCommentReport } from "../middleware/validation/Forum/comment.js";
+import { validateTag, validatePostTag, validateForumPostTag, validateForumPostTagUnmap } from "../middleware/validation/Forum/tag.js";
+import { validateReportPost, validateReportComment, validateForumPostReportDelete } from "../middleware/validation/Forum/report.js";
+import { validateActivity } from "../middleware/validation/Forum/activity.js";
+
 
 import { paginate } from "../middleware/paginate.js";
 import { auth } from "../middleware/authMiddleware.js";
@@ -98,22 +88,20 @@ router.delete("/posts/:postId", validateForumPostDelete, asyncHandler(deletePost
 
 // ===================================================================================================================================
 // Comment Routes
-// GET routes that return lists (need pagination)
+
 router.get("/posts/:postId/comments", paginate(), asyncHandler(getCommentsByPostId)); 
 router.get("/comments/:commentId/replies", asyncHandler(getCommentReplies)); 
 router.get("/users/:userId/comments", paginate(), asyncHandler(getAllCommentsByUser)); 
 
-// GET routes for single items (no pagination needed)
 router.get("/comments/:commentId/reports", auth.requireModerator, asyncHandler(getReportsForComment));
 
-// POST/PUT/DELETE routes (actions, not lists)
 router.post("/posts/:postId/comments", validateForumPostComment, asyncHandler(addCommentToPost)); 
 router.post("/comments/:commentId/replies", validateForumPostComment, asyncHandler(addReplyToComment)); 
 router.put("/comments/:commentId", validateForumPostComment, asyncHandler(updateComment)); 
 router.delete("/comments/:commentId", auth.requireOwnerOrAdmin("comment"), asyncHandler(deleteComment)); 
 router.post("/comments/:commentId/likes", auth.required, asyncHandler(likeComment)); 
 router.delete("/comments/:commentId/likes", auth.required, asyncHandler(unlikeComment)); 
-router.post("/comments/:commentId/reports", auth.required, validateReport, asyncHandler(reportComment)); 
+router.post("/comments/:commentId/reports", auth.required, validateReportComment, asyncHandler(reportComment)); 
 router.put("/reports/:reportId", auth.requireModerator, asyncHandler(updateReportStatus)); 
 
 // ===================================================================================================================================
@@ -146,7 +134,7 @@ router.get("/posts/:id/likes", asyncHandler(getLikesOfPost));  // optional
 router.get("/reports", asyncHandler(getAllReports));  // admin/moderator view
 router.get("/reports/:id", asyncHandler(getReportById));
 router.get("/posts/:id/reports", asyncHandler(getReportsByPost));
-router.post("/posts/:id/reports", validateReport, asyncHandler(createReport));
+router.post("/posts/:postId/reports", validateReportPost, asyncHandler(createReport));
 router.put("/reports/:id", asyncHandler(updateReportStatus)); // update status
 router.delete("/posts/:id/reports", validateForumPostReportDelete, asyncHandler(deleteReport)); // delete report from post
 
