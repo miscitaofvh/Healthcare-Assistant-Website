@@ -6,11 +6,19 @@ const BASE_URL = "http://localhost:5000";
 interface BookPayload {
   doctor_id: string;
   appointment_time: string;
-  notes?: string;
+  patient_notes: string;
 }
 
 export async function fetchAppointments(): Promise<Appointment[]> {
-  const { data, error, status } = await requestAPI(BASE_URL, "/api/appointments", "GET", undefined);
+  const { data, error, status } = await requestAPI(BASE_URL, "/api/appointments/patient", "GET", undefined);
+  if (error || status >= 400) {
+    throw new Error(data?.message || error || "Lỗi khi tải lịch hẹn");
+  }
+  return data.appointments as Appointment[];
+}
+
+export async function fetchDoctorAppointments(): Promise<Appointment[]> {
+  const { data, error, status } = await requestAPI(BASE_URL, `/api/appointments/doctor`, "GET", undefined);
   if (error || status >= 400) {
     throw new Error(data?.message || error || "Lỗi khi tải lịch hẹn");
   }
@@ -25,9 +33,9 @@ export async function bookAppointment(payload: BookPayload): Promise<Appointment
   return data.appointment as Appointment;
 }
 
-export async function updateAppointmentStatus(appointment_id: string, status: string): Promise<Appointment> {
+export async function updateAppointmentStatus(appointment_id: string, status: string, doctor_notes: string): Promise<Appointment> {
   const { data, error, status: responseStatus } = 
-        await requestAPI(BASE_URL, `/api/appointments/${appointment_id}`, "PUT", { status });
+        await requestAPI(BASE_URL, `/api/appointments/update`, "PUT", { appointment_id, status , doctor_notes });
   if (error || responseStatus >= 400) {
     throw new Error(data?.message || error || "Lỗi khi cập nhật trạng thái");
   }
