@@ -442,7 +442,7 @@ const ForumPage: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
 
         {error && (
           <div className={styles.errorAlert}>

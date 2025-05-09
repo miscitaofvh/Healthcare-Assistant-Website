@@ -1,47 +1,51 @@
-import {
-    getAllCategories,
-    getSummaryCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    getCategoryById,
-    getThreadsByCategory,
-} from "../../../utils/api/Forum/category";
-import { Category, NewCategory, CategoryMain, CategorySummary } from "../../../types/forum";
+import { toast } from "react-toastify";
+import InteractiveCategory from "../../../utils/api/Forum/category";
+import { Category, NewCategory, CategoryMain, CategorySummary, PaginationData } from "../../../types/forum";
 import { Dispatch, SetStateAction } from "react";
 
 export const loadCategories = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategories: Dispatch<SetStateAction<CategoryMain[]>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+    setPagination: Dispatch<SetStateAction<PaginationData>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'name',
+    sortOrder: string = 'ASC'
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getAllCategories();
+
+        const response = await InteractiveCategory.getAllCategories(page, limit, sortBy, sortOrder);
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Errors occurred while loading categories.");
-            setSuccess("");
+            showError(data?.message ?? "Error occurred while loading categories.");
             return;
         }
 
         setCategories(data.categories ?? []);
-        setSuccess("Categories loaded successfully!");
-        setError("");
+        setPagination({
+            currentPage: data.page,
+            totalPages: Math.ceil(data.totalCount / data.limit),
+            limit: data.limit,
+            totalCount: data.totalCount,
+            sortBy: data.sortBy,
+            sortOrder: data.sortOrder
+        });
+        showSuccess(data.message || "Categories loaded successfully!");
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
-            "Errors occurred while loading categories.";
-        setError(errorMsg);
-        setSuccess("");
+            "Error occurred while loading categories.";
+        showError(errorMsg);
     } finally {
         setLoading(false);
     }
 };
-
 
 export const loadCategoriesSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
@@ -51,7 +55,7 @@ export const loadCategoriesSummary = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getSummaryCategories();
+        const response = await InteractiveCategory.getSummaryCategories();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
@@ -83,7 +87,7 @@ export const loadCategorieById = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getCategoryById(id);
+        const response = await InteractiveCategory.getCategoryById(id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
@@ -132,7 +136,7 @@ export const handleCreateCategory = async (
         setError("");
         setSuccess("");
 
-        const response = await createCategory({
+        const response = await InteractiveCategory.createCategory({
             category_name: trimmedName,
             description: trimmedDescription || undefined,
         });
@@ -171,7 +175,7 @@ export const handleUpdateCategory = async (
         setSuccess("");
         setFormLoading(true);
 
-        const response = await updateCategory(categoryId, updatedCategory);
+        const response = await InteractiveCategory.updateCategory(categoryId, updatedCategory);
 
         const { status, data } = response;
 
@@ -214,7 +218,7 @@ export const handleDeleteCategory = async (
         setError("");
         setSuccess("");
 
-        const response = await deleteCategory(id);
+        const response = await InteractiveCategory.deleteCategory(id);
 
         const success = response?.data?.success;
         const message = response?.data?.message || "Category deleted successfully.";
@@ -258,7 +262,7 @@ export const loadSingleCategory = async (
 ) => {
     try {
         setLoading(true);
-        const response = await getCategoryById(Number(id));
+        const response = await InteractiveCategory.getCategoryById(Number(id));
         if (response?.data) {
             setCategory(response.data.data);
         } else {
@@ -284,7 +288,7 @@ export const loadThreadsandCategoryByCategory = async (
         setLoading(true);
         setError("");
         setSuccess("");
-        const response = await getThreadsByCategory(Number(id));
+        const response = await InteractiveCategory.getThreadsByCategory(Number(id));
         const { status, data } = response;
         if (status !== 200 || !data?.success) {
             const errorMsg = data?.message || "Unknown error occurred while loading category.";

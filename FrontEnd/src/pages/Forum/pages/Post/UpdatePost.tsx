@@ -163,7 +163,7 @@ const UpdatePost: React.FC = () => {
     <div className={styles.forumContainer}>
       <div className={styles.main_navbar}><Navbar /></div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Update Post</h1>
           <p className={styles.pageSubtitle}>Modify your post content below</p>

@@ -1,12 +1,13 @@
 import connection from '../../config/connection.js';
 
-export const getAllCategoriesDB = async () => {
+const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => {
     let conn;
+    const offset = (page - 1) * limit;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        const sql = `
+        const categoriesSql = `
             SELECT 
                 fc.category_id, 
                 fc.category_name, 
@@ -27,17 +28,30 @@ export const getAllCategoriesDB = async () => {
             LEFT JOIN forum_threads ft ON ft.category_id = fc.category_id
             LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
             GROUP BY fc.category_id
-            ORDER BY fc.category_name ASC
+            ORDER BY ${conn.escapeId(orderByField)} ${orderDirection === 'ASC' ? 'ASC' : 'DESC'}
+            LIMIT ? OFFSET ?
         `;
 
-        const [categories] = await conn.execute(sql);
+        const countSql = `
+            SELECT COUNT(*) as totalCount 
+            FROM forum_categories
+        `;
+
+        const [categoriesResult, [countResult]] = await Promise.all([
+            conn.execute(categoriesSql, [limit.toString(), offset.toString()]),
+            conn.execute(countSql)
+        ]);
+
         await conn.commit();
 
-        return categories.map(category => ({
-            ...category,
-            thread_count: Number(category.thread_count),
-            post_count: Number(category.post_count)
-        }));
+        return {
+            categories: categoriesResult[0].map(category => ({
+                ...category,
+                thread_count: Number(category.thread_count),
+                post_count: Number(category.post_count)
+            })),
+            totalCount: Number(countResult[0].totalCount)
+        };
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in getAllCategoriesDB:", error);
@@ -47,7 +61,7 @@ export const getAllCategoriesDB = async () => {
     }
 };
 
-export const getSummaryCategoriesDB = async () => {
+const getSummaryCategoriesDB = async () => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -69,7 +83,7 @@ export const getSummaryCategoriesDB = async () => {
     }
 }
 
-export const getCategoryByNameDB = async (name) => {
+const getCategoryByNameDB = async (name) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -95,7 +109,7 @@ export const getCategoryByNameDB = async (name) => {
     }
 };
 
-export const getCategoryByIdDB = async (categoryId) => {
+const getCategoryByIdDB = async (categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -124,7 +138,7 @@ export const getCategoryByIdDB = async (categoryId) => {
     }
 }
 
-export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) => {
+const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) => {
     let conn;
     try {
         const categoryIdNum = parseInt(categoryId, 10);
@@ -238,7 +252,7 @@ export const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) =
     }
 };
 
-export const getThreadsSummaryByCategoryDB = async (categoryId) => {
+const getThreadsSummaryByCategoryDB = async (categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -290,7 +304,7 @@ export const getThreadsSummaryByCategoryDB = async (categoryId) => {
     }
 };
 
-export const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'newest') => {
+const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'newest') => {
     let conn;
     try {
         if (!categoryId || isNaN(Number(categoryId))) {
@@ -344,7 +358,7 @@ export const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sor
     }
 };
 
-export const getCategoriesByUserDB = async (username, includeStats = false) => {
+const getCategoriesByUserDB = async (username, includeStats = false) => {
     if (!username || typeof username !== 'string' || username.trim().length === 0) {
         throw new Error("Invalid username provided");
     }
@@ -390,7 +404,7 @@ export const getCategoriesByUserDB = async (username, includeStats = false) => {
     }
 };
 
-export const createCategoryDB = async (author_id, category_name, description = null) => {
+const createCategoryDB = async (author_id, category_name, description = null) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!author_id || !uuidRegex.test(author_id)) {
         throw new Error("Invalid author ID format");
@@ -440,7 +454,7 @@ export const createCategoryDB = async (author_id, category_name, description = n
 };
 
 
-export const updateCategoryDB = async (author_id, categoryId, category_name, description) => {
+const updateCategoryDB = async (author_id, categoryId, category_name, description) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -516,7 +530,7 @@ export const updateCategoryDB = async (author_id, categoryId, category_name, des
     }
 };
 
-export const deleteCategoryDB = async (author_id, categoryId) => {
+const deleteCategoryDB = async (author_id, categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -572,3 +586,17 @@ export const deleteCategoryDB = async (author_id, categoryId) => {
         if (conn) conn.release();
     }
 };
+
+export default {
+    getAllCategoriesDB,
+    getSummaryCategoriesDB,
+    getCategoryByNameDB,
+    getCategoryByIdDB,
+    getThreadsByCategoryDB,
+    getThreadsSummaryByCategoryDB,
+    getPostsByCategoryDB,
+    getCategoriesByUserDB,
+    createCategoryDB,
+    updateCategoryDB,
+    deleteCategoryDB
+}

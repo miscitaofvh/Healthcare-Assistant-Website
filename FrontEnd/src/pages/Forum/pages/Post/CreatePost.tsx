@@ -162,7 +162,7 @@ const CreatePost: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Create New Post</h1>
           <p className={styles.pageSubtitle}>Share your thoughts with the community</p>

@@ -92,7 +92,7 @@ const CreateThread: React.FC = () => {
                 <Navbar />
             </div>
 
-            <div className={styles.tagListContainer}>
+            <div className={styles.headerContainer}>
                 <div className={styles.headerSection}>
                     <h1 className={styles.pageTitle}>Create New Thread</h1>
                     <p className={styles.pageSubtitle}>Start a new discussion in the forum</p>

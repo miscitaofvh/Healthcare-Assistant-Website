@@ -1,30 +1,8 @@
 import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
-
-import {
-    getAllCategoriesDB,
-    getSummaryCategoriesDB,
-    getThreadsSummaryByCategoryDB,
-    getCategoryByNameDB,
-    getCategoryByIdDB,
-    getThreadsByCategoryDB,
-    getPostsByCategoryDB,
-    getCategoriesByUserDB,
-    createCategoryDB,
-    updateCategoryDB,
-    deleteCategoryDB
-} from "../../models/Forum/category.js";
+import CategoryDB from "../../models/Forum/category.js";
 
 dotenv.config();
-
-// Helper functions
-const validatePagination = (page, limit, maxLimit = 100) => {
-    if (page < 1 || limit < 1 || limit > maxLimit) {
-        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
-    }
-    return { page: parseInt(page), limit: parseInt(limit) };
-};
 
 const handleError = (error, req, res, action = 'process') => {
     console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
@@ -34,18 +12,18 @@ const handleError = (error, req, res, action = 'process') => {
         "No authentication token provided": StatusCodes.UNAUTHORIZED,
         "Invalid or expired token": StatusCodes.UNAUTHORIZED,
         "Invalid token payload": StatusCodes.UNAUTHORIZED,
-        
+
         // Validation errors
         "Invalid category ID": StatusCodes.BAD_REQUEST,
         "Invalid username format": StatusCodes.BAD_REQUEST,
         "Invalid pagination": StatusCodes.BAD_REQUEST,
         "Invalid sort parameter": StatusCodes.BAD_REQUEST,
         "No fields to update provided": StatusCodes.BAD_REQUEST,
-        
+
         // Conflict errors
         "Category name already exists": StatusCodes.CONFLICT,
         "Cannot delete category with existing threads": StatusCodes.CONFLICT,
-        
+
         // Not found errors
         "Category not found or unauthorized": StatusCodes.NOT_FOUND,
         "No categories found": StatusCodes.NOT_FOUND,
@@ -75,31 +53,69 @@ const handleError = (error, req, res, action = 'process') => {
     return res.status(statusCode).json(response);
 };
 
-// Controller methods
-export const getAllCategories = async (req, res) => {
-    try {
-        const categories = await getAllCategoriesDB();
+// Helper functions
+const validatePagination = (page, limit, maxLimit = 100) => {
+    if (page < 1 || limit < 1 || limit > maxLimit) {
+        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
+    }
+    return { page: parseInt(page), limit: parseInt(limit) };
+};
 
+const validateSorting = (sortBy, sortOrder) => {
+    const allowedFields = {
+        name: 'fc.category_name',
+        created: 'fc.created_at',
+        updated: 'fc.last_updated',
+        threads: 'thread_count',
+        posts: 'post_count'
+    };
+
+    const orderByField = allowedFields[sortBy] || allowedFields.name;
+    const orderDirection = sortOrder && sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    return { orderByField, orderDirection };
+};
+
+// Controller methods
+const getAllCategories = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC' } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
+        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
+
+        const result = await CategoryDB.getAllCategoriesDB(p, l, orderByField, orderDirection);
+        
+        if (!result) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "No data returned from database",
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        const categories = result.categories || [];
+        const totalCount = result.totalCount || 0;
+        
         res.status(StatusCodes.OK).json({
             success: true,
             count: categories.length,
-            categories: categories,
-            message: categories.length ? "Categories retrieved successfully" : "No categories found",
-            timestamp: new Date().toISOString(),
-            cache: {
-                recommended: true,
-                duration: "1h"
-            }
+            totalCount, // Add this
+            page: p,
+            limit: l,
+            sortBy,
+            sortOrder: orderDirection,
+            categories,
+            message: categories.length ? "Categories retrieved successfully." : "No categories found.",
+            timestamp: new Date().toISOString()
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch all categories');
     }
 };
 
-export const getSummaryCategories = async (req, res) => {
+const getSummaryCategories = async (req, res) => {
     try {
-        const categories = await getSummaryCategoriesDB();
+        const categories = await CategoryDB.getSummaryCategoriesDB();
 
         res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
 
@@ -119,11 +135,11 @@ export const getSummaryCategories = async (req, res) => {
     }
 };
 
-export const getCategoryByName = async (req, res) => {
+const getCategoryByName = async (req, res) => {
     try {
         const categoryName = req.params;
 
-        const category = await getCategoryByNameDB(categoryName);
+        const category = await CategoryDB.getCategoryByNameDB(categoryName);
 
         if (!category) {
             throw new Error("Category not found");
@@ -142,11 +158,11 @@ export const getCategoryByName = async (req, res) => {
     }
 };
 
-export const getCategoryById = async (req, res) => {
+const getCategoryById = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
-        const category = await getCategoryByIdDB(categoryId);
+        const category = await CategoryDB.getCategoryByIdDB(categoryId);
 
         if (!category) {
             throw new Error("Category not found");
@@ -169,12 +185,12 @@ export const getCategoryById = async (req, res) => {
     }
 };
 
-export const getThreadsByCategory = async (req, res) => {
+const getThreadsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
         const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
-        const { category, threads, totalCount } = await getThreadsByCategoryDB(categoryId, page, limit);
+        const { category, threads, totalCount } = await CategoryDB.getThreadsByCategoryDB(categoryId, page, limit);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -197,11 +213,11 @@ export const getThreadsByCategory = async (req, res) => {
     }
 };
 
-export const getThreadsSummaryByCategory = async (req, res) => {
+const getThreadsSummaryByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
-        const { category, threads, totalCount } = await getThreadsSummaryByCategoryDB(categoryId);
+        const { category, threads, totalCount } = await CategoryDB.getThreadsSummaryByCategoryDB(categoryId);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -221,19 +237,19 @@ export const getThreadsSummaryByCategory = async (req, res) => {
     }
 };
 
-export const getPostsByCategory = async (req, res) => {
+const getPostsByCategory = async (req, res) => {
     try {
         const { id } = req.params;
         const categoryId = validateId(id, "Category ID");
         const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
-        
+
         const sort = req.query.sort || 'newest';
         const validSortOptions = ['newest', 'oldest', 'most_comments', 'most_likes'];
         if (!validSortOptions.includes(sort)) {
             throw new Error("Invalid sort parameter");
         }
 
-        const { posts, totalCount } = await getPostsByCategoryDB(categoryId, page, limit, sort);
+        const { posts, totalCount } = await CategoryDB.getPostsByCategoryDB(categoryId, page, limit, sort);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -263,13 +279,13 @@ export const getPostsByCategory = async (req, res) => {
     }
 };
 
-export const getCategoriesByUser = async (req, res) => {
+const getCategoriesByUser = async (req, res) => {
     try {
         const { username } = req.params;
         const validatedUsername = validateStringInput(username, "Username");
         const includeStats = req.query.stats === 'true';
 
-        const categories = await getCategoriesByUserDB(validatedUsername, includeStats);
+        const categories = await CategoryDB.getCategoriesByUserDB(validatedUsername, includeStats);
 
         if (!categories.length) {
             throw new Error("No categories found for this user");
@@ -295,13 +311,13 @@ export const getCategoriesByUser = async (req, res) => {
     }
 };
 
-export const createCategory = async (req, res) => {
+const createCategory = async (req, res) => {
     try {
         const userId = req.user.user_id;
 
         const { category_name, description } = req.body;
 
-        const categoryId = await createCategoryDB(userId, category_name, description);
+        const categoryId = await CategoryDB.createCategoryDB(userId, category_name, description);
 
         res.status(StatusCodes.CREATED).json({
             success: true,
@@ -318,7 +334,7 @@ export const createCategory = async (req, res) => {
     }
 };
 
-export const updateCategory = async (req, res) => {
+const updateCategory = async (req, res) => {
     try {
         const userId = req.user.user_id;
 
@@ -326,14 +342,14 @@ export const updateCategory = async (req, res) => {
 
         const { category_name, description } = req.body;
 
-        const result = await updateCategoryDB(userId, categoryId, category_name, description);
+        const result = await CategoryDB.updateCategoryDB(userId, categoryId, category_name, description);
 
         res.status(StatusCodes.OK).json({
             success: true,
             message: result,
             metadata: {
                 updatedAt: new Date().toISOString(),
-                updatedFields: Object.keys({category_name, description})
+                updatedFields: Object.keys({ category_name, description })
             }
         });
 
@@ -342,13 +358,13 @@ export const updateCategory = async (req, res) => {
     }
 };
 
-export const deleteCategory = async (req, res) => {
+const deleteCategory = async (req, res) => {
     try {
         const userId = req.user.user_id;
 
         const { categoryId } = req.params;
 
-        const result = await deleteCategoryDB(userId, categoryId);
+        const result = await CategoryDB.deleteCategoryDB(userId, categoryId);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -372,4 +388,18 @@ function getSortDescription(sort) {
         most_likes: "Posts with most likes first"
     };
     return descriptions[sort] || "Default sorting";
+}
+
+export default {
+    getAllCategories,
+    getSummaryCategories,
+    getCategoryByName,
+    getCategoryById,
+    getThreadsByCategory,
+    getThreadsSummaryByCategory,
+    getPostsByCategory,
+    getCategoriesByUser,
+    createCategory,
+    updateCategory,
+    deleteCategory
 }

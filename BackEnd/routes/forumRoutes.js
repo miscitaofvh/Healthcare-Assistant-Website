@@ -1,8 +1,5 @@
 import express from "express";
-import {
-        getAllCategories, getSummaryCategories, getCategoryByName, getCategoryById, getThreadsByCategory,
-        getThreadsSummaryByCategory, getPostsByCategory, getCategoriesByUser, createCategory, updateCategory, deleteCategory
-} from "../controllers/forum/category.js"
+import categoryController from "../controllers/forum/category.js"
 import {
         getAllThreads, getSummaryThreads, getThreadById, getThreadByName, getPostsByThread,
         getThreadsByUser, createThread, updateThread, deleteThread
@@ -61,53 +58,53 @@ router.post('/upload-image', upload.single('forumImage'), uploadImage);
 // Category Routes
 router.get("/categories",
         paginate(),
-        asyncHandler(getAllCategories)
+        asyncHandler(categoryController.getAllCategories)
 );
 
 router.get("/categories/summary",
         paginate({ limit: 5 }),
-        asyncHandler(getSummaryCategories)
+        asyncHandler(categoryController.getSummaryCategories)
 );
 
 router.get("/categories/:categoryId",
         forumValidatorsCategory.validateCategoryExists,
-        asyncHandler(getCategoryById)
+        asyncHandler(categoryController.getCategoryById)
 );
 
 router.get("/categories/name/:categoryName",
         forumValidatorsCategory.validateCategoryExistsByName,
-        asyncHandler(getCategoryByName)
+        asyncHandler(categoryController.getCategoryByName)
 );
 
 router.get("/categories/:categoryId/threads",
         forumValidatorsCategory.validateCategoryExists,
         paginate(),
-        asyncHandler(getThreadsByCategory)
+        asyncHandler(categoryController.getThreadsByCategory)
 );
 
 router.get("/categories/:categoryId/threads/summary",
         forumValidatorsCategory.validateCategoryExists,
         paginate({ limit: 5 }),
-        asyncHandler(getThreadsSummaryByCategory)
+        asyncHandler(categoryController.getThreadsSummaryByCategory)
 );
 
 router.get("/categories/:categoryId/posts",
         forumValidatorsCategory.validateCategoryExists,
         paginate(),
-        asyncHandler(getPostsByCategory)
+        asyncHandler(categoryController.getPostsByCategory)
 );
 
 router.get("/users/:username/categories",
         forumValidatorsUser.validateUserExists,
         paginate(),
-        asyncHandler(getCategoriesByUser)
+        asyncHandler(categoryController.getCategoriesByUser)
 );
 
 router.post("/categories",
         auth.required,
         categoryLimiter,
         forumValidatorsCategory.validateCategoryCreate,
-        asyncHandler(createCategory)
+        asyncHandler(categoryController.createCategory)
 );
 
 router.put("/categories/:categoryId",
@@ -115,15 +112,15 @@ router.put("/categories/:categoryId",
         forumValidatorsCategory.validateCategoryExists,
         forumValidatorsCategory.validateCategoryUpdate,
         auth.requireOwnerOrAdmin("category"),
-        asyncHandler(updateCategory)
+        asyncHandler(categoryController.updateCategory)
 );
 
 router.delete("/categories/:categoryId",
-        auth.required,
+        auth.requireOwnerOrAdmin,
         forumValidatorsCategory.validateCategoryExists,
         forumValidatorsCategory.validateCategoryDelete,
         auth.requireOwnerOrAdmin("category"),
-        asyncHandler(deleteCategory)
+        asyncHandler(categoryController.PromisedeleteCategory)
 );
 
 // ===================================================================================================================================

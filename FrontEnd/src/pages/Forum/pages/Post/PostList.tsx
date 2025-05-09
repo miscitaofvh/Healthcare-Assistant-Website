@@ -49,7 +49,7 @@ const PostList: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Forum Posts</h1>
           <p className={styles.pageSubtitle}>Browse all recent discussions</p>

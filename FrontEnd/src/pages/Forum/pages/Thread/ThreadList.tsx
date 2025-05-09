@@ -48,7 +48,7 @@ const ThreadListPage: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Forum Threads</h1>
           <p className={styles.pageSubtitle}>Browse and manage discussion threads</p>

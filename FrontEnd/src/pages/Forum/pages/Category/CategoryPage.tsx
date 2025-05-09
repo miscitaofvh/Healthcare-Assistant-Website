@@ -48,7 +48,7 @@ const CategoryDetailPage: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         {loading ? (
           <div className={styles.loadingState}>
             <div className={styles.spinner}></div>

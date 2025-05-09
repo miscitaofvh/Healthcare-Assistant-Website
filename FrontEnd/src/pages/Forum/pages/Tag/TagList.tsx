@@ -47,7 +47,7 @@ const TagList: React.FC = () => {
     <div className={styles.forumContainer}>
       <Navbar />
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Forum Tags</h1>
           <p className={styles.pageSubtitle}>Browse all available discussion tags</p>

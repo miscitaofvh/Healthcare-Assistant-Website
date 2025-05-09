@@ -8,7 +8,7 @@ import {
     getPostsByThread
 } from "../../../utils/api/Forum/thread";
 import { Thread, NewThread, Post, ThreadSummary, ThreadDropdown } from "../../../types/forum";
-import { getThreadsByCategory, getThreadsSummaryByCategory } from "../../../utils/api/Forum/category";
+import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Dispatch, SetStateAction } from "react";
 
 export const loadThreads = async (
@@ -187,7 +187,7 @@ export const loadThreadsByCategory = async (
     try {
         setError("");
 
-        const response = await getThreadsSummaryByCategory(category_id);
+        const response = await InteractiveCategory.getThreadsSummaryByCategory(category_id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

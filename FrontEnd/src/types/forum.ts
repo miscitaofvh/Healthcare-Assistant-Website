@@ -1,5 +1,13 @@
-// Tag Interfaces
+export interface PaginationData {
+    currentPage: number;
+    totalPages: number;
+    limit: number;
+    totalCount: number;
+    sortBy: string;
+    sortOrder: string;
+}
 
+// Tag Interfaces
 export interface TagMapping {
     relation_id: number;
     post_id: number;

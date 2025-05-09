@@ -203,19 +203,19 @@ const validateCategoryDelete = [
         }
 
         // Check if category has subcategories
-        const [subcategories] = await connection.execute(
-            'SELECT COUNT(*) as count FROM forum_categories WHERE parent_id = ?',
-            [req.params.categoryId]
-        );
+        // const [subcategories] = await connection.execute(
+        //     'SELECT COUNT(*) as count FROM forum_categories WHERE parent_id = ?',
+        //     [req.params.categoryId]
+        // );
         
-        if (subcategories[0].count > 0) {
-            throw new Error('Không thể xóa danh mục có danh mục con');
-        }
+        // if (subcategories[0].count > 0) {
+        //     throw new Error('Không thể xóa danh mục có danh mục con');
+        // }
 
         // Additional check for admin-only deletion
-        if (req.user.role !== 'admin') {
-            throw new Error('Chỉ quản trị viên mới có thể xóa danh mục');
-        }
+        // if (req.user.role !== 'admin') {
+        //     throw new Error('Chỉ quản trị viên mới có thể xóa danh mục');
+        // }
         
         return true;
     }),

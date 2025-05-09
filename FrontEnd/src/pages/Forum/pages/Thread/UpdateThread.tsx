@@ -110,7 +110,7 @@ const UpdateThread: React.FC = () => {
                 <Navbar />
             </div>
 
-            <div className={styles.tagListContainer}>
+            <div className={styles.headerContainer}>
                 <div className={styles.headerSection}>
                     <h1 className={styles.pageTitle}>Update Thread</h1>
                     <p className={styles.pageSubtitle}>Edit your thread content below</p>

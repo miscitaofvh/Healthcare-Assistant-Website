@@ -93,7 +93,7 @@ const UpdateCategory: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Update Category</h1>
           <p className={styles.pageSubtitle}>Modify your category details below</p>

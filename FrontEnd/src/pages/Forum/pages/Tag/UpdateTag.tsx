@@ -95,7 +95,7 @@ const UpdateTag: React.FC = () => {
         <Navbar />
       </div>
 
-      <div className={styles.tagListContainer}>
+      <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Update Tag</h1>
           <p className={styles.pageSubtitle}>Modify your tag details below</p>
