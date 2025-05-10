@@ -210,7 +210,7 @@ const handleDeleteCategory = async (
         setFormLoading?.(true);
 
         const response = await InteractiveCategory.deleteCategory(id);
-
+        
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

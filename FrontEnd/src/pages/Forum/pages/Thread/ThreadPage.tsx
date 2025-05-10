@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "../../../../components/Navbar";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
 import { Thread, Post, PaginationData } from "../../../../types/forum";
 import requestThread from "../../../../utils/service/Forum/thread";
@@ -21,6 +22,8 @@ const ThreadPage: React.FC = () => {
     sortBy: "created_at",
     sortOrder: "DESC",
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   const sortOptions = [
@@ -30,7 +33,12 @@ const ThreadPage: React.FC = () => {
     { value: "like_count", label: "Likes" },
   ];
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (
+    page: number = pagination.currentPage,
+    limit: number = pagination.limit,
+    sortBy = pagination.sortBy,
+    sortOrder = pagination.sortOrder
+  ) => {
     if (!id) {
       toast.error("Invalid thread ID");
       setLoading(false);
@@ -43,13 +51,20 @@ const ThreadPage: React.FC = () => {
         setLoading,
         setThread,
         setPosts,
-        setPagination,
+        (newPagination) => {
+          setPagination(prev => ({
+            ...prev,
+            ...newPagination,
+            sortBy,
+            sortOrder
+          }));
+        },
         (errorMessage) => toast.error(errorMessage),
         (successMessage) => toast.success(successMessage),
-        pagination.currentPage,
-        pagination.limit,
-        pagination.sortBy,
-        pagination.sortOrder
+        page,
+        limit,
+        sortBy,
+        sortOrder
       );
     } catch (err: any) {
       toast.error(err.message || "Failed to load thread data");
@@ -61,12 +76,43 @@ const ThreadPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  const handleDeleteClick = () => {
+    if (!thread) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!thread) return;
+    
+    setIsDeleting(true);
+    try {
+      await requestThread.handleDeleteThread(
+        thread.thread_id,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
+        setLoading,
+        () => {
+          navigate(`/forum/categories/${thread.category_id}`);
+        }
+      );
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred while deleting the thread");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+  };
+
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSortBy = e.target.value;
-    setPagination((prev) => ({
+    setPagination(prev => ({
       ...prev,
       sortBy: newSortBy,
-      currentPage: 1, // Reset to first page when changing sort
+      currentPage: 1
     }));
   };
 
@@ -75,7 +121,7 @@ const ThreadPage: React.FC = () => {
     setPagination((prev) => ({
       ...prev,
       sortOrder: newOrder,
-      currentPage: 1, // Reset to first page when changing sort order
+      currentPage: 1,
     }));
   };
 
@@ -177,13 +223,22 @@ const ThreadPage: React.FC = () => {
             {/* Thread Actions */}
             <div className={styles.buttonGroup}>
               {thread?.is_owner && (
-                <button
-                  className={`${styles.primaryButton} ${styles.createButton}`}
-                  onClick={() => navigate(`/forum/threads/${thread.thread_id}/update`)}
-                  disabled={loading}
-                >
-                  Update Thread
-                </button>
+                <>
+                  <button
+                    className={`${styles.primaryButton} ${styles.createButton}`}
+                    onClick={() => navigate(`/forum/threads/${thread.thread_id}/update`)}
+                    disabled={loading}
+                  >
+                    Update Thread
+                  </button>
+                  <button
+                    className={`${styles.primaryButton} ${styles.deleteButton}`}
+                    onClick={handleDeleteClick}
+                    disabled={loading}
+                  >
+                    Delete Thread
+                  </button>
+                </>
               )}
               <button
                 className={styles.secondaryButton}
@@ -237,6 +292,9 @@ const ThreadPage: React.FC = () => {
                         <span className={styles.metaItem}>
                           Likes: {post.like_count || 0}
                         </span>
+                        <span className={styles.metaItem}>
+                          Replies: {post.comment_count || 0}
+                        </span>
                       </div>
                       <div className={styles.postActions}>
                         <button
@@ -246,6 +304,18 @@ const ThreadPage: React.FC = () => {
                         >
                           View Post
                         </button>
+                        {post.is_owner && (
+                          <button
+                            className={styles.secondaryButton}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/forum/posts/${post.post_id}/update`);
+                            }}
+                            disabled={loading}
+                          >
+                            Edit Post
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -278,6 +348,17 @@ const ThreadPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="Delete Thread"
+        message="Are you sure you want to delete this thread? All posts within it will be permanently removed. This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Delete Thread"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

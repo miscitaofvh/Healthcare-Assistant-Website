@@ -199,7 +199,7 @@ const validateCategoryDelete = [
         );
         
         if (threads[0].count > 0) {
-            throw new Error('Không thể xóa danh mục đã có chủ đề');
+            throw new Error('Không thể xóa danh mục đã có chủ đề (chỉ admin có quyền này)');
         }
         // Check if category has subcategories
         // const [subcategories] = await connection.execute(

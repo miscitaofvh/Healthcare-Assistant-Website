@@ -69,6 +69,7 @@ const UpdateThread: React.FC = () => {
                 thread.thread_id,
                 updatedThread,
                 (error) => toast.error(error),
+                (success) => toast.success(success),
                 () => {
                     toast.success("Thread updated successfully!");
                     navigate(`/forum/threads/${thread.thread_id}`);

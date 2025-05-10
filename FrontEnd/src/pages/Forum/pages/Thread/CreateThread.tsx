@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -10,12 +10,16 @@ import requestThread from "../../../../utils/service/Forum/thread";
 import { NewThread, CategorySummary } from "../../../../types/forum";
 
 const CreateThread: React.FC = () => {
+    const [searchParams] = useSearchParams();
+    const categoryIdFromUrl = searchParams.get('category');
+    
     const [newThread, setNewThread] = useState<NewThread>({
         thread_id: 0,
         thread_name: "",
         description: "",
-        category_id: 0,
+        category_id: categoryIdFromUrl ? parseInt(categoryIdFromUrl) : 0,
     });
+    
     const [categories, setCategories] = useState<CategorySummary[]>([]);
     const [formLoading, setFormLoading] = useState(false);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -39,33 +43,16 @@ const CreateThread: React.FC = () => {
         fetchCategories();
     }, []);
 
-    const validateInputs = (thread: NewThread): string | null => {
-        const title = thread.thread_name.trim();
-        const description = thread.description?.trim() || "";
-        
-        if (!title) return "Thread title is required";
-        if (title.length < 3 || title.length > 100) return "Thread title must be from 3 to 100 characters";
-        if (!description) return "Thread content is required";
-        if (description.length < 10 || description.length > 5000) return "Content must be from 10 to 5000 characters";
-        if (!thread.category_id || thread.category_id <= 0) return "Please select a valid category";
-
-        return null;
-    };
-
+    // Rest of your component remains the same...
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        const validationError = validateInputs(newThread);
-        if (validationError) {
-            toast.error(validationError);
-            return;
-        }
 
         try {
             setFormLoading(true);
             await requestThread.handleCreateThread(
                 newThread,
                 (error) => toast.error(error),
+                (success) => toast.success(success),
                 () => {
                     toast.success("Thread created successfully!");
                     navigate(`/forum/categories/${newThread.category_id}`);

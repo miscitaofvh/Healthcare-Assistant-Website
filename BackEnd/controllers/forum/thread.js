@@ -123,10 +123,6 @@ const getThreadById = async (req, res) => {
         const { threadId } = req.params;
         const thread = await ThreadDB.getThreadByIdDB(threadId);
 
-        if (!thread) {
-            throw new Error("Thread not found");
-        }
-
         res.status(StatusCodes.OK).json({
             success: true,
             thread: thread,

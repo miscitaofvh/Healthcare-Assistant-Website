@@ -20,7 +20,6 @@ const getAllThreadsDB = async (page = 1, limit = 10, orderByField = 'created_at'
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Validate orderByField to prevent SQL injection
         const validThreadColumns = [
             'thread_id', 'thread_name', 'description',
             'created_at', 'last_updated', 'created_by',
@@ -28,7 +27,7 @@ const getAllThreadsDB = async (page = 1, limit = 10, orderByField = 'created_at'
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
-            orderByField = 'created_at'; // default to created_at if invalid
+            orderByField = 'created_at';
         }
 
         const threadsSql = `
@@ -95,7 +94,6 @@ const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 10, orderByF
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Validate orderByField to prevent SQL injection
         const validThreadColumns = [
             'thread_id', 'thread_name', 'description',
             'created_at', 'last_updated', 'created_by',
@@ -103,7 +101,7 @@ const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 10, orderByF
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
-            orderByField = 'created_at'; // default to created_at if invalid
+            orderByField = 'created_at';
         }
 
         const threadsSql = `
@@ -201,9 +199,6 @@ const getThreadByIdDB = async (threadId) => {
         const [thread] = await conn.execute(sql, [threadId]);
         await conn.commit();
 
-        if (thread.length === 0) {
-            throw new Error("Thread not found");
-        }
 
         return {
             ...thread[0],
@@ -219,7 +214,7 @@ const getThreadByIdDB = async (threadId) => {
     }
 };
 
-const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField = 'thread_name', orderDirection = 'ASC', author_id = null) => {
+const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField = 'created_at', orderDirection = 'ASC', author_id = null) => {
     let conn;
     const offset = (page - 1) * limit;
 
@@ -227,7 +222,6 @@ const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField =
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // First get thread info
         const threadSql = `
             SELECT 
                 ft.thread_id,
@@ -249,23 +243,16 @@ const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField =
         `;
         const [threadResult] = await conn.execute(threadSql, author_id ? [author_id, threadId] : [threadId]);
 
-        if (threadResult.length === 0) {
-            throw new Error("Thread not found");
-        }
-
         const thread = threadResult[0];
 
-        // Validate orderByField to prevent SQL injection
         const validPostColumns = [
             'post_id', 'title', 'content', 'created_at',
             'last_updated', 'author'
         ];
 
         if (!validPostColumns.includes(orderByField)) {
-            orderByField = 'created_at'; // default to created_at if invalid
+            orderByField = 'created_at';
         }
-
-        // Then get posts with pagination
         const postsSql = `
             SELECT 
                 p.post_id,
@@ -331,7 +318,6 @@ const getThreadsByUserDB = async (userId, page = 1, limit = 10, orderByField = '
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Validate orderByField to prevent SQL injection
         const validThreadColumns = [
             'thread_id', 'thread_name', 'description',
             'created_at', 'last_updated', 'category_name',
@@ -339,7 +325,7 @@ const getThreadsByUserDB = async (userId, page = 1, limit = 10, orderByField = '
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
-            orderByField = 'created_at'; // default to created_at if invalid
+            orderByField = 'created_at';
         }
 
         const threadsSql = `
@@ -404,37 +390,6 @@ const createThreadDB = async (userId, categoryId, threadName, description = null
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Input validation
-        if (!threadName || threadName.trim().length === 0) {
-            throw new Error("Thread name is required");
-        }
-
-        if (!categoryId || isNaN(categoryId)) {
-            throw new Error("Invalid category ID");
-        }
-
-        // Check if category exists
-        const checkCategorySql = `
-            SELECT category_id
-            FROM forum_categories
-            WHERE category_id = ?
-        `;
-        const [categoryCheck] = await conn.execute(checkCategorySql, [categoryId]);
-        if (categoryCheck.length === 0) {
-            throw new Error("Category does not exist");
-        }
-
-        // Check for duplicate thread name
-        const checkThreadSql = `
-            SELECT thread_id
-            FROM forum_threads
-            WHERE LOWER(thread_name) = LOWER(?) AND category_id = ?
-        `;
-        const [threadCheck] = await conn.execute(checkThreadSql, [threadName, categoryId]);
-        if (threadCheck.length > 0) {
-            throw new Error("Thread name already exists in this category");
-        }
-
         const insertSql = `
             INSERT INTO forum_threads (thread_name, category_id, user_id, description) 
             VALUES (?, ?, ?, ?)
@@ -448,7 +403,6 @@ const createThreadDB = async (userId, categoryId, threadName, description = null
 
         const threadId = insertResult.insertId;
 
-        // Get username for response
         const getUsernameSql = `
             SELECT username
             FROM users
@@ -469,7 +423,6 @@ const createThreadDB = async (userId, categoryId, threadName, description = null
         if (conn) await conn.rollback();
         console.error("Database error in createThreadDB:", error);
 
-        // Preserve specific error messages
         if (error.message === "Thread name is required" ||
             error.message === "Invalid category ID" ||
             error.message === "Category does not exist" ||
@@ -489,92 +442,29 @@ const updateThreadDB = async (userId, threadId, threadName, description) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Input validation
-        if (!threadId || isNaN(threadId)) {
-            throw new Error("Invalid thread ID");
-        }
-
-        // Check if thread exists and user is authorized
-        const checkThreadSql = `
-            SELECT thread_id, category_id
-            FROM forum_threads
-            WHERE thread_id = ? AND user_id = ?
-        `;
-        const [threadCheck] = await conn.execute(checkThreadSql, [threadId, userId]);
-        if (threadCheck.length === 0) {
-            throw new Error("Thread not found or unauthorized");
-        }
-
-        const categoryId = threadCheck[0].category_id;
-
-        // Check if at least one field is being updated
-        if (!threadName && description === undefined) {
-            throw new Error("No fields to update provided");
-        }
-
-        // Check for duplicate thread name if threadName is being updated
-        if (threadName) {
-            const checkNameSql = `
-                SELECT thread_id
-                FROM forum_threads
-                WHERE LOWER(thread_name) = LOWER(?) 
-                AND category_id = ? 
-                AND thread_id != ?
-            `;
-            const [nameCheck] = await conn.execute(checkNameSql, [
-                threadName, 
-                categoryId, 
-                threadId
-            ]);
-            if (nameCheck.length > 0) {
-                throw new Error("Thread name already exists in this category");
-            }
-        }
-
-        // Build the update query dynamically based on provided fields
-        const updateFields = [];
-        const updateParams = [];
-        
-        if (threadName) {
-            updateFields.push("thread_name = ?");
-            updateParams.push(threadName);
-        }
-        
-        if (description !== undefined) {
-            updateFields.push("description = ?");
-            updateParams.push(description);
-        }
-        
-        updateFields.push("last_updated = CURRENT_TIMESTAMP");
-        
         const updateSql = `
             UPDATE forum_threads
-            SET ${updateFields.join(', ')}
+            SET
+                thread_name = COALESCE(?, thread_name),
+                description = COALESCE(?, description)
             WHERE thread_id = ?
         `;
-        
-        updateParams.push(threadId);
-        
-        const [updateResult] = await conn.execute(updateSql, updateParams);
+
+        const [updateResult] = await conn.execute(updateSql, [
+            threadName ? threadName : null,
+            description !== undefined ? description : null,
+            threadId
+        ]);
 
         if (updateResult.affectedRows === 0) {
             throw new Error("Thread not found or no changes made");
         }
 
         await conn.commit();
-
-        return {
-            threadId,
-            updatedFields: {
-                ...(threadName && { threadName }),
-                ...(description !== undefined && { description })
-            }
-        };
+        return 'Thread updated successfully';
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in updateThreadDB:", error);
-        
-        // Preserve specific error messages
         if ([
             "Invalid thread ID",
             "Thread not found or unauthorized",
@@ -584,7 +474,7 @@ const updateThreadDB = async (userId, threadId, threadName, description) => {
         ].includes(error.message)) {
             throw error;
         }
-        
+
         throw new Error("Failed to update thread in database");
     } finally {
         if (conn) conn.release();
@@ -596,24 +486,6 @@ const deleteThreadDB = async (userId, threadId) => {
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        if (!threadId || isNaN(threadId)) {
-            throw new Error("Invalid thread ID");
-        }
-
-        // Check thread exists and user is owner
-        await validateThreadOwnership(conn, threadId, userId);
-
-        // Check for existing posts
-        const checkPostsSql = `
-            SELECT COUNT(*) as post_count
-            FROM forum_posts
-            WHERE thread_id = ?
-        `;
-        const [postsCheck] = await conn.execute(checkPostsSql, [threadId]);
-        if (postsCheck[0].post_count > 0) {
-            throw new Error("Cannot delete thread with existing posts");
-        }
 
         const deleteSql = `
             DELETE FROM forum_threads
@@ -627,12 +499,11 @@ const deleteThreadDB = async (userId, threadId) => {
 
         await conn.commit();
 
-        return { threadId, deletedPosts: postsCheck[0].post_count };
+        return `Thread with ID ${threadId} deleted successfully`;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in deleteThreadDB:", error);
 
-        // Preserve specific error messages
         if (error.message === "Invalid thread ID" ||
             error.message === "Thread not found or unauthorized" ||
             error.message === "Cannot delete thread with existing posts" ||
