@@ -81,25 +81,25 @@ const TagList: React.FC = () => {
               <p>Loading tags...</p>
             </div>
           ) : tags.length > 0 ? (
-            <div className={styles.tagGrid}>
+            <div className={styles.forumGrid}>
               {tags.map((tag) => (
                 <div
                   key={tag.tag_id}
-                  className={styles.tagCard}
+                  className={styles.forumCard}
                   onClick={() => handleTagClick(tag.tag_id)}
                 >
 
                   <div className={styles.tagHeader}>
-                    <h3 className={styles.tagName}>#{tag.tag_name}</h3>
+                    <h3 className={styles.forumName}>#{tag.tag_name}</h3>
                     {tag.description && (
-                      <p className={styles.tagDescription}>
+                      <p className={styles.forumDescription}>
                         {tag.description.split(/\s+/).slice(0, 10).join(' ')}
                         {tag.description.split(/\s+/).length > 10 && '...'}
                       </p>
                     )}
                   </div>
 
-                  <div className={styles.tagMeta}>
+                  <div className={styles.forumMeta}>
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>Created by:</span>
                       <span className={styles.metaValue}>{tag.created_by}</span>

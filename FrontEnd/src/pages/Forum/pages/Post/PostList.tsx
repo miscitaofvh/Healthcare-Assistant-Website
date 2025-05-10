@@ -92,7 +92,7 @@ const PostList: React.FC = () => {
                 >
                   <div className={styles.postHeader}>
                     <div>
-                      <h3 className={styles.tagName}>{post.title}</h3>
+                      <h3 className={styles.forumName}>{post.title}</h3>
                       <span className={styles.postAuthor}>By {post.author}</span>
                     </div>
                     <div className={styles.metaValue}>
@@ -100,14 +100,14 @@ const PostList: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className={styles.tagDescription}>
+                  <div className={styles.forumDescription}>
                     {stripMarkdown(post.content).length > 200
                       ? `${stripMarkdown(post.content).substring(0, 200)}...`
                       : stripMarkdown(post.content)}
                   </div>
 
 
-                  <div className={styles.tagMeta}>
+                  <div className={styles.forumMeta}>
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>Category:</span>
                       <span className={styles.metaValue}>{post.category_name}</span>

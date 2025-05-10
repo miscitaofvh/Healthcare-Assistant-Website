@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleCreateThread } from "../../../../utils/service/Forum/thread";
-import { NewThread } from "../../../../types/forum";
-import { useNavigate } from "react-router-dom";
-import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
-import { CategorySummary } from "../../../../types/forum";
+import requestCategory from "../../../../utils/service/Forum/category";
+import requestThread from "../../../../utils/service/Forum/thread";
+import { NewThread, CategorySummary } from "../../../../types/forum";
 
 const CreateThread: React.FC = () => {
     const [newThread, setNewThread] = useState<NewThread>({
@@ -16,49 +18,35 @@ const CreateThread: React.FC = () => {
     });
     const [categories, setCategories] = useState<CategorySummary[]>([]);
     const [formLoading, setFormLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const [categoriesLoading, setCategoriesLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                await loadCategoriesSummary(
-                    setCategoriesLoading,
-                    setCategories,
-                    setError,
-                    () => { }
+                setCategoriesLoading(true);
+                await requestCategory.loadCategoriesSummary(
+                    (categories) => setCategories(categories),
+                    (error) => toast.error(error)
                 );
             } catch (err) {
-                setError("Failed to load categories");
+                toast.error("Failed to load categories");
+            } finally {
+                setCategoriesLoading(false);
             }
         };
 
         fetchCategories();
     }, []);
 
-    useEffect(() => {
-        if (success) {
-            const timer = setTimeout(() => setSuccess(""), 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [success]);
-
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(""), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
     const validateInputs = (thread: NewThread): string | null => {
         const title = thread.thread_name.trim();
-        let description = thread.description?.trim() || "";
+        const description = thread.description?.trim() || "";
+        
         if (!title) return "Thread title is required";
-        if (title.length < 3 || title.length > 50) return "Thread title must be from 3 to 50 characters";
+        if (title.length < 3 || title.length > 100) return "Thread title must be from 3 to 100 characters";
         if (!description) return "Thread content is required";
-        if (description.length < 10 || description.length > 200) return "Content must be from 10 to 200 characters";
+        if (description.length < 10 || description.length > 5000) return "Content must be from 10 to 5000 characters";
         if (!thread.category_id || thread.category_id <= 0) return "Please select a valid category";
 
         return null;
@@ -69,25 +57,30 @@ const CreateThread: React.FC = () => {
 
         const validationError = validateInputs(newThread);
         if (validationError) {
-            setError(validationError);
+            toast.error(validationError);
             return;
         }
 
         try {
-            await handleCreateThread(
+            setFormLoading(true);
+            await requestThread.handleCreateThread(
                 newThread,
-                setFormLoading,
-                setError,
-                setSuccess,
-                () => navigate(`/forum/categories/${newThread.category_id}`)
+                (error) => toast.error(error),
+                () => {
+                    toast.success("Thread created successfully!");
+                    navigate(`/forum/categories/${newThread.category_id}`);
+                }
             );
         } catch (err) {
-            setError("An unexpected error occurred while creating the thread");
+            toast.error("An unexpected error occurred while creating the thread");
+        } finally {
+            setFormLoading(false);
         }
     };
 
     return (
         <div className={styles.forumContainer}>
+            <ToastContainer position="top-right" autoClose={5000} />
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
@@ -98,19 +91,7 @@ const CreateThread: React.FC = () => {
                     <p className={styles.pageSubtitle}>Start a new discussion in the forum</p>
                 </div>
 
-                {error && (
-                    <div className={styles.errorAlert}>
-                        <span className={styles.errorIcon}>⚠️</span> {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div className={styles.alertSuccess}>
-                        <span className={styles.errorIcon}>✅</span> {success}
-                    </div>
-                )}
-
-                <div className={styles.tagCard}>
+                <div className={styles.forumCard}>
                     <form onSubmit={handleSubmit}>
                         <div className={styles.formGroup}>
                             <label htmlFor="threadCategory" className={styles.metaLabel}>
@@ -171,7 +152,7 @@ const CreateThread: React.FC = () => {
                                 disabled={formLoading}
                             />
                             <small className={styles.characterCount}>
-                                {newThread.description.length}/5000 characters
+                                {newThread.description?.length || 0}/5000 characters
                             </small>
                         </div>
 

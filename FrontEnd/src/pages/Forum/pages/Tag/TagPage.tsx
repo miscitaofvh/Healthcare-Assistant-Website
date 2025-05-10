@@ -79,14 +79,14 @@ const TagPage: React.FC = () => {
                         )}
 
                         {/* Tag Info Card */}
-                        <div className={styles.tagCard}>
-                            <div className={styles.tagMeta}>
+                        <div className={styles.forumCard}>
+                            <div className={styles.forumMeta}>
                                 <div className={styles.metaItem}>
                                     <span className={styles.metaLabel}>Created by:</span>
                                     <span className={styles.metaValue}>{tag.created_by}</span>
                                 </div>
                             </div>
-                            <div className={styles.tagMeta}>
+                            <div className={styles.forumMeta}>
                                 <div className={styles.metaItem}>
                                     <span className={styles.metaLabel}>Created at:</span>
                                     <span className={styles.metaValue}>{new Date(tag.created_at).toLocaleString()}</span>
@@ -96,7 +96,7 @@ const TagPage: React.FC = () => {
                                     <span className={styles.metaValue}>{new Date(tag.last_updated).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <div className={styles.tagMeta}>
+                            <div className={styles.forumMeta}>
                                 <div className={styles.metaItem}>
                                     <span className={styles.metaLabel}>Usage:</span>
                                     <span className={styles.metaValue}>{tag.usage_count} posts</span>
@@ -117,13 +117,13 @@ const TagPage: React.FC = () => {
                         </div>
 
                         {posts.length > 0 ? (
-                            <div className={styles.tagGrid}>
+                            <div className={styles.forumGrid}>
                                 {posts.map((post) => (
-                                    <div key={post.post_id} className={styles.tagCard}>
-                                        <h3 className={styles.tagName}>{post.title}</h3>
-                                        <p className={styles.tagDescription}>{post.content.slice(0, 100)}...</p>
+                                    <div key={post.post_id} className={styles.forumCard}>
+                                        <h3 className={styles.forumName}>{post.title}</h3>
+                                        <p className={styles.forumDescription}>{post.content.slice(0, 100)}...</p>
 
-                                        <div className={styles.tagMeta}>
+                                        <div className={styles.forumMeta}>
                                             <div className={styles.metaItem}>
                                                 <span className={styles.metaLabel}>Category:</span>
                                                 <span className={styles.metaValue}>{post.category_name}</span>

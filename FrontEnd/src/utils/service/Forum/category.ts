@@ -17,7 +17,7 @@ const validateInputs = (category: NewCategory): string | null => {
     return null;
 };
 
-export const loadCategories = async (
+const loadCategories = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategories: Dispatch<SetStateAction<CategoryMain[]>>,
     setPagination: Dispatch<SetStateAction<PaginationData>>,
@@ -54,38 +54,30 @@ export const loadCategories = async (
     }
 };
 
-export const loadCategoriesSummary = async (
-    setLoading: Dispatch<SetStateAction<boolean>>,
-    setCategories: Dispatch<SetStateAction<CategorySummary[]>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+const loadCategoriesSummary = async (
+    onSuccess: (categories: CategorySummary[]) => void,
+    onError: (error: string) => void
 ): Promise<void> => {
     try {
-        setLoading(true);
         const response = await InteractiveCategory.getSummaryCategories();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
-            setSuccess("");
+            onError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            return;
         }
 
-        setCategories(data.categories ?? []);
-        setSuccess("Tải danh sách categories thành công");
-        setError("");
+        onSuccess(data.categories ?? []);
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
             "Đã xảy ra lỗi khi tải danh sách category";
-        setError(errorMsg);
-        setSuccess("");
-    } finally {
-        setLoading(false);
+        onError(errorMsg);
     }
 };
 
-export const loadCategorieById = async (
+const loadCategorieById = async (
     id: number,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
@@ -99,6 +91,7 @@ export const loadCategorieById = async (
 
         if (status !== 200 || !data?.success) {
             showError(data?.message ?? "Unknown server error occurred");
+            return;
         }
 
         setCategory(data.category || null);
@@ -113,7 +106,7 @@ export const loadCategorieById = async (
     }
 };
 
-export const handleCreateCategory = async (
+const handleCreateCategory = async (
     newCategory: NewCategory,
     showError: (message: string) => void = toast.error,
     onSuccess: () => void,
@@ -135,24 +128,30 @@ export const handleCreateCategory = async (
         });
 
         const { status, data } = response;
+
         if (status !== 201 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while creating category.";
-            showError(`Không thể tạo category: ${errorMsg}`);
+            const defaultMsg = "Không thể tạo danh mục.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
+            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
+                ? data.errors.map((err: { message: string }) => err.message).join("\n")
+                : "";
+
+            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
             return;
         }
 
-        onSuccess();
-
+        setTimeout(() => {
+            onSuccess();
+        }, 2000);
     } catch (err: any) {
         const errorMessage = err?.response?.data?.message ?? err.message ?? "Failed to create category.";
         showError(errorMessage);
-        console.error("Category creation error:", err);
     } finally {
         setFormLoading?.(false);
     }
 };
 
-export const handleUpdateCategory = async (
+const handleUpdateCategory = async (
     categoryId: number,
     updatedCategory: NewCategory,
     showError: (message: string) => void = toast.error,
@@ -170,13 +169,20 @@ export const handleUpdateCategory = async (
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while updating category.";
-            showError(`Cannot update category: ${errorMsg}`);
+            const defaultMsg = "Không thể tạo danh mục.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
+            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
+                ? data.errors.map((err: { message: string }) => err.message).join("\n")
+                : "";
+
+            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+            return;
         }
 
         toast.success(data?.message || "Category updated successfully!");
-        onSuccess();
-
+        setTimeout(() => {
+            onSuccess();
+        }, 2000);
     } catch (error: unknown) {
         console.error("Error updating category:", error);
 
@@ -193,31 +199,34 @@ export const handleUpdateCategory = async (
     }
 };
 
-export const handleDeleteCategory = async (
+const handleDeleteCategory = async (
     id: number,
-    setFormLoading: Dispatch<SetStateAction<boolean>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>,
-    loadCategories: () => void
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
+    setFormLoading?: Dispatch<SetStateAction<boolean>>,
+    onSuccess?: () => void
 ): Promise<void> => {
     try {
-        setFormLoading(true);
-        setError("");
-        setSuccess("");
+        setFormLoading?.(true);
 
         const response = await InteractiveCategory.deleteCategory(id);
 
-        const success = response?.data?.success;
-        const message = response?.data?.message || "Category deleted successfully.";
+        const { status, data } = response;
 
-        if (!success) {
-            throw new Error(response?.data?.message || "Failed to delete category.");
+        if (status !== 200 || !data?.success) {
+            const defaultMsg = "Không thể xóa danh mục.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi xóa danh mục.";
+            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
+                ? data.errors.map((err: { message: string }) => err.message).join("\n")
+                : "";
+
+            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+            return;
         }
-
-        setSuccess(message);
+        showSuccess(data?.message || "Category deleted successfully!");
 
         setTimeout(() => {
-            loadCategories();
+            onSuccess?.();
         }, 2000);
 
     } catch (error: unknown) {
@@ -226,14 +235,13 @@ export const handleDeleteCategory = async (
                 ? error.message
                 : "An unexpected error occurred while deleting the category.";
 
-        setError(errorMessage);
-        console.error("Error deleting category:", error);
+        showError(errorMessage);
     } finally {
-        setFormLoading(false);
+        setFormLoading?.(false);
     }
 };
 
-export const handleInputChange = (
+const handleInputChange = (
     field: string,
     value: string,
     setNewCategory: Dispatch<SetStateAction<any>>
@@ -241,7 +249,7 @@ export const handleInputChange = (
     setNewCategory((prev: any) => ({ ...prev, [field]: value }));
 };
 
-export const loadSingleCategory = async (
+const loadSingleCategory = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
@@ -263,7 +271,7 @@ export const loadSingleCategory = async (
     }
 };
 
-export const loadThreadsandCategoryByCategory = async (
+const loadThreadsandCategoryByCategory = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
@@ -309,3 +317,15 @@ export const loadThreadsandCategoryByCategory = async (
         setLoading(false);
     }
 };
+
+export default {
+    loadCategories,
+    loadCategoriesSummary,
+    loadCategorieById,
+    handleCreateCategory,
+    handleUpdateCategory,
+    handleDeleteCategory,
+    handleInputChange,
+    loadSingleCategory,
+    loadThreadsandCategoryByCategory
+}

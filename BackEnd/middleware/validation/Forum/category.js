@@ -201,7 +201,6 @@ const validateCategoryDelete = [
         if (threads[0].count > 0) {
             throw new Error('Không thể xóa danh mục đã có chủ đề');
         }
-
         // Check if category has subcategories
         // const [subcategories] = await connection.execute(
         //     'SELECT COUNT(*) as count FROM forum_categories WHERE parent_id = ?',

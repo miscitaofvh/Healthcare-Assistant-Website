@@ -77,7 +77,7 @@ const CreateTag: React.FC = () => {
                     </div>
                 )}
 
-                <div className={styles.tagCard}>
+                <div className={styles.forumCard}>
                     <form onSubmit={handleSubmit}>
                         <div className={styles.formGroup}>
                             <label htmlFor="tagName" className={styles.metaLabel}>
@@ -99,11 +99,11 @@ const CreateTag: React.FC = () => {
                                 {newTag.tag_name.length}/50 characters
                             </small>
 
-                            <label htmlFor="tagDescription" className={styles.metaLabel}>
+                            <label htmlFor="forumDescription" className={styles.metaLabel}>
                                 Description
                             </label>
                             <textarea
-                                id="tagDescription"
+                                id="forumDescription"
                                 className={styles.formTextarea}
                                 value={newTag.description}
                                 onChange={(e) =>

@@ -1,9 +1,6 @@
 import express from "express";
 import categoryController from "../controllers/forum/category.js"
-import {
-        getAllThreads, getSummaryThreads, getThreadById, getThreadByName, getPostsByThread,
-        getThreadsByUser, createThread, updateThread, deleteThread
-} from "../controllers/forum/thread.js";
+import threadController from "../controllers/forum/thread.js";
 import { getAllPosts, getSummaryPosts, getPostById, getPostsByUser, createPost, updatePost, deletePost } from "../controllers/forum/post.js";
 import {
         getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
@@ -116,11 +113,10 @@ router.put("/categories/:categoryId",
 );
 
 router.delete("/categories/:categoryId",
-        auth.requireOwnerOrAdmin,
+        auth.requireOwnerOrAdmin("category"),
         forumValidatorsCategory.validateCategoryExists,
         forumValidatorsCategory.validateCategoryDelete,
-        auth.requireOwnerOrAdmin("category"),
-        asyncHandler(categoryController.PromisedeleteCategory)
+        asyncHandler(categoryController.deleteCategory)
 );
 
 // ===================================================================================================================================
@@ -128,41 +124,41 @@ router.delete("/categories/:categoryId",
 // Thread Routes
 router.get("/threads",
         paginate(),
-        asyncHandler(getAllThreads)
+        asyncHandler(threadController.getAllThreads)
 );
 
 router.get("/threads/summary",
         paginate({ limit: 5 }),
-        asyncHandler(getSummaryThreads)
+        asyncHandler(threadController.getSummaryThreads)
 );
 
 router.get("/threads/:threadId",
         forumValidatorsThread.validateThreadExists,
-        asyncHandler(getThreadById)
+        asyncHandler(threadController.getThreadById)
 );
 
 router.get("/threads/name/:threadName",
         forumValidatorsThread.validateThreadExists,
-        asyncHandler(getThreadByName)
+        asyncHandler(threadController.getThreadByName)
 );
 
 router.get("/threads/:threadId/posts",
         forumValidatorsThread.validateThreadExists,
         paginate(),
-        asyncHandler(getPostsByThread)
+        asyncHandler(threadController.getPostsByThread)
 );
 
 router.get("/users/:username/threads",
         forumValidatorsUser.validateUserExists,
         paginate(),
-        asyncHandler(getThreadsByUser)
+        asyncHandler(threadController.getThreadsByUser)
 );
 
 router.post("/threads",
         auth.required,
         threadLimiter,
         forumValidatorsThread.validateThreadCreate,
-        asyncHandler(createThread)
+        asyncHandler(threadController.createThread)
 );
 
 router.put("/threads/:threadId",
@@ -170,7 +166,7 @@ router.put("/threads/:threadId",
         forumValidatorsThread.validateThreadExists,
         forumValidatorsThread.validateThreadUpdate,
         auth.requireOwnerOrAdmin("thread"),
-        asyncHandler(updateThread)
+        asyncHandler(threadController.updateThread)
 );
 
 router.delete("/threads/:threadId",
@@ -178,7 +174,7 @@ router.delete("/threads/:threadId",
         forumValidatorsThread.validateThreadExists,
         forumValidatorsThread.validateThreadDelete,
         auth.requireOwnerOrAdmin("thread"),
-        asyncHandler(deleteThread)
+        asyncHandler(threadController.deleteThread)
 );
 // ===================================================================================================================================
 // ===================================================================================================================================

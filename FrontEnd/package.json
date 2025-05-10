@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.17.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "axios": "^1.8.1",
     "dotenv": "^16.4.7",
+    "framer-motion": "^12.10.5",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "react": "^19.0.0",

@@ -69,7 +69,7 @@ const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => 
     }
 };
 
-const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, orderDirection, author_id = null) => {
+const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 10, orderByField = 'category_name', orderDirection = 'ASC', author_id = null) => {
     let conn;
     const offset = (page - 1) * limit;
     const categoryIdNum = Number(categoryId);
@@ -80,7 +80,6 @@ const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, ord
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Get category info with counts
         const categorySql = `
             SELECT 
                 fc.category_id, 
@@ -106,7 +105,6 @@ const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, ord
             GROUP BY fc.category_id
         `;
 
-        // Validate orderByField to prevent SQL injection and ensure it's a valid column
         const validThreadColumns = [
             'thread_id', 'thread_name', 'description',
             'created_at', 'last_updated', 'created_by',
@@ -114,10 +112,9 @@ const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, ord
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
-            orderByField = 'created_at'; // default to created_at if invalid
+            orderByField = 'created_at';
         }
 
-        // Get threads with pagination and ordering
         const threadsSql = `
             SELECT 
                 ft.thread_id,
@@ -148,7 +145,6 @@ const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, ord
             LIMIT ? OFFSET ?
         `;
 
-        // Get total thread count for pagination
         const countSql = `
             SELECT COUNT(*) AS totalCount 
             FROM forum_threads 
@@ -205,19 +201,26 @@ const getSummaryCategoriesDB = async () => {
     let conn;
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+        
         const sql = `
-            SELECT category_id, category_name
-            FROM forum_categories
+            SELECT 
+                category_id, 
+                category_name,
+                description,
+                created_at,
+                (SELECT COUNT(*) FROM forum_threads WHERE category_id = fc.category_id) as thread_count
+            FROM forum_categories fc
             ORDER BY created_at DESC
+            LIMIT 1000
         `;
+        
         const [categories] = await conn.execute(sql);
-        await conn.commit();
+        
         return categories;
+        
     } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting categories:", error);
-        throw new Error("Failed to get categories");
+        console.error("Database error in getSummaryCategoriesDB:", error);
+        throw new Error("Failed to retrieve category summaries");
     } finally {
         if (conn) conn.release();
     }
@@ -240,7 +243,10 @@ const getCategoryByNameDB = async (name) => {
             WHERE c.category_name = ?
         `;
         const [categories] = await conn.execute(sql, [name]);
-        return categories[0] || null;
+
+        const category = categories[0];
+
+        return category;
     } catch (error) {
         console.error("Database error getting category by name:", error);
         throw error;
@@ -253,7 +259,7 @@ const getCategoryByIdDB = async (categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+
         const sql = `
             SELECT 
                 fc.category_id, u.username, 
@@ -264,10 +270,11 @@ const getCategoryByIdDB = async (categoryId) => {
             WHERE fc.category_id = ?
         `;
 
-        const [category] = await conn.execute(sql, [categoryId]);
+        const [returnCategory] = await conn.execute(sql, [categoryId]);
+        
+        const category = returnCategory[0];
 
-        await conn.commit();
-        return category[0] || null;
+        return category;
     }
     catch (error) {
         if (conn) await conn.rollback();
@@ -290,10 +297,6 @@ const getThreadsSummaryByCategoryDB = async (categoryId) => {
             FROM forum_categories fc
             WHERE fc.category_id = ?`;
         const [categoryResult] = await conn.execute(sqlCategory, [categoryId]);
-
-        if (categoryResult.length === 0) {
-            throw new Error("Category not found");
-        }
 
         const category = categoryResult[0];
 
@@ -333,10 +336,6 @@ const getThreadsSummaryByCategoryDB = async (categoryId) => {
 const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'newest') => {
     let conn;
     try {
-        if (!categoryId || isNaN(Number(categoryId))) {
-            throw new Error("Invalid category ID");
-        }
-
         const offset = (page - 1) * limit;
 
         let orderByClause = 'p.created_at DESC';
@@ -385,10 +384,6 @@ const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'ne
 };
 
 const getCategoriesByUserDB = async (username, includeStats = false) => {
-    if (!username || typeof username !== 'string' || username.trim().length === 0) {
-        throw new Error("Invalid username provided");
-    }
-
     let conn;
     try {
         conn = await connection.getConnection();
@@ -421,6 +416,11 @@ const getCategoriesByUserDB = async (username, includeStats = false) => {
         `;
 
         const [categories] = await conn.execute(sql, [username.trim()]);
+
+        if (!categories.length) {
+            throw new Error("No categories found for this user");
+        }
+
         return categories;
     } catch (error) {
         console.error("Error getting categories by user:", error);
@@ -453,9 +453,13 @@ const createCategoryDB = async (author_id, category_name, description = null) =>
             FROM users
             WHERE user_id = ?
         `;
-        const [rows] = await conn.execute(getUsernameSQL, [author_id]);
+        const [createResult] = await conn.execute(getUsernameSQL, [author_id]);
 
-        const username = rows[0]?.username || null;
+        if (createResult.affectedRows === 0) {
+            throw new Error("Category not found or no changes made");
+        }
+
+        const username = createResult[0]?.username || null;
 
         return { categoryId, username };
     } catch (error) {
@@ -477,37 +481,6 @@ const updateCategoryDB = async (author_id, categoryId, category_name, descriptio
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        const checkSql = `
-            SELECT user_id
-            FROM forum_categories
-            WHERE category_id = ?
-        `;
-        const [categoryRows] = await conn.execute(checkSql, [categoryId]);
-        if (categoryRows.length === 0) {
-            throw new Error("Category not found or unauthorized");
-        }
-
-        const ownerId = categoryRows[0].user_id;
-        if (ownerId !== author_id) {
-            throw new Error("Category not found or unauthorized");
-        }
-
-        if (category_name) {
-            const checkNameSql = `
-                SELECT category_id
-                FROM forum_categories
-                WHERE LOWER(category_name) = ? AND category_id != ?
-            `;
-            const [nameCheckRows] = await conn.execute(checkNameSql, [category_name, categoryId]);
-            if (nameCheckRows.length > 0) {
-                throw new Error("Category name already exists");
-            }
-        }
-
-        if (!category_name && !description) {
-            throw new Error("No fields to update provided");
-        }
 
         const updateSql = `
             UPDATE forum_categories
@@ -553,34 +526,6 @@ const deleteCategoryDB = async (author_id, categoryId) => {
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
-
-        const categorySql = `
-            SELECT user_id
-            FROM forum_categories
-            WHERE category_id = ?
-        `;
-        const [categoryRows] = await conn.execute(categorySql, [categoryId]);
-
-        if (categoryRows.length === 0) {
-            throw new Error("Category not found");
-        }
-
-        const categoryOwnerId = categoryRows[0].user_id;
-        if (categoryOwnerId !== author_id) {
-            throw new Error("Category not found or unauthorized");
-        }
-
-        const dependencySql = `
-            SELECT 1
-            FROM forum_threads
-            WHERE category_id = ?
-            LIMIT 1
-        `;
-        const [threadRows] = await conn.execute(dependencySql, [categoryId]);
-
-        if (threadRows.length > 0) {
-            throw new Error("Cannot delete category with existing threads");
-        }
 
         const deleteSql = `
             DELETE FROM forum_categories

@@ -64,14 +64,14 @@ const validatePagination = (page, limit, maxLimit = 100) => {
 
 const validateSorting = (sortBy, sortOrder) => {
     const allowedFields = {
-        name: 'fc.category_name',
+        category_name: 'fc.category_name',
         created: 'fc.created_at',
         updated: 'fc.last_updated',
         threads: 'thread_count',
         posts: 'post_count'
     };
 
-    const orderByField = allowedFields[sortBy] || allowedFields.name;
+    const orderByField = allowedFields[sortBy] || allowedFields.category_name;
     const orderDirection = sortOrder && sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
     return { orderByField, orderDirection };
@@ -80,7 +80,7 @@ const validateSorting = (sortBy, sortOrder) => {
 // Controller methods
 const getAllCategories = async (req, res) => {
     try {
-        const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC' } = req.query;
+        const { page = 1, limit = 10, sortBy = 'category_name', sortOrder = 'ASC' } = req.query;
         const { page: p, limit: l } = validatePagination(page, limit);
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
 
@@ -111,7 +111,7 @@ const getAllCategories = async (req, res) => {
 const getThreadsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
-        const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC' } = req.query;
+        const { page = 1, limit = 10, sortBy = 'category_name', sortOrder = 'ASC' } = req.query;
         const { page: p, limit: l } = validatePagination(page, limit);
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
 
@@ -169,10 +169,6 @@ const getCategoryByName = async (req, res) => {
 
         const category = await CategoryDB.getCategoryByNameDB(categoryName);
 
-        if (!category) {
-            throw new Error("Category not found");
-        }
-
         res.status(StatusCodes.OK).json({
             success: true,
             category: category,
@@ -191,10 +187,6 @@ const getCategoryById = async (req, res) => {
         const { categoryId } = req.params;
 
         const category = await CategoryDB.getCategoryByIdDB(categoryId);
-
-        if (!category) {
-            throw new Error("Category not found");
-        }
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -239,8 +231,8 @@ const getThreadsSummaryByCategory = async (req, res) => {
 
 const getPostsByCategory = async (req, res) => {
     try {
-        const { id } = req.params;
-        const categoryId = validateId(id, "Category ID");
+        const { categoryId } = req.params;
+
         const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
         const sort = req.query.sort || 'newest';
@@ -286,10 +278,6 @@ const getCategoriesByUser = async (req, res) => {
         const includeStats = req.query.stats === 'true';
 
         const categories = await CategoryDB.getCategoriesByUserDB(validatedUsername, includeStats);
-
-        if (!categories.length) {
-            throw new Error("No categories found for this user");
-        }
 
         res.status(StatusCodes.OK).json({
             success: true,

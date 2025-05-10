@@ -172,7 +172,7 @@ const UpdatePost: React.FC = () => {
         {error && <div className={styles.errorAlert}><span className={styles.errorIcon}>⚠️</span> {error}</div>}
         {success && <div className={styles.alertSuccess}><span className={styles.successIcon}>✅</span> {success}</div>}
 
-        <div className={styles.tagCard}>
+        <div className={styles.forumCard}>
           <form onSubmit={handleSubmit}>
             {/* Read-only Category & Thread */}
             <div className={styles.formGroup}>

@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateCategory, loadCategorieById } from "../../../../utils/service/Forum/category";
+import requestCategory from "../../../../utils/service/Forum/category";
 import { Category, NewCategory } from "../../../../types/forum";
 
 const UpdateCategory: React.FC = () => {
@@ -18,7 +18,7 @@ const UpdateCategory: React.FC = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        await loadCategorieById(
+        await requestCategory.loadCategorieById(
           parseInt(id || ""),
           setInitialLoad,
           setCategory,
@@ -46,7 +46,7 @@ const UpdateCategory: React.FC = () => {
 
     try {
       setFormLoading(true);
-      await handleUpdateCategory(
+      await requestCategory.handleUpdateCategory(
         category.category_id,
         updatedCategory,
         (error) => toast.error(error),
@@ -96,7 +96,7 @@ const UpdateCategory: React.FC = () => {
         </div>
 
         {category ? (
-          <div className={styles.tagCard}>
+          <div className={styles.forumCard}>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
                 <label htmlFor="categoryName" className={styles.metaLabel}>

@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleCreateCategory } from "../../../../utils/service/Forum/category";
+import requestCategory from "../../../../utils/service/Forum/category";
 import { NewCategory } from "../../../../types/forum";
 
 const CreateCategory: React.FC = () => {
@@ -21,7 +21,7 @@ const CreateCategory: React.FC = () => {
 
         try {
             setFormLoading(true);
-            await handleCreateCategory(
+            await requestCategory.handleCreateCategory(
                 newCategory,
                 (error) => toast.error(error),
                 () => {
@@ -49,7 +49,7 @@ const CreateCategory: React.FC = () => {
                     <p className={styles.pageSubtitle}>Add a new category to organize forum content</p>
                 </div>
 
-                <div className={styles.tagCard}>
+                <div className={styles.forumCard}>
                     <form onSubmit={handleSubmit}>
                         <div className={styles.formGroup}>
                             <label htmlFor="categoryName" className={styles.metaLabel}>

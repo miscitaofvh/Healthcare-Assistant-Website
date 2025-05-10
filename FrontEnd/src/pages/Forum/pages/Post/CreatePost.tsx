@@ -4,8 +4,8 @@ import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
-import { loadCategoriesSummary } from "../../../../utils/service/Forum/category";
-import { loadThreadsByCategory } from "../../../../utils/service/Forum/thread";
+import requestCategory from "../../../../utils/service/Forum/category";
+import requestThread from "../../../../utils/service/Forum/thread";
 import { loadTagsSummary } from "../../../../utils/service/Forum/tag";
 import { createPostFE, uploadPostImageFE } from "../../../../utils/service/Forum/post";
 import {
@@ -37,7 +37,7 @@ const CreatePost: React.FC = () => {
 
   useEffect(() => {
     try {
-      loadCategoriesSummary(setLoading, setCategories, setError, () => { });
+      requestCategory.loadCategoriesSummary(setLoading, setCategories, setError, () => { });
       loadTagsSummary(setTagsLoading, setTags, setError, () => { });
     } catch (err) {
       setError("Failed to load categories or tags. Please try again.");
@@ -46,7 +46,7 @@ const CreatePost: React.FC = () => {
 
   useEffect(() => {
     if (categoryId > 0) {
-      loadThreadsByCategory(categoryId, setThreads, setError);
+      requestThread.loadThreadsByCategory(categoryId, setThreads, setError);
     } else {
       setThreads([]);
     }
@@ -180,7 +180,7 @@ const CreatePost: React.FC = () => {
           </div>
         )}
 
-        <div className={styles.tagCard}>
+        <div className={styles.forumCard}>
           <form onSubmit={handleSubmit}>
             {/* Category */}
             <div className={styles.formGroup}>

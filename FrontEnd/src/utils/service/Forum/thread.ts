@@ -1,185 +1,200 @@
-import {
-    getAllThreads,
-    getSummaryThreads,
-    createThread,
-    updateThread,
-    deleteThread,
-    getThreadById,
-    getPostsByThread
-} from "../../../utils/api/Forum/thread";
-import { Thread, NewThread, Post, ThreadSummary, ThreadDropdown } from "../../../types/forum";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import InteractiveThread from "../../../utils/api/Forum/thread";
+import { Thread, NewThread, Post, ThreadSummary, ThreadDropdown, PaginationData } from "../../../types/forum";
 import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Dispatch, SetStateAction } from "react";
 
-export const loadThreads = async (
+const loadThreads = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThreads: Dispatch<SetStateAction<Thread[]>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+    setPagination: Dispatch<SetStateAction<PaginationData>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getAllThreads();
+        const response = await InteractiveThread.getAllThreads(page, limit, sortBy, sortOrder);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Internal server error.");
-            setSuccess("");
+            throw new Error(data?.message ?? "Failed to load threads");
         }
+
         setThreads(data.threads ?? []);
-        setSuccess("Threads loaded successfully");
-        setError("");
-    } catch (err: any) {
+        setPagination({
+            currentPage: data.page || page,
+            totalPages: Math.ceil(data.totalCount / data.limit) || 1,
+            limit: data.limit || limit,
+            totalItems: data.totalCount || 0,
+            sortBy: data.sortBy || sortBy,
+            sortOrder: data.sortOrder || sortOrder
+        });
+
+        if (data.message) {
+            showSuccess(data.message);
+        }
+    } catch (err: unknown) {
         const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Failed to load threads.";
-        setError(errorMsg);
-        setSuccess("");
+            (err as any)?.response?.data?.message ??
+            (err instanceof Error ? err.message : "Failed to load threads");
+        showError(errorMsg);
     } finally {
         setLoading(false);
     }
 };
 
-export const loadThreadByID = async (
+const loadThreadByID = async (
     id: number,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThread: Dispatch<SetStateAction<ThreadSummary | null>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+    showError: (message: string) => void = toast.error,
+    onSuccess: () => void,
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getThreadById(id);
+        const response = await InteractiveThread.getThreadById(id);
 
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
-            setSuccess("");
+            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            return;
         }
+
         setThread(data.thread || null);
-        setSuccess("Tải danh sách threads thành công");
-        setError("");
+        onSuccess();
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
             "Đã xảy ra lỗi khi tải danh sách category";
-        setError(errorMsg);
-        setSuccess("");
+        showError(errorMsg);
     } finally {
         setLoading(false);
     }
 };
 
-export const loadPostsandThreadByCategory = async (
-    id: string,
+const loadPostsandThreadByCategory = async (
+    threadId: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThread: Dispatch<SetStateAction<Thread | null>>,
-    setPosts: Dispatch<SetStateAction<any[]>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+    setPosts: Dispatch<SetStateAction<Post[]>>,
+    setPagination: Dispatch<SetStateAction<PaginationData>>,
+    errorCallback: (message: string) => void,
+    successCallback: (message: string) => void,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = "created_at",
+    sortOrder: string = "DESC"
 ) => {
     try {
         setLoading(true);
-        const response = await getPostsByThread(Number(id));
+        const response = await InteractiveThread.getPostsByThread(
+            Number(threadId),
+            page,
+            limit,
+            sortBy,
+            sortOrder
+        );
 
         const { status, data } = response;
         if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while loading threads.";
-            setError(`Không thể tải threads: ${errorMsg}`);
+            const errorMsg = data?.message || "Unknown error occurred while loading thread data.";
+            errorCallback(`Failed to load thread: ${errorMsg}`);
             return;
         }
 
-        if (response?.data) {
+        if (data?.thread) {
             setThread(data.thread);
             setPosts(data.posts || []);
+
+            // Update pagination data from response
+            setPagination(prev => ({
+                ...prev,
+                currentPage: page,
+                totalPages: data.totalPages || 1,
+                totalItems: data.totalItems || 0,
+                limit: limit,
+                sortBy: sortBy,
+                sortOrder: sortOrder
+            }));
+
+            successCallback("Thread loaded successfully");
         } else {
-            setError("Failed to load Posts.");
+            errorCallback("No thread data found in response.");
         }
-        setSuccess("Thread loaded successfully");
-    } catch (error) {
-        setError("Failed to load Posts. Please try again later.");
-        console.error("Error loading Posts:", error);
+    } catch (error: any) {
+        errorCallback(error.message || "Failed to load thread data. Please try again later.");
+        console.error("Error loading thread:", error);
     } finally {
         setLoading(false);
     }
 };
 
-export const handleCreateThread = async (
+const handleCreateThread = async (
     newThread: NewThread,
-    setFormLoading: Dispatch<SetStateAction<boolean>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>,
-    onSuccess: () => void
+    showError: (error: string) => void,
+    onSuccess: () => void,
+    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
 ): Promise<void> => {
     try {
-        setFormLoading(true);
-        setError("");
-        setSuccess("");
+        setFormLoading?.(true);
 
-        const response = await createThread(newThread);
+        const response = await InteractiveThread.createThread(newThread);
 
         const { status, data } = response;
         if (status !== 201 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while loading threads.";
-            setError(`Không thể tải threads: ${errorMsg}`);
+            const errorMsg = data?.message || "Unknown error occurred while creating thread.";
+            showError(`Không thể tạo thread: ${errorMsg}`);
             return;
         }
 
-        setSuccess(data?.message || "Thread created successfully!");
-
-        setTimeout(() => {
-            onSuccess();
-        }, 2000);
-
+        onSuccess();
     } catch (err: any) {
-        setError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
+        const errorMsg = err?.response?.data?.message ?? err.message ?? "Failed to create thread.";
+        showError(errorMsg);
         console.error("Thread creation error:", err);
     } finally {
-        setFormLoading(false);
+        setFormLoading?.(false);
     }
 };
 
-export const handleUpdateThread = async (
+const handleUpdateThread = async (
     thread_id: number,
     newThread: NewThread,
-    setFormLoading: Dispatch<SetStateAction<boolean>>,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>,
-    onSuccess?: () => void
+    showError: (message: string) => void = toast.error,
+    onSuccess: () => void,
+    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
 ): Promise<void> => {
     try {
-        setFormLoading(true);
-        setError("");
-        setSuccess("");
+        setFormLoading?.(true);
 
-        const response = await updateThread(thread_id, newThread);
+        const response = await InteractiveThread.updateThread(thread_id, newThread);
 
         const { status, data } = response;
+
         if (status !== 200 || !data?.success) {
             const errorMsg = data?.message || "Unknown error occurred while update thread.";
-            setError(`Không thể cập nhật thread: ${errorMsg}`);
+            showError(`Không thể cập nhật thread: ${errorMsg}`);
             return;
         }
-        setSuccess(data?.message || "Thread updated successfully!");
 
-        if (onSuccess) {
-            setTimeout(() => {
-                onSuccess();
-            }, 2000);
-        }
+        toast.success(data?.message || "Category updated successfully!");
+        onSuccess();
 
     } catch (err: any) {
-        setError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
-        console.error("Thread creation error:", err);
+        showError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
     } finally {
-        setFormLoading(false);
+        setFormLoading?.(false);
     }
 };
 
-export const loadThreadsByCategory = async (
+const loadThreadsByCategory = async (
     category_id: number,
     setThreads: Dispatch<SetStateAction<ThreadDropdown[] | []>>,
     setError: Dispatch<SetStateAction<string>>,
@@ -202,5 +217,15 @@ export const loadThreadsByCategory = async (
         setError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
         console.error("Thread creation error:", err);
     } finally {
-        setError("");}
+        setError("");
+    }
+};
+
+export default {
+    loadThreads,
+    loadThreadByID,
+    loadPostsandThreadByCategory,
+    handleCreateThread,
+    handleUpdateThread,
+    loadThreadsByCategory
 };

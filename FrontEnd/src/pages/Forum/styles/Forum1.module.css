@@ -37,13 +37,13 @@
 }
 
 /* Cards & Grid */
-.tagGrid {
+.forumGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
-.tagCard,
+.forumCard,
 .postCard {
   background: #ffffff;
   border-radius: 8px;
@@ -52,7 +52,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.tagCard:hover,
+.forumCard:hover,
 .postCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -64,7 +64,7 @@
   margin-bottom: 0.5rem;
 }
 
-.tagDescription,
+.forumDescription,
 .postContent {
   color: #4b5563;
   margin-bottom: 1rem;
@@ -72,7 +72,7 @@
 }
 
 /* Meta Information */
-.tagMeta,
+.forumMeta,
 .postHeader {
   margin-top: 1rem;
   font-size: 0.875rem;
@@ -318,7 +318,7 @@
       flex-direction: column;
   }
 
-  .tagCard button,
+  .forumCard button,
   .postCard button {
       width: 100%;
       margin-bottom: 0.75rem;

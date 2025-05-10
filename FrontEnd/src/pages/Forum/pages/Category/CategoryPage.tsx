@@ -4,9 +4,10 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "../../../../components/Navbar";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
 import { Category, Thread, PaginationData } from "../../../../types/forum";
-import { loadThreadsandCategoryByCategory } from "../../../../utils/service/Forum/category";
+import requestCategory from "../../../../utils/service/Forum/category";
 
 const CategoryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,19 +19,27 @@ const CategoryPage: React.FC = () => {
     totalPages: 1,
     limit: 10,
     totalItems: 0,
-    sortBy: "created_at",
+    sortBy: "name",
     sortOrder: "DESC",
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   const sortOptions = [
     { value: "thread_name", label: "Thread Name" },
-    { value: "created_at", label: "Created Date" },
-    { value: "last_post_date", label: "Last Post" },
-    { value: "post_count", label: "Post Count" },
+    { value: "created", label: "Created Date" },
+    { value: "updated", label: "Last Post" },
+    { value: "post", label: "Post Count" },
   ];
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (
+    page: number = pagination.currentPage,
+    limit: number = pagination.limit,
+    sortBy = pagination.sortBy,
+    sortOrder = pagination.sortOrder
+  ) => {
     if (!id) {
       toast.error("Invalid category ID");
       setLoading(false);
@@ -38,18 +47,25 @@ const CategoryPage: React.FC = () => {
     }
 
     try {
-      await loadThreadsandCategoryByCategory(
+      await requestCategory.loadThreadsandCategoryByCategory(
         id,
         setLoading,
         setCategory,
         setThreads,
-        setPagination,
-        (errorMessage) => toast.error(errorMessage), // Error callback
-        (successMessage) => toast.success(successMessage), // Success callback
-        pagination.currentPage,
-        pagination.limit,
-        pagination.sortBy,
-        pagination.sortOrder
+        (newPagination) => {
+          setPagination(prev => ({
+            ...prev,
+            ...newPagination,
+            sortBy,
+            sortOrder
+          }));
+        },
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
+        page,
+        limit,
+        sortBy,
+        sortOrder
       );
     } catch (err: any) {
       toast.error(err.message || "Failed to load category data");
@@ -61,12 +77,45 @@ const CategoryPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  const handleDeleteClick = (categoryId: number) => {
+    setCategoryToDelete(categoryId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await requestCategory.handleDeleteCategory(
+        categoryToDelete,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
+        setLoading,
+        () => {
+          navigate("/forum/categories");
+        }
+      );
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred while deleting the category");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
+  };
+
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSortBy = e.target.value;
-    setPagination((prev) => ({
+    setPagination(prev => ({
       ...prev,
       sortBy: newSortBy,
-      currentPage: 1, // Reset to first page when changing sort
+      currentPage: 1
     }));
   };
 
@@ -75,7 +124,7 @@ const CategoryPage: React.FC = () => {
     setPagination((prev) => ({
       ...prev,
       sortOrder: newOrder,
-      currentPage: 1, // Reset to first page when changing sort order
+      currentPage: 1,
     }));
   };
 
@@ -162,16 +211,22 @@ const CategoryPage: React.FC = () => {
                   (category.description.split(/\s+/).length > 20 ? "..." : "")
                   : "No description available"}
               </p>
-              {
-                category?.is_owner && ( // Ensure category is not null before accessing is_owner
+              {category?.is_owner && (
+                <div className={styles.buttonGroup}>
                   <button
                     className={`${styles.primaryButton} ${styles.createButton}`}
                     onClick={() => navigate(`/forum/categories/${category.category_id}/update`)}
                   >
                     Update Category
                   </button>
-                )
-              }
+                  <button
+                    className={`${styles.primaryButton} ${styles.deleteButton}`}
+                    onClick={() => handleDeleteClick(category.category_id)}
+                  >
+                    Delete Category
+                  </button>
+                </div>
+              )}
               <button
                 className={styles.secondaryButton}
                 onClick={() => navigate(`/forum/threads/create?category=${category.category_id}`)}
@@ -203,21 +258,21 @@ const CategoryPage: React.FC = () => {
 
             {threads.length > 0 ? (
               <>
-                <div className={styles.tagGrid}>
+                <div className={styles.forumGrid}>
                   {threads.map((thread) => (
                     <div
                       key={thread.thread_id}
-                      className={styles.tagCard}
+                      className={styles.forumCard}
                       onClick={() => navigate(`/forum/threads/${thread.thread_id}`)}
                     >
-                      <h3 className={styles.tagName}>{thread.thread_name}</h3>
-                      <p className={styles.tagDescription}>
+                      <h3 className={styles.forumName}>{thread.thread_name}</h3>
+                      <p className={styles.forumDescription}>
                         {thread.description
                           ? thread.description.split(/\s+/).slice(0, 10).join(" ") +
                           (thread.description.split(/\s+/).length > 10 ? "..." : "")
                           : "No description available"}
                       </p>
-                      <div className={styles.tagMeta}>
+                      <div className={styles.forumMeta}>
                         <div className={styles.metaItem}>
                           <span className={styles.metaLabel}>Posts:</span>
                           <span className={styles.metaValue}>{thread.post_count}</span>
@@ -265,6 +320,17 @@ const CategoryPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="Delete Category"
+        message="Are you sure you want to delete this category? All threads and posts within it will be permanently removed. This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Delete Category"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

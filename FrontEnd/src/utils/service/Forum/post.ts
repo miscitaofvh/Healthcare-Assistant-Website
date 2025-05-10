@@ -373,7 +373,7 @@ export const reportPostFE = async (
         setSuccess('');
 
         const response = await reportPost(postId, reportReason);
-        alert(JSON.stringify(response));
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

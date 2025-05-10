@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateThread, loadThreadByID } from "../../../../utils/service/Forum/thread";
+import requestThread from "../../../../utils/service/Forum/thread";
 import { NewThread, ThreadSummary } from "../../../../types/forum";
 
 const UpdateThread: React.FC = () => {
@@ -12,37 +15,28 @@ const UpdateThread: React.FC = () => {
     const [thread, setThread] = useState<ThreadSummary | null>(null);
     const [formLoading, setFormLoading] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
-    const [success, setSuccess] = useState("");
-    const [error, setError] = useState("");
 
     useEffect(() => {
         const fetchThread = async () => {
             try {
-                await loadThreadByID(parseInt(id || ""), setInitialLoad, setThread, setError, () => { });
-            } catch {
-                setError("An unexpected error occurred");
+                await requestThread.loadThreadByID(
+                    parseInt(id || ""),
+                    setInitialLoad,
+                    setThread,
+                    (error) => toast.error(error),
+                    () => toast.success("Thread loaded successfully")
+                );
+            } catch (err) {
+                toast.error("An unexpected error occurred while loading thread");
             }
         };
         fetchThread();
     }, [id]);
 
-    useEffect(() => {
-        if (success) {
-            const timer = setTimeout(() => setSuccess(""), 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [success]);
-
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(""), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
     const validateInputs = (thread: NewThread): string | null => {
         const title = thread.thread_name.trim();
-        let description = thread.description?.trim() || "";
+        const description = thread.description?.trim() || "";
+        
         if (!title) return "Thread title is required";
         if (title.length < 3 || title.length > 50) return "Thread title must be from 3 to 50 characters";
         if (!description) return "Thread content is required";
@@ -59,40 +53,43 @@ const UpdateThread: React.FC = () => {
         const updatedThread: NewThread = {
             thread_id: thread.thread_id,
             thread_name: thread.thread_name.trim(),
-            description: thread.description.trim() || "",
+            description: thread.description.trim(),
             category_id: thread.category_id
         };
 
         const validationError = validateInputs(updatedThread);
         if (validationError) {
-            setError(validationError);
+            toast.error(validationError);
             return;
         }
 
         try {
-            await handleUpdateThread(
+            setFormLoading(true);
+            await requestThread.handleUpdateThread(
                 thread.thread_id,
                 updatedThread,
-                setFormLoading,
-                setError,
-                setSuccess,
-                () => navigate(`/forum/threads/${thread.thread_id}`)
+                (error) => toast.error(error),
+                () => {
+                    toast.success("Thread updated successfully!");
+                    navigate(`/forum/threads/${thread.thread_id}`);
+                }
             );
         } catch (err) {
-            setError("Failed to update thread. Please try again.");
+            toast.error("Failed to update thread. Please try again.");
+        } finally {
+            setFormLoading(false);
         }
     };
 
     const handleInputChange = (field: keyof NewThread, value: string | number) => {
         if (!thread) return;
-        setError("");
-        setSuccess("");
         setThread({ ...thread, [field]: value });
     };
 
     if (initialLoad) {
         return (
             <div className={styles.forumContainer}>
+                <ToastContainer position="top-right" autoClose={5000} />
                 <div className={styles.main_navbar}>
                     <Navbar />
                 </div>
@@ -106,6 +103,7 @@ const UpdateThread: React.FC = () => {
 
     return (
         <div className={styles.forumContainer}>
+            <ToastContainer position="top-right" autoClose={5000} />
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
@@ -116,26 +114,13 @@ const UpdateThread: React.FC = () => {
                     <p className={styles.pageSubtitle}>Edit your thread content below</p>
                 </div>
 
-                {error && (
-                    <div className={styles.errorAlert}>
-                        <span className={styles.errorIcon}>⚠️</span> {error}
-                    </div>
-                )}
-                {success && (
-                    <div className={styles.alertSuccess}>
-                        <span className={styles.errorIcon}>✅</span> {success}
-                    </div>
-                )}
-
                 {thread ? (
-                    <div className={styles.tagCard}>
+                    <div className={styles.forumCard}>
                         <form onSubmit={handleSubmit}>
                             <div className={styles.formGroup}>
-
                                 <label htmlFor="threadCategory" className={styles.readOnlyField}>
                                     Category *
                                 </label>
-
                                 <p className={styles.readOnlyValue}>
                                     {thread.category_name}
                                 </p>
@@ -172,7 +157,7 @@ const UpdateThread: React.FC = () => {
                                     disabled={formLoading}
                                 />
                                 <small className={styles.characterCount}>
-                                    {thread.description?.length}/200 characters
+                                    {thread.description.length}/200 characters
                                 </small>
                             </div>
 
@@ -188,7 +173,7 @@ const UpdateThread: React.FC = () => {
                                 <button
                                     type="submit"
                                     className={styles.primaryButton}
-                                    disabled={formLoading || initialLoad}
+                                    disabled={formLoading}
                                 >
                                     {formLoading ? (
                                         <>

@@ -79,6 +79,7 @@ export interface Thread {
     thread_id: number;
     created_by: string;
     thread_name: string;
+    is_owner?: boolean;
     description?: string;
     created_at: string;
     last_updated: string;

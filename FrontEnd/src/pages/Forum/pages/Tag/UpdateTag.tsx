@@ -116,7 +116,7 @@ const UpdateTag: React.FC = () => {
         )}
 
         {tag ? (
-          <div className={styles.tagCard}>
+          <div className={styles.forumCard}>
             <form onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
                 <label htmlFor="tagName" className={styles.metaLabel}>
@@ -136,11 +136,11 @@ const UpdateTag: React.FC = () => {
                   {tag.tag_name.length}/50 characters
                 </small>
 
-                <label htmlFor="tagDescription" className={styles.metaLabel}>
+                <label htmlFor="forumDescription" className={styles.metaLabel}>
                   Description
                 </label>
                 <textarea
-                  id="tagDescription"
+                  id="forumDescription"
                   className={styles.formTextarea}
                   value={tag.description || ""}
                   onChange={(e) => setTag({ ...tag, description: e.target.value })}

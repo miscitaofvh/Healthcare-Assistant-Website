@@ -3,47 +3,85 @@ import { Thread, NewThread } from "../../../types/forum";
 
 const BASE_URL = "http://localhost:5000/api/forum";
 
-export async function getAllThreads() {
-    const response = await requestAPI(BASE_URL, "/threads", "GET");
+async function getAllThreads(
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
+) {
+    const response = await requestAPI(
+        BASE_URL,
+        `/threads?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+        "GET"
+    );
     return response;
 }
 
-export async function getSummaryThreads() {
+async function getSummaryThreads() {
     const response = await requestAPI(BASE_URL, "/threads/summary", "GET");
     return response;
 }
 
-export async function getThreadById(threadId: number) {
+async function getThreadById(threadId: number) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}`, "GET");
     return response;
 }
 
-export async function getThreadName(threadId: number) {
+async function getThreadName(threadId: number) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}/name`, "GET");
     return response;
 }
 
-export async function getPostsByThread(threadId: number) {
-    const response = await requestAPI(BASE_URL, `/threads/${threadId}/posts`, "GET");
+async function getPostsByThread(
+    threadId: number,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = "created_at",
+    sortOrder: string = "DESC"
+) {
+    const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        sortBy: sortBy,
+        sortOrder: sortOrder
+    });
+
+    const response = await requestAPI(
+        BASE_URL,
+        `/threads/${threadId}/posts?${queryParams.toString()}`,
+        "GET"
+    );
     return response;
 }
 
-export async function getThreadsByUser(userId: number) {
+async function getThreadsByUser(userId: number) {
     const response = await requestAPI(BASE_URL, `/users/${userId}/threads`, "GET");
     return response;
 }
 
-export async function createThread(threadData: NewThread) {
+async function createThread(threadData: NewThread) {
     const response = await requestAPI(BASE_URL, "/threads", "POST", threadData);
     return response;
 }
 
-export async function updateThread(threadId: number, threadData: NewThread) {
+async function updateThread(threadId: number, threadData: NewThread) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}`, "PUT", threadData);
     return response;
 }
 
-export async function deleteThread(threadId: number) {
+async function deleteThread(threadId: number) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}`, "DELETE");
     return response;
 }
+
+export default {
+    getAllThreads,
+    getSummaryThreads,
+    getThreadById,
+    getThreadName,
+    getPostsByThread,
+    getThreadsByUser,
+    createThread,
+    updateThread,
+    deleteThread
+};

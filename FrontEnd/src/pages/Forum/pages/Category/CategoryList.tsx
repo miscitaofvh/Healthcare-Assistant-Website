@@ -5,8 +5,24 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { loadCategories } from "../../../../utils/service/Forum/category";
+import requestCategory from "../../../../utils/service/Forum/category";
 import { CategoryMain, PaginationData } from "../../../../types/forum";
+
+// Helper function to truncate text
+const truncateText = (text: string, wordLimit: number, charLimit: number) => {
+  if (!text) return "No description available";
+  
+  // First truncate by character length to prevent extremely long words
+  let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
+  
+  // Then truncate by word count
+  const words = truncated.split(/\s+/);
+  if (words.length > wordLimit) {
+    truncated = words.slice(0, wordLimit).join(' ') + '...';
+  }
+  
+  return truncated;
+};
 
 const CategoryList: React.FC = () => {
   const [categories, setCategories] = useState<CategoryMain[]>([]);
@@ -22,19 +38,26 @@ const CategoryList: React.FC = () => {
   const navigate = useNavigate();
 
   const sortOptions = [
-    { value: 'name', label: 'Name' },
+    { value: 'category_name', label: 'Name' },
     { value: 'created', label: 'Created Date' },
     { value: 'updated', label: 'Updated Date' },
     { value: 'threads', label: 'Thread Count' },
     { value: 'posts', label: 'Post Count' }
   ];
 
-  // Use useCallback to memoize the loadData function
-  const loadData = useCallback((page: number = 1, limit: number = pagination.limit, sortBy = pagination.sortBy, sortOrder = pagination.sortOrder) => {
-    loadCategories(
+  const loadData = useCallback((page: number = 1, limit: number = pagination.limit, 
+    sortBy = pagination.sortBy, sortOrder = pagination.sortOrder) => {
+    requestCategory.loadCategories(
       setLoading,
       setCategories,
-      setPagination,
+      (newPagination) => {
+        setPagination(prev => ({
+          ...prev,
+          ...newPagination,
+          sortBy, // Ensure we keep the current sortBy
+          sortOrder // Ensure we keep the current sortOrder
+        }));
+      },
       (errorMessage) => toast.error(errorMessage),
       (successMessage) => toast.success(successMessage),
       page,
@@ -60,20 +83,20 @@ const CategoryList: React.FC = () => {
     const newSortBy = e.target.value;
     setPagination(prev => ({
       ...prev,
-      sortBy: newSortBy
+      sortBy: newSortBy,
+      currentPage: 1 // Reset to first page when sorting changes
     }));
-    // Pass the new sortBy value directly to loadData
-    loadData(1, pagination.limit, newSortBy, pagination.sortOrder);
+    // No need to call loadData here - the useEffect will trigger it
   };
 
   const toggleSortOrder = () => {
     const newOrder = pagination.sortOrder === 'ASC' ? 'DESC' : 'ASC';
     setPagination(prev => ({
       ...prev,
-      sortOrder: newOrder
+      sortOrder: newOrder,
+      currentPage: 1 // Reset to first page when order changes
     }));
-    // Pass the new sortOrder value directly to loadData
-    loadData(1, pagination.limit, pagination.sortBy, newOrder);
+    // No need to call loadData here - the useEffect will trigger it
   };
 
   const renderSortIndicator = () => {
@@ -161,22 +184,18 @@ const CategoryList: React.FC = () => {
           </div>
         ) : categories.length > 0 ? (
           <>
-            <div className={styles.tagGrid}>
+            <div className={styles.forumGrid}>
               {categories.map((category) => (
                 <div
                   key={category.category_id}
-                  className={styles.tagCard}
+                  className={styles.forumCard}
                   onClick={() => handleCategoryClick(category.category_id)}
                 >
-                  <h3 className={styles.tagName}>
+                  <h3 className={styles.forumName}>
                     {category.category_name}
                   </h3>
                   <p className={styles.tagDescription}>
-                    {category.description
-                      ? category.description.split(/\s+/).slice(0, 10).join(' ') +
-                      (category.description.split(/\s+/).length > 10 ? '...' : '')
-                      : "No description available"
-                    }
+                    {truncateText(category.description || "", 10, 100)}
                   </p>
                   <div className={styles.tagMeta}>
                     <div className={styles.metaItem}>
