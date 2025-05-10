@@ -100,6 +100,7 @@ const loadPostsandThreadByCategory = async (
             sortBy,
             sortOrder
         );
+
         const { status, data } = response;
         if (status !== 200 || !data?.success) {
             const errorMsg = data?.message || "Unknown error occurred while loading thread data.";

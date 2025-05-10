@@ -260,14 +260,17 @@ const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField =
                 p.content,
                 p.created_at,
                 p.last_updated,
-                u.username AS author
+                p.like_count,
+                u.username AS author,
+                COUNT(DISTINCT c.comment_id) AS comment_count
             FROM forum_posts p
             JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN forum_comments c ON c.post_id = p.post_id
             WHERE p.thread_id = ?
+            GROUP BY p.post_id, p.title, p.content, p.created_at, p.last_updated, p.like_count, u.username
             ORDER BY ${conn.escapeId(orderByField)} ${orderDirection === 'ASC' ? 'ASC' : 'DESC'}
             LIMIT ? OFFSET ?
         `;
-
         const countSql = `
             SELECT COUNT(*) AS totalCount 
             FROM forum_posts 
