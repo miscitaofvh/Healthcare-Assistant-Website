@@ -1,8 +1,8 @@
 export interface PaginationData {
+    totalItems: number;
     currentPage: number;
     totalPages: number;
     limit: number;
-    totalCount: number;
     sortBy: string;
     sortOrder: string;
 }
@@ -108,6 +108,7 @@ export interface Category {
     last_updated: string;
     thread_count: number;
     post_count: number;
+    is_owner?: boolean;
 }
 
 export interface CategoryMain {

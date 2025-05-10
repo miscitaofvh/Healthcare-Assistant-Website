@@ -22,8 +22,18 @@ async function getCategoryById(id: number) {
     return response;
 }
 
-async function getThreadsByCategory(id: number) {
-    const response = await requestAPI(BASE_URL, `/categories/${id}/threads`, "GET");
+async function getThreadsByCategory(
+    id: number,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
+) {
+    const response = await requestAPI(
+        BASE_URL,
+        `/categories/${id}/threads?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+        "GET"
+    );
     return response;
 }
 

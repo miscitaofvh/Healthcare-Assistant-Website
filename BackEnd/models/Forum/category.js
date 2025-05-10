@@ -50,12 +50,152 @@ const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => 
                 thread_count: Number(category.thread_count),
                 post_count: Number(category.post_count)
             })),
-            totalCount: Number(countResult[0].totalCount)
+            pagination: {
+                totalItems: Number(countResult[0].totalCount),
+                currentPage: page,
+                totalPages: Math.ceil(Number(countResult[0].totalCount) / limit),
+                itemsPerPage: limit,
+                limit: limit,
+                sortBy: orderByField,
+                sortOrder: orderDirection
+            }
         };
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in getAllCategoriesDB:", error);
         throw new Error("Failed to retrieve categories from database");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+const getThreadsByCategoryDB = async (categoryId, page, limit, orderByField, orderDirection, author_id = null) => {
+    let conn;
+    const offset = (page - 1) * limit;
+    const categoryIdNum = Number(categoryId);
+    const limitNum = Number(limit);
+    const pageNum = Number(page);
+
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
+
+        // Get category info with counts
+        const categorySql = `
+            SELECT 
+                fc.category_id, 
+                fc.category_name,
+                fc.description,
+                fc.created_at,
+                fc.last_updated,
+                u.username AS created_by,
+                COUNT(DISTINCT ft.thread_id) AS thread_count,
+                COUNT(DISTINCT fp.post_id) AS post_count,
+                (
+                    SELECT MAX(fp2.created_at)
+                    FROM forum_posts fp2
+                    JOIN forum_threads ft2 ON fp2.thread_id = ft2.thread_id
+                    WHERE ft2.category_id = fc.category_id
+                ) AS last_post_date
+                ${author_id ? ', (fc.user_id = ?) AS is_owner' : ''}
+            FROM forum_categories fc
+            JOIN users u ON fc.user_id = u.user_id
+            LEFT JOIN forum_threads ft ON ft.category_id = fc.category_id
+            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
+            WHERE fc.category_id = ?
+            GROUP BY fc.category_id
+        `;
+
+        // Validate orderByField to prevent SQL injection and ensure it's a valid column
+        const validThreadColumns = [
+            'thread_id', 'thread_name', 'description',
+            'created_at', 'last_updated', 'created_by',
+            'post_count', 'last_post_date', 'last_post_author'
+        ];
+
+        if (!validThreadColumns.includes(orderByField)) {
+            orderByField = 'created_at'; // default to created_at if invalid
+        }
+
+        // Get threads with pagination and ordering
+        const threadsSql = `
+            SELECT 
+                ft.thread_id,
+                ft.thread_name,
+                ft.description,
+                ft.created_at,
+                ft.last_updated,
+                u.username AS created_by,
+                COUNT(DISTINCT fp.post_id) AS post_count,
+                MAX(fp.created_at) AS last_post_date,
+                (
+                    SELECT username
+                    FROM users
+                    WHERE user_id = (
+                        SELECT user_id
+                        FROM forum_posts
+                        WHERE thread_id = ft.thread_id
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    )
+                ) AS last_post_author
+            FROM forum_threads ft
+            JOIN users u ON ft.user_id = u.user_id
+            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
+            WHERE ft.category_id = ?
+            GROUP BY ft.thread_id
+            ORDER BY ${conn.escapeId(orderByField)} ${orderDirection === 'ASC' ? 'ASC' : 'DESC'}
+            LIMIT ? OFFSET ?
+        `;
+
+        // Get total thread count for pagination
+        const countSql = `
+            SELECT COUNT(*) AS totalCount 
+            FROM forum_threads 
+            WHERE category_id = ?
+        `;
+
+        const [[categoryResult], [threads], [countResult]] = await Promise.all([
+            conn.execute(categorySql, author_id ? [author_id, categoryIdNum] : [categoryIdNum]),
+            conn.execute(threadsSql, [categoryIdNum, limitNum.toString(), offset.toString()]),
+            conn.execute(countSql, [categoryIdNum])
+        ]);
+
+        const returnCategory = categoryResult[0];
+
+        await conn.commit();
+
+        if (!returnCategory) {
+            throw new Error("Category not found");
+        }
+
+        return {
+            category: {
+                ...returnCategory,
+                thread_count: Number(returnCategory.thread_count),
+                post_count: Number(returnCategory.post_count),
+                is_owner: author_id ? returnCategory.is_owner === 1 : false
+            },
+            threads: threads.map(thread => ({
+                ...thread,
+                post_count: Number(thread.post_count)
+            })),
+            pagination: {
+                totalItems: Number(countResult[0].totalCount),
+                currentPage: pageNum,
+                totalPages: Math.ceil(Number(countResult[0].totalCount) / limitNum),
+                itemsPerPage: limitNum,
+                limit: limitNum,
+                sortBy: orderByField,
+                sortOrder: orderDirection
+            }
+        };
+
+    } catch (error) {
+        if (conn) await conn.rollback();
+        console.error("Database error in getThreadsByCategoryDB:", error);
+        throw new Error(error.message.includes("Category not found") ?
+            error.message : "Failed to get threads by category");
     } finally {
         if (conn) conn.release();
     }
@@ -137,120 +277,6 @@ const getCategoryByIdDB = async (categoryId) => {
         if (conn) conn.release();
     }
 }
-
-const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 20) => {
-    let conn;
-    try {
-        const categoryIdNum = parseInt(categoryId, 10);
-        const pageNum = parseInt(page, 10);
-        const limitNum = parseInt(limit, 10);
-
-        if (isNaN(categoryIdNum)) {
-            throw new Error("Invalid category ID");
-        }
-        if (isNaN(pageNum)) {
-            throw new Error("Invalid page number");
-        }
-        if (isNaN(limitNum)) {
-            throw new Error("Invalid limit value");
-        }
-
-        const offset = (pageNum - 1) * limitNum;
-
-        conn = await connection.getConnection();
-
-        const sqlCategory = `
-            SELECT 
-                fc.category_id, 
-                fc.category_name,
-                fc.description,
-                fc.created_at,
-                fc.last_updated,
-                u.username AS created_by,
-                (
-                    SELECT COUNT(*) 
-                    FROM forum_threads 
-                    WHERE category_id = fc.category_id
-                ) AS thread_count,
-                (
-                    SELECT COUNT(*)
-                    FROM forum_posts fp
-                    JOIN forum_threads ft ON fp.thread_id = ft.thread_id
-                    WHERE ft.category_id = fc.category_id
-                ) AS post_count
-            FROM forum_categories fc
-            JOIN users u ON fc.user_id = u.user_id
-            WHERE fc.category_id = ?`;
-        const [categoryResult] = await conn.execute(sqlCategory, [categoryIdNum]);
-
-        if (categoryResult.length === 0) {
-            throw new Error("Category not found");
-        }
-
-        const category = categoryResult[0];
-
-        const sqlThreads = `
-            SELECT 
-                ft.thread_id,
-                ft.thread_name,
-                ft.description,
-                ft.created_at,
-                ft.last_updated,
-                u.username AS created_by,
-                COUNT(fp.post_id) AS post_count,
-                MAX(fp.created_at) AS last_post_date,
-                (
-                    SELECT username
-                    FROM users
-                    WHERE user_id = (
-                        SELECT user_id
-                        FROM forum_posts
-                        WHERE thread_id = ft.thread_id
-                        ORDER BY created_at DESC
-                        LIMIT 1
-                    )
-                ) AS last_post_author
-            FROM forum_threads ft
-            JOIN users u ON ft.user_id = u.user_id
-            LEFT JOIN forum_posts fp ON fp.thread_id = ft.thread_id
-            WHERE ft.category_id = ?
-            GROUP BY ft.thread_id
-            ORDER BY IFNULL(last_post_date, 0) DESC, ft.created_at DESC
-            LIMIT ? OFFSET ?`;
-        const [threads] = await conn.execute(sqlThreads, [categoryIdNum, limitNum.toString(), offset.toString()]);
-
-        // Get total thread count for pagination
-        const [countResult] = await conn.execute(
-            `SELECT COUNT(*) AS totalCount FROM forum_threads WHERE category_id = ?`,
-            [categoryIdNum]
-        );
-        const totalCount = countResult[0].totalCount || 0;
-
-        return {
-            category: {
-                ...category,
-                thread_count: Number(category.thread_count),
-                post_count: Number(category.post_count)
-            },
-            threads: threads.map(thread => ({
-                ...thread,
-                post_count: Number(thread.post_count)
-            })),
-            pagination: {
-                totalItems: totalCount,
-                currentPage: pageNum,
-                totalPages: Math.ceil(totalCount / limitNum),
-                itemsPerPage: limitNum
-            }
-        };
-
-    } catch (error) {
-        console.error("Error in getThreadsByCategoryDB:", error);
-        throw new Error(error.message.includes("Category not found") ? error.message : "Failed to get threads by category");
-    } finally {
-        if (conn) conn.release();
-    }
-};
 
 const getThreadsSummaryByCategoryDB = async (categoryId) => {
     let conn;
@@ -404,30 +430,11 @@ const getCategoriesByUserDB = async (username, includeStats = false) => {
     }
 };
 
+// DB Layer: createCategoryDB
 const createCategoryDB = async (author_id, category_name, description = null) => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!author_id || !uuidRegex.test(author_id)) {
-        throw new Error("Invalid author ID format");
-    }
-
-    if (!category_name || typeof category_name !== 'string' || category_name.trim().length === 0) {
-        throw new Error("Category name is required and must be a non-empty string");
-    }
-
     let conn;
     try {
         conn = await connection.getConnection();
-
-        const checkSql = `
-            SELECT category_id
-            FROM forum_categories
-            WHERE LOWER(category_name) = LOWER(?)
-            LIMIT 1
-        `;
-        const [existing] = await conn.execute(checkSql, [category_name.trim()]);
-        if (existing.length > 0) {
-            throw new Error("Category name already exists");
-        }
 
         const insertSql = `
             INSERT INTO forum_categories (user_id, category_name, description)
@@ -439,7 +446,18 @@ const createCategoryDB = async (author_id, category_name, description = null) =>
             description?.trim() || null
         ]);
 
-        return insertResult.insertId;
+        const categoryId = insertResult.insertId;
+
+        const getUsernameSQL = `
+            SELECT username
+            FROM users
+            WHERE user_id = ?
+        `;
+        const [rows] = await conn.execute(getUsernameSQL, [author_id]);
+
+        const username = rows[0]?.username || null;
+
+        return { categoryId, username };
     } catch (error) {
         console.error("Error creating category:", error);
 
@@ -589,10 +607,10 @@ const deleteCategoryDB = async (author_id, categoryId) => {
 
 export default {
     getAllCategoriesDB,
+    getThreadsByCategoryDB,
     getSummaryCategoriesDB,
     getCategoryByNameDB,
     getCategoryByIdDB,
-    getThreadsByCategoryDB,
     getThreadsSummaryByCategoryDB,
     getPostsByCategoryDB,
     getCategoriesByUserDB,

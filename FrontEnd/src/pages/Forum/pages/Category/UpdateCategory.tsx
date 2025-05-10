@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { handleUpdateCategory, loadCategorieById } from "../../../../utils/service/Forum/category";
@@ -9,33 +12,28 @@ const UpdateCategory: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [category, setCategory] = useState<Category | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [initialLoad, setInitialLoad] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        await loadCategorieById(parseInt(id || ""), setInitialLoad, setCategory, setError, () => { });
-      } catch {
-        setError("An unexpected error occurred");
+        await loadCategorieById(
+          parseInt(id || ""),
+          setInitialLoad,
+          setCategory,
+          (error) => toast.error(error),
+        () => {
+          toast.success("Category loaded successfully");
+        }
+        );
+      } catch (err) {
+        toast.error("An unexpected error occurred while loading category");
       }
     };
 
     fetchCategory();
   }, [id]);
-
-  const validateInputs = (category: NewCategory): string | null => {
-    const categoryName = category.category_name.trim();
-    let description = category.description?.trim() || "";
-    if (!categoryName) return "Category name is required";
-    if (categoryName.length < 3 || categoryName.length > 50) return "Category name must be from 3 to 50 characters";
-    if (description && (description.length < 10 || description.length > 200)) {
-      return "Description must be from 10 to 200 characters long";
-    }
-    return null;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,36 +44,33 @@ const UpdateCategory: React.FC = () => {
       description: category.description?.trim() || undefined,
     };
 
-    const validationError = validateInputs(updatedCategory);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     try {
+      setFormLoading(true);
       await handleUpdateCategory(
         category.category_id,
         updatedCategory,
-        setFormLoading,
-        setError,
-        setSuccess,
-        () => navigate("/forum/categories")
+        (error) => toast.error(error),
+        () => {
+          toast.success("Category updated successfully!");
+          navigate(`/forum/categories/${category.category_id}`);
+        }
       );
     } catch (err) {
-      setError("An unexpected error occurred while updating the category");
+      toast.error("An unexpected error occurred while updating the category");
+    } finally {
+      setFormLoading(false);
     }
   };
 
   const handleInputChange = (field: keyof Category, value: string) => {
     if (!category) return;
-    setError("");
-    setSuccess("");
     setCategory({ ...category, [field]: value });
   };
 
   if (initialLoad) {
     return (
       <div className={styles.forumContainer}>
+        <ToastContainer position="top-right" autoClose={5000} />
         <div className={styles.main_navbar}>
           <Navbar />
         </div>
@@ -89,6 +84,7 @@ const UpdateCategory: React.FC = () => {
 
   return (
     <div className={styles.forumContainer}>
+      <ToastContainer position="top-right" autoClose={5000} />
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
@@ -98,17 +94,6 @@ const UpdateCategory: React.FC = () => {
           <h1 className={styles.pageTitle}>Update Category</h1>
           <p className={styles.pageSubtitle}>Modify your category details below</p>
         </div>
-
-        {error && (
-          <div className={styles.errorAlert}>
-            <span className={styles.errorIcon}>⚠️</span> {error}
-          </div>
-        )}
-        {success && (
-          <div className={styles.alertSuccess}>
-            <span className={styles.errorIcon}>✅</span> {success}
-          </div>
-        )}
 
         {category ? (
           <div className={styles.tagCard}>
@@ -125,6 +110,7 @@ const UpdateCategory: React.FC = () => {
                   required
                   maxLength={50}
                   placeholder="Enter category name (required)"
+                  disabled={formLoading}
                 />
                 <small className={styles.characterCount}>
                   {category.category_name.length}/50 characters
@@ -141,6 +127,7 @@ const UpdateCategory: React.FC = () => {
                   maxLength={200}
                   placeholder="Enter category description (optional)"
                   rows={4}
+                  disabled={formLoading}
                 />
                 <small className={styles.characterCount}>
                   {(category.description?.length || 0)}/200 characters
@@ -156,7 +143,11 @@ const UpdateCategory: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className={styles.primaryButton} disabled={formLoading}>
+                <button 
+                  type="submit" 
+                  className={styles.primaryButton} 
+                  disabled={formLoading}
+                >
                   {formLoading ? (
                     <>
                       <span className={styles.spinnerSmall}></span>

@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import CategoryDB from "../../models/Forum/category.js";
 
@@ -83,9 +84,9 @@ const getAllCategories = async (req, res) => {
         const { page: p, limit: l } = validatePagination(page, limit);
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
 
-        const result = await CategoryDB.getAllCategoriesDB(p, l, orderByField, orderDirection);
-        
-        if (!result) {
+        const { categories, pagination } = await CategoryDB.getAllCategoriesDB(p, l, orderByField, orderDirection);
+
+        if (!categories) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "No data returned from database",
@@ -93,23 +94,50 @@ const getAllCategories = async (req, res) => {
             });
         }
 
-        const categories = result.categories || [];
-        const totalCount = result.totalCount || 0;
-        
         res.status(StatusCodes.OK).json({
             success: true,
-            count: categories.length,
-            totalCount, // Add this
-            page: p,
-            limit: l,
-            sortBy,
-            sortOrder: orderDirection,
-            categories,
-            message: categories.length ? "Categories retrieved successfully." : "No categories found.",
-            timestamp: new Date().toISOString()
+            categories: categories,
+            pagination: pagination,
+            metadata: {
+                message: categories.length ? "Categories retrieved successfully." : "No categories found.",
+                retrievedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
         handleError(error, req, res, 'fetch all categories');
+    }
+};
+
+const getThreadsByCategory = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC' } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
+        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
+
+        let author_id = null;
+        try {
+            if ((req.cookies.auth_token)) {
+                const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+                author_id = decoded.user_id;
+            }
+        } catch(error) {
+        }
+        const { category, threads, pagination } = await CategoryDB.getThreadsByCategoryDB(categoryId, p, l, orderByField, orderDirection, author_id);
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            category: category,
+            threads: threads,
+            pagination: pagination,
+            metadata: {
+                categoryId,
+                retrievedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        handleError(error, req, res, 'fetch threads by category');
     }
 };
 
@@ -182,34 +210,6 @@ const getCategoryById = async (req, res) => {
 
     } catch (error) {
         handleError(error, req, res, 'fetch category by ID');
-    }
-};
-
-const getThreadsByCategory = async (req, res) => {
-    try {
-        const { categoryId } = req.params;
-        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
-
-        const { category, threads, totalCount } = await CategoryDB.getThreadsByCategoryDB(categoryId, page, limit);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            category: category,
-            threads: threads,
-            pagination: {
-                currentPage: page,
-                totalPages: Math.ceil(totalCount / limit),
-                totalItems: totalCount,
-                itemsPerPage: limit
-            },
-            metadata: {
-                categoryId,
-                retrievedAt: new Date().toISOString()
-            }
-        });
-
-    } catch (error) {
-        handleError(error, req, res, 'fetch threads by category');
     }
 };
 
@@ -311,20 +311,20 @@ const getCategoriesByUser = async (req, res) => {
     }
 };
 
+// Controller: createCategory
 const createCategory = async (req, res) => {
     try {
         const userId = req.user.user_id;
-
         const { category_name, description } = req.body;
 
-        const categoryId = await CategoryDB.createCategoryDB(userId, category_name, description);
+        const { categoryId, username } = await CategoryDB.createCategoryDB(userId, category_name, description);
 
         res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Category created successfully",
             data: { categoryId },
             metadata: {
-                createdBy: userId,
+                createdBy: username,
                 createdAt: new Date().toISOString()
             }
         });
@@ -333,6 +333,7 @@ const createCategory = async (req, res) => {
         handleError(error, req, res, 'create category');
     }
 };
+
 
 const updateCategory = async (req, res) => {
     try {

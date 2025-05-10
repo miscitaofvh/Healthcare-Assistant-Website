@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { handleCreateCategory } from "../../../../utils/service/Forum/category";
 import { NewCategory } from "../../../../types/forum";
-import { useNavigate } from "react-router-dom";
 
 const CreateCategory: React.FC = () => {
     const [newCategory, setNewCategory] = useState<NewCategory>({
@@ -11,45 +14,31 @@ const CreateCategory: React.FC = () => {
         description: "",
     });
     const [formLoading, setFormLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const navigate = useNavigate();
 
-    const validateInputs = (category: NewCategory): string | null => {
-        const categoryName = category.category_name.trim();
-        let description = category.description?.trim() || "";
-        if (!categoryName) return "Category name is required";
-        if (categoryName.length < 3 || categoryName.length > 50) return "Category name must be from 3 to 50 characters";
-        if (description && (description.length < 10 || description.length > 200)) {
-            return "Description must be from 10 to 200 characters long";
-        }
-        return null;
-    };
-    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateInputs(newCategory);
-        if (validationError) {
-            setError(validationError);
-            return;
-        }
         try {
+            setFormLoading(true);
             await handleCreateCategory(
                 newCategory,
-                setFormLoading,
-                setError,
-                setSuccess,
-                () => navigate("/forum/categories")
+                (error) => toast.error(error),
+                () => {
+                    toast.success("Category created successfully!");
+                    navigate("/forum/categories");
+                }
             );
-        }
-        catch (err) {
-            setError("An unexpected error occurred while creating the category");
+        } catch (err) {
+            toast.error("An unexpected error occurred while creating the category");
+        } finally {
+            setFormLoading(false);
         }
     };
 
     return (
         <div className={styles.forumContainer}>
+            <ToastContainer position="top-right" autoClose={5000} />
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
@@ -59,18 +48,6 @@ const CreateCategory: React.FC = () => {
                     <h1 className={styles.pageTitle}>Create New Category</h1>
                     <p className={styles.pageSubtitle}>Add a new category to organize forum content</p>
                 </div>
-
-                {error && (
-                    <div className={styles.errorAlert}>
-                        <span className={styles.errorIcon}>⚠️</span> {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div className={styles.alertSuccess}>
-                        <span className={styles.errorIcon}>✅</span> {success}
-                    </div>
-                )}
 
                 <div className={styles.tagCard}>
                     <form onSubmit={handleSubmit}>

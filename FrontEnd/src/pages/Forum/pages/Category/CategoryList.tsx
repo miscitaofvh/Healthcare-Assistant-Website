@@ -15,7 +15,7 @@ const CategoryList: React.FC = () => {
     currentPage: 1,
     totalPages: 1,
     limit: 10,
-    totalCount: 0,
+    totalItems: 0,
     sortBy: 'name',
     sortOrder: 'ASC'
   });
