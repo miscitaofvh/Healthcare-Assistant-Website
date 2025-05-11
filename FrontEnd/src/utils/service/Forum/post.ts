@@ -1,8 +1,11 @@
-import InteractPost from "../../../utils/api/Forum/post";
+import { toast } from 'react-toastify';
 import { Dispatch, SetStateAction } from "react";
+
+import InteractPost from "../../../utils/api/Forum/post";
 import { PostListResponse, Post, NewPost } from "../../../types/Forum/post";
 import { CommentPost } from "../../../types/Forum/comment";
-import { Tag, SummaryTag } from "../../../types/Forum/tag";
+import { PaginationData } from "../../../types/Forum/pagination";
+import { SummaryTag } from "../../../types/Forum/tag";
 import { SummaryCategory } from "../../../types/Forum/category";
 import { ThreadDropdown } from "../../../types/Forum/thread";
 
@@ -10,28 +13,42 @@ import { ThreadDropdown } from "../../../types/Forum/thread";
 const loadPosts = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setPosts: (posts: PostListResponse[]) => void,
-    setError: Dispatch<SetStateAction<string>>,
-    setSuccess: Dispatch<SetStateAction<string>>
+    setPagination: Dispatch<SetStateAction<PaginationData>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await InteractPost.getPosts();
+
+        const response = await InteractPost.getPosts(page, limit, sortBy, sortOrder);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
-            setSuccess("");
+            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
             return;
         }
-        setPosts(data.data.posts ?? []);
-        setSuccess("Tải danh sách posts thành công");
+        setPosts(data.posts ?? []);
+
+        setPagination({
+            currentPage: data.page || page,
+            totalPages: Math.ceil(data.totalCount / data.limit) || 1,
+            limit: data.limit || limit,
+            totalItems: data.totalCount || 0,
+            sortBy: data.sortBy || sortBy,
+            sortOrder: data.sortOrder || sortOrder
+        });
+
+        showSuccess("Posts loaded successfully");
     } catch (err: any) {
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
             "Đã xảy ra lỗi khi tải danh sách category";
-        setError(errorMsg);
-        setSuccess("");
+        showError(errorMsg);
     } finally {
         setLoading(false);
     }

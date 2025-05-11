@@ -1,403 +1,350 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-
-import {
-  getAllPostsDB,
-  getSummaryPostsDB,
-  getPostByIdDB,
-  getPostsByUserDB,
-  createPostDB,
-  updatePostDB,
-  deletePostDB,
-} from "../../models/Forum/post.js";
+import { StatusCodes } from "http-status-codes";
+import PostDB from "../../models/Forum/post.js";
 
 dotenv.config();
 
-/**
- * Handles post-related errors consistently across all routes
- * @param {Error} error - The error object
- * @param {Response} res - Express response object
- * @param {string} action - The action being performed (e.g., 'create', 'update', 'delete')
- */
-export const handlePostError = (error, res, action = 'process') => {
-  console.error(`Error while trying to ${action} post:`, error);
+const handleError = (error, req, res, action = 'process') => {
+  console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
 
-  // JWT Authentication Errors
-  if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication failed",
-      error: "Invalid or expired token"
-    });
-  }
+  const errorMap = {
+    // Authentication errors
+    "No authentication token provided": StatusCodes.UNAUTHORIZED,
+    "Invalid or expired token": StatusCodes.UNAUTHORIZED,
+    "Invalid token payload": StatusCodes.UNAUTHORIZED,
 
-  // Input Validation Errors
-  if (error.message.includes("required") ||
-    error.message.includes("Invalid") ||
-    error.message.includes("must be")) {
-    return res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
+    // Validation errors
+    "Invalid post ID": StatusCodes.BAD_REQUEST,
+    "Invalid thread ID": StatusCodes.BAD_REQUEST,
+    "Invalid username format": StatusCodes.BAD_REQUEST,
+    "Invalid pagination parameters": StatusCodes.BAD_REQUEST,
+    "Invalid sort parameter": StatusCodes.BAD_REQUEST,
+    "Title is required": StatusCodes.BAD_REQUEST,
+    "Content is required": StatusCodes.BAD_REQUEST,
+    "Invalid post type": StatusCodes.BAD_REQUEST,
 
-  // Not Found Errors
-  if (error.message.includes("not found")) {
-    return res.status(404).json({
-      success: false,
-      message: error.message
-    });
-  }
+    // Authorization errors
+    "Unauthorized to modify this post": StatusCodes.FORBIDDEN,
+    "User is banned from posting": StatusCodes.FORBIDDEN,
+    "Thread is locked": StatusCodes.FORBIDDEN,
 
-  // Authorization Errors
-  if (error.message.includes("Unauthorized") ||
-    error.message.includes("permission") ||
-    error.message.includes("banned")) {
-    return res.status(403).json({
-      success: false,
-      message: error.message
-    });
-  }
+    // Conflict errors
+    "Post already exists": StatusCodes.CONFLICT,
+    "Duplicate vote": StatusCodes.CONFLICT,
 
-  // Resource Locked Errors
-  if (error.message.includes("locked")) {
-    return res.status(423).json({
-      success: false,
-      message: error.message
-    });
-  }
+    // Not found errors
+    "Post not found": StatusCodes.NOT_FOUND,
+    "Thread not found": StatusCodes.NOT_FOUND,
+    "User not found": StatusCodes.NOT_FOUND,
+    "No posts found": StatusCodes.NOT_FOUND,
+    "No posts found for this user": StatusCodes.NOT_FOUND
+  };
 
-  // Database Constraint Errors
-  if (error.code === 'ER_NO_REFERENCED_ROW' ||
-    error.code === 'ER_DUP_ENTRY' ||
-    error.code === 'ER_DATA_TOO_LONG') {
-    return res.status(409).json({
-      success: false,
-      message: "Database constraint error",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-
-  // Default Server Error
-  res.status(500).json({
+  const statusCode = errorMap[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
+  const response = {
     success: false,
-    message: `Failed to ${action} post`,
-    error: process.env.NODE_ENV === 'development' ? {
-      name: error.name,
+    message: error.message || `Failed to ${action} post`,
+    timestamp: new Date().toISOString()
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    response.debug = {
       message: error.message,
-      stack: error.stack
-    } : undefined
-  });
+      stack: error.stack?.split("\n")[0]
+    };
+  }
+
+  if (error.message.includes("Invalid") || error.message.includes("required")) {
+    response.errorCode = "VALIDATION_ERROR";
+  }
+
+  return res.status(statusCode).json(response);
 };
 
-export const getAllPosts = async (req, res) => {
+// Helper functions
+const validatePagination = (page, limit, maxLimit = 100) => {
+  if (page < 1 || limit < 1 || limit > maxLimit) {
+    throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
+  }
+  return { page: parseInt(page), limit: parseInt(limit) };
+};
+
+const validateSorting = (sortBy, sortOrder) => {
+  const allowedFields = {
+    created: 'created_at',
+    updated: 'last_updated',
+    views: 'view_count',
+    likes: 'like_count',
+    comments: 'comment_count',
+    title: 'title'
+  };
+
+  const orderByField = allowedFields[sortBy] || allowedFields.created;
+  const orderDirection = sortOrder && sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  return { orderByField, orderDirection };
+};
+
+const getAllPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const search = req.query.search || '';
-    const sortBy = req.query.sortBy || 'created_at';
-    const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
-    const categoryId = req.query.categoryId;
-    const tagId = req.query.tagId;
+    const { page = 1, limit = 20, sortBy = 'created', sortOrder = 'DESC' } = req.query;
+    const { page: p, limit: l } = validatePagination(page, limit);
+    const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
 
-    if (page < 1 || limit < 1 || limit > 100) {
-      throw new Error("Invalid pagination parameters. Page must be ≥ 1 and limit must be between 1 and 100");
-    }
+    const { posts, pagination } = await PostDB.getAllPostsDB(p, l, orderByField, orderDirection);
 
-    const validSortColumns = ['title', 'created_at', 'updated_at', 'view_count', 'like_count'];
-    if (!validSortColumns.includes(sortBy)) {
-      throw new Error(`Invalid sort parameter. Valid columns are: ${validSortColumns.join(', ')}`);
-    }
-
-    const { posts, totalPosts } = await getAllPostsDB(
-      page,
-      limit,
-      search,
-      sortBy,
-      sortOrder,
-      categoryId,
-      tagId
-    );
-
-    const totalPages = Math.ceil(totalPosts / limit);
-
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
-      data: {
-        posts,
-        pagination: {
-          totalItems: totalPosts,
-          totalPages,
-          currentPage: page,
-          itemsPerPage: limit,
-          hasNextPage: page < totalPages,
-          hasPreviousPage: page > 1
-        },
-        filters: {
-          search,
-          sortBy,
-          sortOrder,
-          ...(categoryId && { categoryId }),
-          ...(tagId && { tagId })
-        }
+      posts: posts,
+      pagination: pagination,
+      metadata: {
+        message: posts.length ? "Posts retrieved successfully." : "No posts found.",
+        retrievedAt: new Date().toISOString()
       }
     });
   } catch (error) {
-    handlePostError(error, res, 'fetch');
+    handleError(error, req, res, 'fetch all posts');
   }
 };
 
-export const getSummaryPosts = async (req, res) => {
+const getSummaryPosts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 5;
-    const type = req.query.type || 'recent'; // recent, popular, trending
+    const type = req.query.type || 'recent'; // recent, popular, trending, featured
 
     if (limit < 1 || limit > 20) {
       throw new Error("Invalid limit parameter. Must be between 1 and 20");
     }
 
-    const validTypes = ['recent', 'popular', 'trending'];
+    const validTypes = ['recent', 'popular', 'trending', 'featured'];
     if (!validTypes.includes(type)) {
       throw new Error(`Invalid type parameter. Valid types are: ${validTypes.join(', ')}`);
     }
 
-    const posts = await getSummaryPostsDB(limit, type);
+    const posts = await PostDB.getSummaryPostsDB(limit, type);
 
-    res.status(200).json({
+    res.set('Cache-Control', 'public, max-age=300'); // 5 minute cache
+
+    res.status(StatusCodes.OK).json({
       success: true,
-      data: {
-        posts,
-        meta: {
-          count: posts.length,
-          type,
-          limit
-        }
+      posts: posts,
+      metadata: {
+        type,
+        count: posts.length,
+        generatedAt: new Date().toISOString()
       }
     });
   } catch (error) {
-    handlePostError(error, res, 'fetch summary');
+    handleError(error, req, res, 'fetch post summaries');
   }
 };
 
-export const getPostById = async (req, res) => {
+const getPostById = async (req, res) => {
   try {
     const { postId } = req.params;
 
     let author_id = null;
-    if (req.cookies.auth_token) {
-      const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-      author_id = decoded.user_id;
+    try {
+      if (req.cookies.auth_token) {
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        author_id = decoded.user_id;
+      }
+    } catch (error) {
     }
 
-    const includeComments = req.query.includeComments === 'true';
-    const includeAuthor = req.query.includeAuthor !== 'false';
-    const includeStats = req.query.includeStats === 'true';
-    const includeCommentReplies = req.query.includeCommentReplies === 'true';
-    
-    const post = await getPostByIdDB(
-      postId,
-      {
-        includeComments,
-        includeAuthor,
-        includeStats,
-        includeCommentReplies
-      },
-      author_id
-    );
+    const options = {
+      includeComments: req.query.includeComments === 'true',
+      includeAuthor: req.query.includeAuthor !== 'false',
+      includeStats: req.query.includeStats === 'true',
+      includeReplies: req.query.includeReplies === 'true',
+      includeHistory: req.query.includeHistory === 'true'
+    };
+
+    const post = await PostDB.getPostByIdDB(postId, options, author_id);
 
     if (!post) {
-      throw new Error(`Post with ID ${postId} not found`);
+      throw new Error("Post not found");
     }
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       post: post,
-      meta: {
-        includes: {
-          comments: includeComments,
-          author: includeAuthor,
-          stats: includeStats,
-          commentReplies: includeCommentReplies
-        }
+      metadata: {
+        includes: options,
+        retrievedAt: new Date().toISOString(),
+        ...(!author_id && { warning: "Viewing as guest - some features may be limited" })
       }
     });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      // If token is invalid but we still want to show the post
-      try {
-        const post = await getPostByIdDB(
-          req.params.postId,
-          {
-            includeComments: req.query.includeComments === 'true',
-            includeAuthor: req.query.includeAuthor !== 'false',
-            includeStats: req.query.includeStats === 'true',
-            includeCommentReplies: req.query.includeCommentReplies === 'true'
-          },
-          null
-        );
-        
-        if (post) {
-          return res.status(200).json({
-            success: true,
-            post: post,
-            meta: {
-              includes: {
-                comments: req.query.includeComments === 'true',
-                author: req.query.includeAuthor !== 'false',
-                stats: req.query.includeStats === 'true',
-                commentReplies: req.query.includeCommentReplies === 'true'
-              },
-              warning: "Authentication token was invalid - showing public view"
-            }
-          });
-        }
-      } catch (dbError) {
-        // Fall through to original error handling
-      }
-    }
-    handlePostError(error, res, 'fetch');
+    handleError(error, req, res, 'fetch post by ID');
   }
 };
 
-export const getPostsByUser = async (req, res) => {
+const getPostsByUser = async (req, res) => {
   try {
     const { username } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const sortBy = req.query.sortBy || 'created_at';
-    const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const { page = 1, limit = 10, sortBy = 'created', sortOrder = 'DESC' } = req.query;
+    const { page: p, limit: l } = validatePagination(page, limit);
+    const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, getPostSortFields());
 
-    if (page < 1 || limit < 1 || limit > 50) {
-      throw new Error("Invalid pagination parameters. Page must be ≥ 1 and limit must be between 1 and 50");
-    }
+    const { posts, pagination } = await PostDB.getPostsByUserDB(username, p, l, orderByField, orderDirection);
 
-    const validSortColumns = ['created_at', 'updated_at', 'view_count', 'like_count'];
-    if (!validSortColumns.includes(sortBy)) {
-      throw new Error(`Invalid sort parameter. Valid columns are: ${validSortColumns.join(', ')}`);
-    }
-
-    const { posts, totalPosts } = await getPostsByUserDB(
-      username.trim(),
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    );
-
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
-      data: {
-        posts,
-        pagination: {
-          totalItems: totalPosts,
-          totalPages: Math.ceil(totalPosts / limit),
-          currentPage: page,
-          itemsPerPage: limit,
-          hasNextPage: page < Math.ceil(totalPosts / limit),
-          hasPreviousPage: page > 1
-        },
-        user: {
-          username,
-          postCount: totalPosts
+      posts: posts,
+      pagination: pagination,
+      user: {
+        username,
+        postCount: pagination.totalItems
+      },
+      metadata: {
+        retrievedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    handleError(error, req, res, 'fetch posts by user');
+  }
+};
+
+const createPost = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { thread_id, title, content, tags = [] } = req.body;
+
+    if (!title || !content) {
+      throw new Error("Title and content are required");
+    }
+
+    const result = await PostDB.createPostDB({
+      userId,
+      threadId: thread_id,
+      title: title.trim(),
+      content: content.trim(),
+      tags: Array.isArray(tags) ? tags : [tags]
+    });
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      post: {
+        id: result.post_id,
+        title: result.title,
+        threadId: result.thread_id
+      },
+      metadata: {
+        createdBy: userId,
+        createdAt: new Date().toISOString(),
+        links: {
+          viewPost: `/posts/${result.post_id}`,
+          viewThread: `/threads/${result.thread_id}`
         }
       }
     });
   } catch (error) {
-    handlePostError(error, res, 'fetch user');
+    handleError(error, req, res, 'create post');
   }
 };
 
-export const createPost = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { thread_id, title, content, tag_name = [] } = req.body;
-
-    const result = await createPostDB(
-      userId,
-      thread_id,
-      title.trim(),
-      content.trim(),
-      tag_name && tag_name.length > 0 ? tag_name : null
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Post created successfully",
-      data: {
-        postId: result.post_id,
-        threadId: result.thread_id,
-        threadName: result.thread_name,
-        createdAt: result.created_at
-      },
-      links: {
-        viewPost: `/forum/posts/${result.post_id}`,
-        viewThread: `/forum/threads/${result.thread_id}`
-      }
-    });
-  } catch (error) {
-    handlePostError(error, res, 'create');
-  }
-};
-
-export const updatePost = async (req, res) => {
+const updatePost = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { postId } = req.params;
     const { title, content, edit_reason, tags } = req.body;
 
-    const result = await updatePostDB(
+    if (!title && !content && !tags) {
+      throw new Error("No fields to update provided");
+    }
+
+    const result = await PostDB.updatePostDB({
       postId,
       userId,
-      title,
-      content?.trim(),
+      title: title?.trim(),
+      content: content?.trim(),
+      editReason: edit_reason?.trim(),
       tags
-    );
+    });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
-      message: "Post updated successfully",
-      data: {
-        postId: postId,
+      post: {
+        id: postId,
         updatedAt: result.updated_at,
-        editCount: result.edit_count,
-        ...(edit_reason && { editReason: edit_reason.trim() })
+        editCount: result.edit_count
       },
-      links: {
-        viewPost: `/forum/posts/${postId}`,
-        viewHistory: `/forum/posts/${postId}/history`
+      metadata: {
+        updatedFields: Object.keys({ title, content, tags }).filter(k => k in req.body),
+        updatedAt: new Date().toISOString()
       }
     });
   } catch (error) {
-    handlePostError(error, res, 'update');
+    handleError(error, req, res, 'update post');
   }
 };
 
-export const deletePost = async (req, res) => {
+const deletePost = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const is_moderator = decoded.is_moderator || false;
-
+    const isModerator = req.user.is_moderator || false;
     const { postId } = req.params;
     const { delete_reason } = req.body;
 
-    const result = await deletePostDB(
+    const result = await PostDB.deletePostDB({
       postId,
       userId,
-      is_moderator,
-      delete_reason?.trim()
-    );
+      isModerator,
+      deleteReason: delete_reason?.trim()
+    });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       message: "Post deleted successfully",
-      data: {
-        postId: postId,
+      metadata: {
+        postId,
+        deletedBy: isModerator ? `moderator:${userId}` : `user:${userId}`,
         deletedAt: new Date().toISOString(),
-        ...(is_moderator && { deletedBy: `moderator:${author_id}` }),
         ...(delete_reason && { deleteReason: delete_reason.trim() })
       }
     });
   } catch (error) {
-    handlePostError(error, res, 'delete');
+    handleError(error, req, res, 'delete post');
   }
+};
+
+const voteOnPost = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { postId } = req.params;
+    const { vote } = req.body; // Expected values: 1 (like), -1 (dislike), 0 (remove vote)
+
+    if (![-1, 0, 1].includes(vote)) {
+      throw new Error("Invalid vote value");
+    }
+
+    const result = await PostDB.voteOnPostDB(postId, userId, vote);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      vote: {
+        postId,
+        newVote: vote,
+        newScore: result.score
+      },
+      metadata: {
+        votedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    handleError(error, req, res, 'process vote');
+  }
+};
+
+export default {
+  getAllPosts,
+  getSummaryPosts,
+  getPostById,
+  getPostsByUser,
+  createPost,
+  updatePost,
+  deletePost,
+  voteOnPost
 };

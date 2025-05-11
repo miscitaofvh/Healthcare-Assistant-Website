@@ -121,7 +121,7 @@ const getThreadsByCategory = async (req, res) => {
                 const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
                 author_id = decoded.user_id;
             }
-        } catch(error) {
+        } catch (error) {
         }
         const { category, threads, pagination } = await CategoryDB.getThreadsByCategoryDB(categoryId, p, l, orderByField, orderDirection, author_id);
 

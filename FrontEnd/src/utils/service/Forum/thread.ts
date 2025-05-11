@@ -1,6 +1,7 @@
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InteractiveThread from "../../../utils/api/Forum/thread";
+
 import { Thread, NewThread, ThreadSummary, ThreadDropdown } from "../../../types/Forum/thread";
 import { Post } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";

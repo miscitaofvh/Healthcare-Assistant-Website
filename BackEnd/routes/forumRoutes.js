@@ -1,7 +1,7 @@
 import express from "express";
 import categoryController from "../controllers/forum/category.js"
 import threadController from "../controllers/forum/thread.js";
-import { getAllPosts, getSummaryPosts, getPostById, getPostsByUser, createPost, updatePost, deletePost } from "../controllers/forum/post.js";
+import postController from "../controllers/forum/post.js";
 import {
         getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
         updateComment, deleteComment
@@ -177,30 +177,30 @@ router.delete("/threads/:threadId",
 // Post Routes
 router.get("/posts",
         paginate(),
-        asyncHandler(getAllPosts)
+        asyncHandler(postController.getAllPosts)
 );
 
 router.get("/posts/summary",
         paginate({ limit: 5 }),
-        asyncHandler(getSummaryPosts)
+        asyncHandler(postController.getSummaryPosts)
 );
 
 router.get("/posts/:postId",
         forumValidatorsPost.validatePostExists,
-        asyncHandler(getPostById)
+        asyncHandler(postController.getPostById)
 );
 
 router.get("/users/:username/posts",
         forumValidatorsUser.validateUserExists,
         paginate(),
-        asyncHandler(getPostsByUser)
+        asyncHandler(postController.getPostsByUser)
 );
 
 router.post("/posts",
         auth.required,
         postLimiter,
         forumValidatorsPost.validateCreatePost,
-        asyncHandler(createPost)
+        asyncHandler(postController.createPost)
 );
 
 router.put("/posts/:postId",
@@ -208,7 +208,7 @@ router.put("/posts/:postId",
         forumValidatorsPost.validatePostExists,
         forumValidatorsPost.validateUpdatePost,
         auth.requireOwnerOrAdmin("post"),
-        asyncHandler(updatePost)
+        asyncHandler(postController.updatePost)
 );
 
 router.delete("/posts/:postId",
@@ -216,7 +216,7 @@ router.delete("/posts/:postId",
         forumValidatorsPost.validatePostExists,
         forumValidatorsPost.validateDeletePost,
         auth.requireOwnerOrAdmin("post"),
-        asyncHandler(deletePost)
+        asyncHandler(postController.deletePost)
 );
 // ===================================================================================================================================
 // ===================================================================================================================================

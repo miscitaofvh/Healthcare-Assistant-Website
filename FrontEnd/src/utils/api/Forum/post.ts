@@ -1,11 +1,19 @@
-import { Post, PostNew } from "../../../types/forum";
-import { requestAPI, requestAPIFormdata } from "../request";
+import { NewPost } from "../../../types/Forum/post";
+import { requestAPI } from "../request";
 const BASE_URL = "http://localhost:5000/api/forum";
 
-async function getPosts() {
-    const response = await requestAPI(BASE_URL, "/posts", "GET");
+async function getPosts(
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
+) {
+    const response = await requestAPI(
+        BASE_URL, 
+        `/posts?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`, 
+        "GET");
     return response;
-}   
+}
 
 async function getPostsSummary() {
     const response = await requestAPI(BASE_URL, "/posts/summary", "GET");
@@ -15,19 +23,19 @@ async function getPostsSummary() {
 async function getPostsByUser(username: string) {
     const response = await requestAPI(BASE_URL, `/user/${username}/posts`, "GET");
     return response;
-}   
+}
 
 async function getPostById(id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${id}`, "GET");
     return response;
 }
 
-async function createPost(post: PostNew) {
+async function createPost(post: NewPost) {
     const response = await requestAPI(BASE_URL, "/posts", "POST", post);
     return response;
 }
 
-async function updatePost(id: string, post: any) {
+async function updatePost(id: string, post: NewPost) {
     const response = await requestAPI(BASE_URL, `/posts/${id}`, "PUT", post);
     return response;
 }
@@ -35,7 +43,7 @@ async function updatePost(id: string, post: any) {
 async function deletePost(id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${id}`, "DELETE");
     return response;
-}   
+}
 
 async function getTagByForumPost(forum_post_id: string) {
     const response = await requestAPI(BASE_URL, `/posts/${forum_post_id}/tags`, "GET");
