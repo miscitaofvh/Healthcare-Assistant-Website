@@ -12,6 +12,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
+import healthTrackingRoutes from "./routes/healthTrackingRoutes.js";
 import errorHandler from "./middleware/errorHandler.js"; 
 
 dotenv.config();
@@ -47,6 +48,7 @@ app.use("/api/verify", verifyRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use("/api/user", userRoutes); // Add the new user routes
+app.use("/api/health", healthTrackingRoutes); // Add health tracking routes
 // app.get('/profile', authenticateUser, async (req, res) => {
 //     const user = await getUserById(req.user.user_id);
 //     res.json({ success: true, user });

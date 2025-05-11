@@ -14,6 +14,7 @@ import React, {
     username: string;
     email: string;
     role: "User" | "Doctor" | "Admin" | "Moderator";
+    dob?: string; // Add date of birth for age calculation in health tracking
   }
   
   interface AuthContextType {
