@@ -3,7 +3,7 @@ import { useLocation, Outlet } from "react-router-dom";
 import Navbar from "../../../components/Navbar";
 import styles from "../styles/Forum.module.css";
 import { useNavigate } from "react-router-dom";
-import { fetchPosts } from "../../../utils/service/Forum/main";
+import requestPosts from "../../../utils/service/Forum/post";
 import { Post, Tag } from "../../../types/forum";
 
 const Forum: React.FC = () => {
@@ -18,8 +18,8 @@ const Forum: React.FC = () => {
       try {
         setLoading(true);
         setError("");
-        const forumPosts = await fetchPosts();
-        setPosts(forumPosts);
+        // const forumPosts = await requestPosts.fetchPosts();
+        // setPosts(forumPosts);
       } catch (error) {
         setError("Không thể tải bài viết. Vui lòng thử lại sau.");
         console.error("Error fetching posts:", error);
@@ -72,7 +72,7 @@ const Forum: React.FC = () => {
                       <h5 className={styles.mb_1}>{post.thread_name}</h5>
                       <p className={styles.mb_1}>{post.content.substring(0, 150)}...</p>
 
-                      {Array.isArray(post.tags) && post.tags.length > 0 && (
+                      {/* {Array.isArray(post.tags) && post.tags.length > 0 && (
                         <div className={styles.tags}>
                           {post.tags.map((tag: Tag | string, index: number) => (
                             <span key={index} className={styles.tag}>
@@ -80,7 +80,7 @@ const Forum: React.FC = () => {
                             </span>
                           ))}
                         </div>
-                      )}
+                      )} */}
                       <small>
                         Đăng bởi {post.author} vào{" "}
                         {new Date(post.created_at).toLocaleDateString()}

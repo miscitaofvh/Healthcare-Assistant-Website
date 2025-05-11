@@ -6,11 +6,7 @@ import {
         getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
         updateComment, deleteComment
 } from "../controllers/forum/comment.js";
-import {
-        getAllTags, getSummaryTags, getSummaryLittleTags, getSummaryTagById, getTagById, getTagByName, getPostsByTag, getTagsByUser, getPopularTags,
-        getTagOfPostById, getTagsForPost, addTagsToPost, createTag, updateTagById, deleteTagById,
-        removeTagFromPost
-} from "../controllers/forum/tag.js";
+import tagController from "../controllers/forum/tag.js";
 import { likePost, unlikePost, getLikesOfPost, likeComment, unlikeComment } from "../controllers/forum/like.js";
 import {
         reportComment, getAllReports, getReportById, getReportsByUser, getReportsByPost, createReport,
@@ -36,7 +32,7 @@ import { validateActivity } from "../middleware/validation/Forum/activity.js";
 import { paginate } from "../middleware/paginate.js";
 import { auth } from "../security/authMiddleware.js";
 import multer from 'multer';
-import { categoryLimiter, threadLimiter, commentLimiter, likeLimiter, reportLimiter, postLimiter, tagLimiter  } from "../security/rateLimit.js";
+import { categoryLimiter, threadLimiter, commentLimiter, likeLimiter, reportLimiter, postLimiter, tagLimiter } from "../security/rateLimit.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -391,101 +387,108 @@ router.put("/reports/:reportId",
 // Tag Routes
 router.get("/tags",
         paginate(),
-        asyncHandler(getAllTags)
+        forumValidatorsTag.validateTagQuery,
+        asyncHandler(tagController.getAllTags)
 );
 
 router.get("/tags/summary",
         paginate({ limit: 5 }),
-        asyncHandler(getSummaryTags)
+        forumValidatorsTag.validateTagQuery,
+        asyncHandler(tagController.getSummaryTags)
 );
 
 router.get("/tags/summary/little",
         paginate({ limit: 3 }),
-        asyncHandler(getSummaryLittleTags)
-);
-
-router.get("/tags/summary/:tagId",
-        forumValidatorsTag.validateTagExists,
-        asyncHandler(getSummaryTagById)
+        asyncHandler(tagController.getSummaryLittleTags)
 );
 
 router.get("/tags/popular",
         paginate({ limit: 10 }),
-        asyncHandler(getPopularTags)
+        asyncHandler(tagController.getPopularTags)
 );
 
+// Single Tag Routes
 router.get("/tags/:tagId",
         forumValidatorsTag.validateTagExists,
-        asyncHandler(getTagById)
+        asyncHandler(tagController.getTagById)
 );
 
-router.get("/tags/search",
-        forumValidatorsTag.validateTagQuery,
-        asyncHandler(getTagByName)
+router.get("/tags/:tagId/summary",
+        forumValidatorsTag.validateTagExists,
+        asyncHandler(tagController.getSummaryTagById)
 );
 
 router.get("/tags/:tagId/posts",
         forumValidatorsTag.validateTagExists,
         paginate(),
-        asyncHandler(getPostsByTag)
+        asyncHandler(tagController.getPostsByTag)
 );
 
-router.get("/users/:userId/tags",
-        forumValidatorsUser.validateUserExists,
-        paginate(),
-        asyncHandler(getTagsByUser)
+// Tag Search
+router.get("/tags/search/name",
+        forumValidatorsTag.validateTagQuery,
+        asyncHandler(tagController.getTagByName)
 );
 
+// Tag Management
 router.post("/tags",
         auth.required,
         tagLimiter,
         forumValidatorsTag.validateTagCreate,
-        asyncHandler(createTag)
+        asyncHandler(tagController.createTag)
 );
 
 router.put("/tags/:tagId",
         auth.required,
         forumValidatorsTag.validateTagExists,
         forumValidatorsTag.validateTagUpdate,
-        auth.requireOwnerOrAdmin("tag"),
-        asyncHandler(updateTagById)
+        auth.requireOwnerOrAdmin('tag'),
+        asyncHandler(tagController.updateTagById)
 );
 
 router.delete("/tags/:tagId",
         auth.required,
         forumValidatorsTag.validateTagExists,
-        auth.requireOwnerOrAdmin("tag"),
-        asyncHandler(deleteTagById)
+        forumValidatorsTag.validateTagDelete,
+        auth.requireOwnerOrAdmin('tag'),
+        asyncHandler(tagController.deleteTagById)
 );
 
-// Post-Tag Relationship Routes
-router.get("/posts/:postId/tags",
+// User Tags
+router.get("/tags/users/:userId",
+        forumValidatorsUser.validateUserExists,
+        paginate(),
+        asyncHandler(tagController.getTagsByUser)
+);
+
+// Post-Tag Relationships
+router.get("/tags/posts/:postId",
         forumValidatorsPost.validatePostExists,
         paginate(),
-        asyncHandler(getTagsForPost)
+        asyncHandler(tagController.getTagsForPost)
 );
 
-router.get("/posts/:postId/tags/:tagId",
+router.get("/tags/posts/:postId/:tagId",
         forumValidatorsPost.validatePostExists,
         forumValidatorsTag.validateTagExists,
-        forumValidatorsTag.validatePostTagMapping,
-        asyncHandler(getTagOfPostById)
+        asyncHandler(tagController.getTagOfPostById)
 );
 
-router.post("/posts/:postId/tags",
+router.post("/tags/posts/:postId",
         auth.required,
         forumValidatorsPost.validatePostExists,
-        forumValidatorsTag.validatePostTags,
-        asyncHandler(addTagsToPost)
+        forumValidatorsTag.validatePostTagsAdd,
+        auth.requireOwnerOrAdmin("post"),
+        asyncHandler(tagController.addTagsToPost)
 );
 
-router.delete("/posts/:postId/tags/:tagId",
+router.delete("/tags/posts/:postId/:tagId",
         auth.required,
         forumValidatorsPost.validatePostExists,
         forumValidatorsTag.validateTagExists,
-        forumValidatorsTag.validatePostTagMapping,
-        forumValidatorsTag.validatePostTagUnmapping,
-        asyncHandler(removeTagFromPost)
+        forumValidatorsTag.validatePostTagRemove,
+        auth.requireOwnerOrAdmin("posts"),
+        asyncHandler(tagController.removeTagFromPost)
 );
 
 // ===================================================================================================================================

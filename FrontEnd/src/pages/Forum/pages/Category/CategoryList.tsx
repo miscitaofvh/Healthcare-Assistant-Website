@@ -6,16 +6,15 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "../../../../utils/service/Forum/category";
-import { CategoryMain, PaginationData } from "../../../../types/forum";
+import { Category } from "../../../../types/Forum/category";
+import { PaginationData } from "../../../../types/Forum/pagination";
 
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";
   
-  // First truncate by character length to prevent extremely long words
   let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
   
-  // Then truncate by word count
   const words = truncated.split(/\s+/);
   if (words.length > wordLimit) {
     truncated = words.slice(0, wordLimit).join(' ') + '...';
@@ -25,7 +24,7 @@ const truncateText = (text: string, wordLimit: number, charLimit: number) => {
 };
 
 const CategoryList: React.FC = () => {
-  const [categories, setCategories] = useState<CategoryMain[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState<PaginationData>({
     currentPage: 1,
@@ -195,7 +194,7 @@ const CategoryList: React.FC = () => {
                     {category.category_name}
                   </h3>
                   <p className={styles.tagDescription}>
-                    {truncateText(category.description || "", 10, 100)}
+                    {truncateText(category.description || "", 10, 50)}
                   </p>
                   <div className={styles.tagMeta}>
                     <div className={styles.metaItem}>

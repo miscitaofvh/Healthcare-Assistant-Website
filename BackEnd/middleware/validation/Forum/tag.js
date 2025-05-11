@@ -1,5 +1,6 @@
 import { param, body, validationResult, query } from "express-validator";
 import connection from "../../../config/connection.js";
+import { isTagandCategoryValid } from "../../../utils/format/article.js";
 
 // Constants
 const MAX_TAG_NAME_LENGTH = 30;
@@ -9,54 +10,6 @@ const MAX_TAGS_PER_POST = 5;
 const DEFAULT_PAGE_LIMIT = 20;
 const MAX_PAGE_LIMIT = 50;
 
-// Reusable validators
-const validateEntityExists = (table, idField = 'id', entityName) => {
-    return async (value, { req }) => {
-        const [result] = await connection.execute(
-            `SELECT * FROM ${table} WHERE ${idField} = ?`,
-            [value]
-        );
-        if (result.length === 0) {
-            throw new Error(`${entityName} không tồn tại`);
-        }
-        req[table] = result[0]; // Attach entity to request for later use
-        return true;
-    };
-};
-
-const validateTagName = () => {
-    return body("tag_name")
-        .trim()
-        .escape()
-        .notEmpty().withMessage("Tên thẻ là bắt buộc")
-        .isLength({ min: MIN_TAG_NAME_LENGTH, max: MAX_TAG_NAME_LENGTH })
-        .withMessage(`Tên thẻ phải từ ${MIN_TAG_NAME_LENGTH} đến ${MAX_TAG_NAME_LENGTH} ký tự`)
-        .customSanitizer(value => value.replace(/\s+/g, ' '));
-};
-
-const validateTagDescription = () => {
-    return body("description")
-        .optional()
-        .trim()
-        .escape()
-        .isLength({ max: MAX_TAG_DESCRIPTION_LENGTH })
-        .withMessage(`Mô tả thẻ không quá ${MAX_TAG_DESCRIPTION_LENGTH} ký tự`);
-};
-
-const validateId = (field, entityName, location = 'body') => {
-    const validator = location === 'body' ? body(field) : param(field);
-    return validator
-        .notEmpty().withMessage(`${entityName} là bắt buộc`)
-        .isInt({ min: 1 }).withMessage(`${entityName} phải là số nguyên dương`)
-        .toInt();
-};
-
-const validateTagId = (location = 'param', field = 'tagId') => {
-    return validateId(field, 'ID thẻ', location)
-        .custom(validateEntityExists('forum_tags', 'tag_id', 'Thẻ'));
-};
-
-// Error handler middleware
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -75,34 +28,103 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Custom validations
-const validateTagNameUniqueness = async (tagName, { req }) => {
-    const [result] = await connection.execute(
-        'SELECT tag_id FROM forum_tags WHERE tag_name = ?',
-        [tagName]
-    );
-    if (result.length > 0 && result[0].tag_id !== req.tag?.tag_id) {
-        throw new Error('Tên thẻ đã tồn tại');
-    }
-    return true;
+// Reusable validators
+const validateTagId = (location = 'param') => {
+    const validator = location === 'param' ? param("tagId") : body("tag_id");
+    return validator
+        .notEmpty().withMessage("ID thẻ là bắt buộc")
+        .isInt({ min: 1 }).withMessage("ID thẻ phải là số nguyên dương")
+        .toInt()
+        .custom(async (value, { req }) => {
+            try {
+                const [result] = await connection.execute(
+                    'SELECT * FROM forum_tags WHERE tag_id = ?',
+                    [value]
+                );
+                if (result.length === 0) {
+                    throw new Error('Thẻ không tồn tại');
+                }
+                req.tag = result[0]; // Cache tag for subsequent middleware
+                return true;
+            } catch (error) {
+                throw new Error(`Lỗi xác thực thẻ: ${error.message}`);
+            }
+        });
 };
 
-const validateTagNotInUse = async (tagId, { req }) => {
-    const [posts] = await connection.execute(
-        'SELECT COUNT(*) as count FROM forum_post_tags WHERE tag_id = ?',
-        [tagId]
-    );
-    if (posts[0].count > 0) {
-        throw new Error('Không thể xóa thẻ đang được sử dụng');
+const validateTagName = (checkUniqueness = true) => {
+    const validator = body("tag_name")
+        .notEmpty().withMessage("Tên thẻ là bắt buộc")
+        .isLength({ min: MIN_TAG_NAME_LENGTH, max: MAX_TAG_NAME_LENGTH })
+        .withMessage(`Tên thẻ phải từ ${MIN_TAG_NAME_LENGTH} đến ${MAX_TAG_NAME_LENGTH} ký tự`)
+        .trim()
+        .escape()
+        .customSanitizer(value => value.replace(/\s+/g, ' '))
+        .custom(value => {
+            if (!isTagandCategoryValid(value)) {
+                throw new Error('Tên thẻ chứa ký tự không hợp lệ');
+            }
+            return true;
+        });
+
+    if (checkUniqueness) {
+        validator.custom(async (value, { req }) => {
+            const [result] = await connection.execute(
+                'SELECT tag_id FROM forum_tags WHERE tag_name = ?',
+                [value]
+            );
+            if (result.length > 0 && result[0].tag_id !== req.params?.tagId) {
+                throw new Error('Tên thẻ đã tồn tại');
+            }
+            return true;
+        });
     }
-    return true;
+
+    return validator;
 };
 
-const validatePostTags = () => {
+const validateTagDescription = () => {
+    return body("description")
+        .optional()
+        .isLength({ max: MAX_TAG_DESCRIPTION_LENGTH })
+        .withMessage(`Mô tả không quá ${MAX_TAG_DESCRIPTION_LENGTH} ký tự`)
+        .trim()
+        .escape();
+};
+
+const validatePostId = () => {
+    return param("postId")
+        .notEmpty().withMessage("ID bài viết là bắt buộc")
+        .isInt({ min: 1 }).withMessage("ID bài viết phải là số nguyên dương")
+        .toInt()
+        .custom(async (value, { req }) => {
+            try {
+                const [result] = await connection.execute(
+                    'SELECT * FROM forum_posts WHERE post_id = ?',
+                    [value]
+                );
+                if (result.length === 0) {
+                    throw new Error('Bài viết không tồn tại');
+                }
+                req.post = result[0]; // Cache post for subsequent middleware
+                return true;
+            } catch (error) {
+                throw new Error(`Lỗi xác thực bài viết: ${error.message}`);
+            }
+        });
+};
+
+const validateTagIds = () => {
     return body("tagIds")
         .notEmpty().withMessage("Danh sách thẻ là bắt buộc")
-        .isArray({ max: MAX_TAGS_PER_POST }).withMessage(`Tối đa ${MAX_TAGS_PER_POST} thẻ mỗi bài viết`)
+        .isArray({ min: 1, max: MAX_TAGS_PER_POST })
+        .withMessage(`Phải có từ 1 đến ${MAX_TAGS_PER_POST} thẻ`)
         .custom(async (tagIds, { req }) => {
+            const uniqueIds = [...new Set(tagIds)];
+            if (uniqueIds.length !== tagIds.length) {
+                throw new Error('Danh sách thẻ chứa ID trùng lặp');
+            }
+
             const [existingTags] = await connection.execute(
                 'SELECT tag_id FROM forum_tags WHERE tag_id IN (?)',
                 [tagIds]
@@ -110,88 +132,119 @@ const validatePostTags = () => {
             if (existingTags.length !== tagIds.length) {
                 throw new Error('Một hoặc nhiều thẻ không tồn tại');
             }
-            
-            // Check for existing mappings
-            const [existingMappings] = await connection.execute(
-                'SELECT tag_id FROM forum_post_tags WHERE post_id = ? AND tag_id IN (?)',
-                [req.params.postId, tagIds]
-            );
-            if (existingMappings.length > 0) {
-                throw new Error('Một hoặc nhiều thẻ đã được gắn cho bài viết này');
-            }
-            
             return true;
         });
 };
 
 // Validation sets
 const validateTagExists = [
-    validateTagId('param'),
+    validateTagId(),
     handleValidationErrors
 ];
 
 const validateTagCreate = [
     validateTagName(),
     validateTagDescription(),
-    body().custom(async (_, { req }) => {
-        await validateTagNameUniqueness(req.body.tag_name, { req });
-        return true;
-    }),
     handleValidationErrors
 ];
 
 const validateTagUpdate = [
-    validateTagId('param'),
+    validateTagId(),
     validateTagName().optional(),
     validateTagDescription(),
-    body().custom(async (_, { req }) => {
-        if (req.body.tag_name) {
-            await validateTagNameUniqueness(req.body.tag_name, { req });
+    body().custom((_, { req }) => {
+        if (!req.body.tag_name && !req.body.description) {
+            throw new Error('Cần cập nhật ít nhất một trường');
         }
         return true;
     }),
     handleValidationErrors
 ];
 
-const validateTagDeletion = [
-    validateTagId('param'),
+const validateTagDelete = [
+    validateTagId(),
     body().custom(async (_, { req }) => {
-        await validateTagNotInUse(req.params.tagId, { req });
+        const [usage] = await connection.execute(
+            'SELECT COUNT(*) as count FROM forum_tags_mapping WHERE tag_id = ?',
+            [req.params.tagId]
+        );
+        if (usage[0].count > 0) {
+            throw new Error('Không thể xóa thẻ đang được sử dụng');
+        }
         return true;
     }),
     handleValidationErrors
 ];
 
 const validateTagQuery = [
-    query("search").optional().isString().trim().escape(),
-    query("page").optional().isInt({ min: 1 }).default(1).toInt(),
-    query("limit").optional().isInt({ min: 1, max: MAX_PAGE_LIMIT }).default(DEFAULT_PAGE_LIMIT).toInt(),
+    query("search")
+        .optional()
+        .isString()
+        .withMessage("Từ khóa tìm kiếm phải là chuỗi")
+        .trim()
+        .escape(),
+
+    query("sortBy")
+        .optional()
+        .isIn(['tag_name', 'usage_count', 'created_at', 'last_used_at'])
+        .withMessage("Trường sắp xếp không hợp lệ")
+        .default('usage_count'),
+
+    query("sortOrder")
+        .optional()
+        .isIn(['asc', 'desc'])
+        .withMessage("Thứ tự sắp xếp phải là 'asc' hoặc 'desc'")
+        .default('desc'),
+
+    query("page")
+        .optional()
+        .default(1)
+        .isInt({ min: 1 }).withMessage("Số trang phải là số nguyên dương")
+        .toInt(),
+
+    query("limit")
+        .optional()
+        .default(DEFAULT_PAGE_LIMIT)
+        .isInt({ min: 1, max: MAX_PAGE_LIMIT })
+        .withMessage(`Giới hạn phải từ 1 đến ${MAX_PAGE_LIMIT}`)
+        .toInt(),
+
     handleValidationErrors
 ];
 
-const validatePostTagMapping = [
-    validateTagId('param'),
+const validatePostTagsAdd = [
+    validatePostId(),
+    validateTagIds(),
     body().custom(async (_, { req }) => {
-        const [mapping] = await connection.execute(
-            'SELECT * FROM forum_post_tags WHERE post_id = ? AND tag_id = ?',
-            [req.params.postId, req.params.tagId]
+        const [existingMappings] = await connection.execute(
+            'SELECT tag_id FROM forum_tags_mapping WHERE post_id = ? AND tag_id IN (?)',
+            [req.params.postId, req.body.tagIds]
         );
-        if (mapping.length === 0) {
-            throw new Error('Thẻ chưa được gắn cho bài viết này');
+        if (existingMappings.length > 0) {
+            throw new Error('Một hoặc nhiều thẻ đã được gắn cho bài viết này');
         }
         return true;
     }),
     handleValidationErrors
 ];
 
-const validatePostTagUnmapping = [
+const validatePostTagRemove = [
+    validatePostId(),
+    validateTagId(),
     body().custom(async (_, { req }) => {
-        // Check if this is the last tag being removed
-        const [tags] = await connection.execute(
-            'SELECT COUNT(*) as count FROM forum_post_tags WHERE post_id = ?',
+        const [mapping] = await connection.execute(
+            'SELECT * FROM forum_tags_mapping WHERE post_id = ? AND tag_id = ?',
+            [req.params.postId, req.params.tagId]
+        );
+        if (mapping.length === 0) {
+            throw new Error('Thẻ chưa được gắn cho bài viết này');
+        }
+
+        const [remainingTags] = await connection.execute(
+            'SELECT COUNT(*) as count FROM forum_tags_mapping WHERE post_id = ?',
             [req.params.postId]
         );
-        if (tags[0].count <= 1) {
+        if (remainingTags[0].count <= 1) {
             throw new Error('Bài viết phải có ít nhất một thẻ');
         }
         return true;
@@ -199,17 +252,25 @@ const validatePostTagUnmapping = [
     handleValidationErrors
 ];
 
+const validatePostTagsGet = [
+    validatePostId(),
+    handleValidationErrors
+];
+
 export default {
+    // Tag validators
     validateTagExists,
     validateTagCreate,
     validateTagUpdate,
-    validateTagDeletion,
+    validateTagDelete,
     validateTagQuery,
-    validatePostTagMapping,
-    validatePostTagUnmapping,
-    validatePostTags,
     
-    // Utility validators for reuse
+    // Post-Tag relationship validators
+    validatePostTagsAdd,
+    validatePostTagRemove,
+    validatePostTagsGet,
+    
+    // Reusable validators
     validateTagId,
     validateTagName,
     validateTagDescription,

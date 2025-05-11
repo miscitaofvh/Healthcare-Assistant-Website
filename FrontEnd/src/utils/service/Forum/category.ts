@@ -1,7 +1,10 @@
-import { toast } from "react-toastify";
-import InteractiveCategory from "../../../utils/api/Forum/category";
-import { Category, NewCategory, CategoryMain, CategorySummary, PaginationData, Thread } from "../../../types/forum";
 import { Dispatch, SetStateAction } from "react";
+import { toast } from "react-toastify";
+
+import InteractiveCategory from "../../../utils/api/Forum/category";
+import { Category, NewCategory, SummaryCategory } from "../../../types/Forum/category";
+import { PaginationData } from "../../../types/Forum/pagination";
+import { Thread } from "../../../types/Forum/thread";
 
 const validateInputs = (category: NewCategory): string | null => {
     const categoryName = category.category_name.trim();
@@ -19,7 +22,7 @@ const validateInputs = (category: NewCategory): string | null => {
 
 const loadCategories = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setCategories: Dispatch<SetStateAction<CategoryMain[]>>,
+    setCategories: Dispatch<SetStateAction<Category[]>>,
     setPagination: Dispatch<SetStateAction<PaginationData>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
@@ -55,7 +58,7 @@ const loadCategories = async (
 };
 
 const loadCategoriesSummary = async (
-    onSuccess: (categories: CategorySummary[]) => void,
+    onSuccess: (categories: SummaryCategory[]) => void,
     onError: (error: string) => void
 ): Promise<void> => {
     try {
@@ -109,8 +112,9 @@ const loadCategorieById = async (
 const handleCreateCategory = async (
     newCategory: NewCategory,
     showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => void,
-    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
+    setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     const trimmedName = newCategory.category_name.trim();
     const trimmedDescription = newCategory.description?.trim();
@@ -124,7 +128,7 @@ const handleCreateCategory = async (
         }
         const response = await InteractiveCategory.createCategory({
             category_name: trimmedName,
-            description: trimmedDescription || undefined,
+            description: trimmedDescription,
         });
 
         const { status, data } = response;
@@ -139,7 +143,7 @@ const handleCreateCategory = async (
             showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
             return;
         }
-
+        showSuccess("Category created successfully!");
         setTimeout(() => {
             onSuccess();
         }, 2000);
@@ -155,8 +159,9 @@ const handleUpdateCategory = async (
     categoryId: number,
     updatedCategory: NewCategory,
     showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => void,
-    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
+    setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
@@ -179,7 +184,7 @@ const handleUpdateCategory = async (
             return;
         }
 
-        toast.success(data?.message || "Category updated successfully!");
+        showSuccess(data?.message || "Category updated successfully!");
         setTimeout(() => {
             onSuccess();
         }, 2000);
@@ -210,7 +215,7 @@ const handleDeleteCategory = async (
         setFormLoading?.(true);
 
         const response = await InteractiveCategory.deleteCategory(id);
-        
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

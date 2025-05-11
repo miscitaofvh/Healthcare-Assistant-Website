@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "../../../../utils/service/Forum/category";
-import { Category, NewCategory } from "../../../../types/forum";
+import { Category, NewCategory } from "../../../../types/Forum/category";
 
 const UpdateCategory: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,9 +23,9 @@ const UpdateCategory: React.FC = () => {
           setInitialLoad,
           setCategory,
           (error) => toast.error(error),
-        () => {
-          toast.success("Category loaded successfully");
-        }
+          () => {
+            toast.success("Category loaded successfully");
+          }
         );
       } catch (err) {
         toast.error("An unexpected error occurred while loading category");
@@ -41,7 +41,7 @@ const UpdateCategory: React.FC = () => {
 
     const updatedCategory: NewCategory = {
       category_name: category.category_name.trim(),
-      description: category.description?.trim() || undefined,
+      description: category.description?.trim() || "",
     };
 
     try {
@@ -50,8 +50,8 @@ const UpdateCategory: React.FC = () => {
         category.category_id,
         updatedCategory,
         (error) => toast.error(error),
+        (success) => toast.success(success),
         () => {
-          toast.success("Category updated successfully!");
           navigate(`/forum/categories/${category.category_id}`);
         }
       );
@@ -143,9 +143,9 @@ const UpdateCategory: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className={styles.primaryButton} 
+                <button
+                  type="submit"
+                  className={styles.primaryButton}
                   disabled={formLoading}
                 >
                   {formLoading ? (

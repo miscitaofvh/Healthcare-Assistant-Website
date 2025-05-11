@@ -6,8 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "../../../../utils/service/Forum/thread";
-import { Thread, PaginationData } from "../../../../types/forum";
-
+import { Thread } from "../../../../types/Forum/thread";
+import { PaginationData } from "../../../../types/Forum/pagination";
 const ThreadListPage: React.FC = () => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

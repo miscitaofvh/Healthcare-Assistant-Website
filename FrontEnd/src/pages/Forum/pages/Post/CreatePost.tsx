@@ -6,27 +6,27 @@ import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
 import requestCategory from "../../../../utils/service/Forum/category";
 import requestThread from "../../../../utils/service/Forum/thread";
-import { loadTagsSummary } from "../../../../utils/service/Forum/tag";
-import { createPostFE, uploadPostImageFE } from "../../../../utils/service/Forum/post";
-import {
-  CategorySummary,
-  ThreadDropdown,
-  PostNew,
-  TagSummary
-} from "../../../../types/forum";
+import requestTag from "../../../../utils/service/Forum/tag";
+import requestPost from "../../../../utils/service/Forum/post";
+import requestImage from "../../../../utils/service/Forum/image";
+
+import { SummaryCategory } from "../../../../types/Forum/category";
+import { ThreadDropdown } from "../../../../types/Forum/thread";
+import { NewPost } from "../../../../types/Forum/post";
+import { SummaryTag } from "../../../../types/Forum/tag";
 
 const CreatePost: React.FC = () => {
   const [categoryId, setCategoryId] = useState<number>(0);
-  const [post, setPost] = useState<PostNew>({
+  const [post, setPost] = useState<NewPost>({
     thread_id: 0,
     title: "",
     content: "",
     tag_name: [],
   });
-  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [categories, setCategories] = useState<SummaryCategory[]>([]);
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
-  const [tags, setTags] = useState<TagSummary[]>([]);
-  const [availableTags, setAvailableTags] = useState<TagSummary[]>([]);
+  const [tags, setTags] = useState<SummaryTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<SummaryTag[]>([]);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,8 +37,11 @@ const CreatePost: React.FC = () => {
 
   useEffect(() => {
     try {
-      requestCategory.loadCategoriesSummary(setLoading, setCategories, setError, () => { });
-      loadTagsSummary(setTagsLoading, setTags, setError, () => { });
+      requestCategory.loadCategoriesSummary(
+        (categories) => setCategories(categories),
+        (error) => toast.error(error)
+      );
+      // requestTag.loadTagsSummary(setTagsLoading, setTags, setError, () => { });
     } catch (err) {
       setError("Failed to load categories or tags. Please try again.");
     }
@@ -90,7 +93,7 @@ const CreatePost: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createPostFE(setLoading, post, setError, setSuccess, () => {
+      await requestPost.createPostFE(setLoading, post, setError, setSuccess, () => {
         navigate("/forum/posts");
       }
       );
@@ -130,7 +133,7 @@ const CreatePost: React.FC = () => {
           formData.append('subfolder', 'forum-posts');
           formData.append('fileName', file.name || 'image.png' + Math.random().toString(36).substring(2, 15));
 
-          const markdownImage = await uploadPostImageFE(formData);
+          const markdownImage = await requestImage.uploadPostImageFE(formData);
 
           if (markdownImage) {
             const cursorPos = textareaRef.current?.selectionStart || 0;

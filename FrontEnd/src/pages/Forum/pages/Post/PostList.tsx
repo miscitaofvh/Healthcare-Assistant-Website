@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { PostListResponse } from "../../../../types/forum";
-import { loadPosts } from "../../../../utils/service/Forum/post";
+import { PostListResponse } from "../../../../types/Forum/post";
+import InteractPost from "../../../../utils/service/Forum/post";
 import { formatDate, stripMarkdown } from "../../../../utils/helpers/dateFormatter";
 
 const PostList: React.FC = () => {
@@ -15,7 +15,7 @@ const PostList: React.FC = () => {
 
   useEffect(() => {
     try {
-      loadPosts(setLoading, setPosts, setError, setSuccess);
+      InteractPost.loadPosts(setLoading, setPosts, setError, setSuccess);
     } catch (err: any) {
       setError(err || "Failed to load posts.");
     }
@@ -93,7 +93,7 @@ const PostList: React.FC = () => {
                   <div className={styles.postHeader}>
                     <div>
                       <h3 className={styles.forumName}>{post.title}</h3>
-                      <span className={styles.postAuthor}>By {post.author}</span>
+                      <span className={styles.postAuthor}>By {post.created_by}</span>
                     </div>
                     <div className={styles.metaValue}>
                       {formatDate(post.created_at)}

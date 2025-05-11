@@ -2,22 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { Post, PostComment } from "../../../../types/forum";
-import {
-  loadPostPageById,
-  deletePostFE,
-  likePostFE,
-  unlikePostFE,
-  reportPostFE
-} from "../../../../utils/service/Forum/post";
-import {
-  handleCommentSubmit,
-  deleteCommentFE,
-  likeCommentFE,
-  unlikeCommentFE,
-  reportCommentFE,
-  countTotalComments
-} from "../../../../utils/service/Forum/comment";
+import { Post } from "../../../../types/Forum/post";
+import { CommentPost } from "../../../../types/Forum/comment";
+import requestPost from "../../../../utils/service/Forum/post";
+import requestComment from "../../../../utils/service/Forum/comment";
+import requestLike from "../../../../utils/service/Forum/like";
+import requestReport from "../../../../utils/service/Forum/repost";
 import ReactMarkdown from "react-markdown";
 import { formatDate } from "../../../../utils/helpers/dateFormatter";
 import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
@@ -29,7 +19,7 @@ const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<PostComment[]>([]);
+  const [comments, setComments] = useState<CommentPost[]>([]);
   const [mainCommentText, setMainCommentText] = useState("");
   const [replyCommentTexts, setReplyCommentTexts] = useState<Record<number, string>>({});
   const [replyingTo, setReplyingTo] = useState<{ commentId: number; username: string } | null>(null);
@@ -74,7 +64,7 @@ const ForumPage: React.FC = () => {
     try {
       setLoading(true);
 
-      await loadPostPageById(
+      await requestPost.loadPostPageById(
         id || "",
         setLoading,
         setPost,
@@ -101,7 +91,7 @@ const ForumPage: React.FC = () => {
         ? comments.find(c => c.comment_id === parentId)?.depth || 0
         : 0;
 
-      await handleCommentSubmit(
+      await requestComment.addCommenttoPost(
         id || "",
         text,
         parentId?.toString(),
@@ -119,7 +109,7 @@ const ForumPage: React.FC = () => {
         setSuccess,
         async () => {
           setReplyingTo(null);
-          await loadPostPageById(
+          await requestPost.loadPostPageById(
             id || "",
             setLoading,
             setPost,
@@ -141,7 +131,7 @@ const ForumPage: React.FC = () => {
     }
 
     try {
-      await reportCommentFE(
+      await requestReport.reportCommentFE(
         commentId.toString(),
         reportReason,
         setError,
@@ -165,14 +155,14 @@ const ForumPage: React.FC = () => {
     try {
       setIsPostLiking(true);
       if (post.is_liked) {
-        await unlikePostFE(
+        await requestLike.unlikePostFE(
           post.post_id.toString(),
           setError,
           setSuccess,
           () => loadInitialData()
         );
       } else {
-        await likePostFE(
+        await requestLike.likePostFE(
           post.post_id.toString(),
           setError,
           setSuccess,
@@ -186,12 +176,12 @@ const ForumPage: React.FC = () => {
     }
   };
 
-  const handleCommentLike = async (comment: PostComment) => {
+  const handleCommentLike = async (comment: CommentPost) => {
     try {
       setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: true }));
 
       if (comment.is_liked) {
-        await unlikeCommentFE(
+        await requestLike.unlikeCommentFE(
           comment.comment_id.toString(),
           post?.post_id.toString() || "",
           setError,
@@ -199,7 +189,7 @@ const ForumPage: React.FC = () => {
           () => loadInitialData()
         );
       } else {
-        await likeCommentFE(
+        await requestLike.likeCommentFE(
           comment.comment_id.toString(),
           setError,
           setSuccess,
@@ -217,7 +207,7 @@ const ForumPage: React.FC = () => {
     if (!postId) return;
     setIsDeleting(true);
     try {
-      await deletePostFE(
+      await requestPost.deletePostFE(
         postId,
         setLoading,
         setError,
@@ -235,7 +225,7 @@ const ForumPage: React.FC = () => {
     if (!commentId) return;
     setIsDeleting(true);
     try {
-      await deleteCommentFE(
+      await requestComment.deleteCommentFromPost(
         commentId,
         setLoading,
         setError,
@@ -258,7 +248,7 @@ const ForumPage: React.FC = () => {
 
     setReportSubmitting(true);
     try {
-      const res = reportPostFE(
+      const res = requestReport.reportPostFE(
         post.post_id.toString(),
         reportReason,
         setReportError,
@@ -281,7 +271,7 @@ const ForumPage: React.FC = () => {
   };
 
 
-  const renderComments = (comments: PostComment[]) => {
+  const renderComments = (comments: CommentPost[]) => {
     return comments.map((comment) => (
       <div
         key={comment.comment_id}
@@ -289,7 +279,7 @@ const ForumPage: React.FC = () => {
         style={{ marginLeft: `${comment.depth * 20}px` }}
       >
         <div className={styles.commentHeader}>
-          <span className={styles.commentAuthor}>{comment.username}</span>
+          <span className={styles.commentAuthor}>{comment.commented_by}</span>
           <br />
           <span className={styles.commentDate}>
             {formatDate(comment.created_at)}
@@ -331,7 +321,7 @@ const ForumPage: React.FC = () => {
               setReplyingTo(
                 replyingTo?.commentId === comment.comment_id
                   ? null
-                  : { commentId: comment.comment_id, username: comment.username }
+                  : { commentId: comment.comment_id, username: comment.commented_by }
               )
             }
           >
@@ -359,7 +349,7 @@ const ForumPage: React.FC = () => {
           <div className={styles.replyForm}>
             <textarea
               className={styles.formTextarea}
-              placeholder={`Reply to @${comment.username}...`}
+              placeholder={`Reply to @${comment.commented_by}...`}
               value={replyCommentTexts[comment.comment_id] || ""}
               onChange={(e) => setReplyCommentTexts({
                 ...replyCommentTexts,
@@ -473,7 +463,7 @@ const ForumPage: React.FC = () => {
             <div className={styles.metaGroup}>
               <span className={styles.metaItem}>
                 <FaUser className={styles.metaIcon} />
-                {post.author}
+                {post.created_by}
               </span>
               <span className={styles.metaItem}>
                 <FaCalendar className={styles.metaIcon} />
@@ -590,7 +580,7 @@ const ForumPage: React.FC = () => {
 
         {/* Comment section */}
         <div className={styles.commentsSection}>
-          <h2 className={styles.pageTitle}>Comments ({countTotalComments(comments)})</h2>
+          <h2 className={styles.pageTitle}>Comments ({requestComment.countTotalComments(comments)})</h2>
 
           <form
             onSubmit={(e) => {

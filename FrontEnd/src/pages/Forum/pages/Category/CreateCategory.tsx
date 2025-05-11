@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "../../../../utils/service/Forum/category";
-import { NewCategory } from "../../../../types/forum";
+import { NewCategory } from "../../../../types/Forum/category";
 
 const CreateCategory: React.FC = () => {
     const [newCategory, setNewCategory] = useState<NewCategory>({
@@ -24,8 +24,8 @@ const CreateCategory: React.FC = () => {
             await requestCategory.handleCreateCategory(
                 newCategory,
                 (error) => toast.error(error),
+                (success) => toast.success(success),
                 () => {
-                    toast.success("Category created successfully!");
                     navigate("/forum/categories");
                 }
             );

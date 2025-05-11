@@ -6,7 +6,9 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { Thread, Post, PaginationData } from "../../../../types/forum";
+import { Thread } from "../../../../types/Forum/thread";
+import { Post } from "../../../../types/Forum/post";
+import { PaginationData } from "../../../../types/Forum/pagination";
 import requestThread from "../../../../utils/service/Forum/thread";
 
 const ThreadPage: React.FC = () => {
@@ -275,7 +277,7 @@ const ThreadPage: React.FC = () => {
                   {posts.map((post) => (
                     <div key={post.post_id} className={styles.postCard}>
                       <div className={styles.postHeader}>
-                        <span className={styles.postAuthor}>By {post.author || "Anonymous"}</span>
+                        <span className={styles.postAuthor}>By {post.created_by || "Anonymous"}</span>
                         <span className={styles.postDate}>
                           {new Date(post.created_at).toLocaleString()}
                         </span>

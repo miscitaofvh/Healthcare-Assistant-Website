@@ -6,8 +6,22 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { Category, Thread, PaginationData } from "../../../../types/forum";
+import { Category } from "../../../../types/Forum/category";
+import { Thread } from "../../../../types/Forum/thread";
+import { PaginationData } from "../../../../types/Forum/pagination";
 import requestCategory from "../../../../utils/service/Forum/category";
+
+const truncateText = (text: string, wordLimit: number, charLimit: number) => {
+  if (!text) return "No description available";
+
+  let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
+
+  const words = truncated.split(/\s+/);
+  if (words.length > wordLimit) {
+    truncated = words.slice(0, wordLimit).join(' ') + '...';
+  }
+  return truncated;
+};
 
 const CategoryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,7 +98,7 @@ const CategoryPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       await requestCategory.handleDeleteCategory(
@@ -206,10 +220,7 @@ const CategoryPage: React.FC = () => {
                 {category.thread_count} threads, {category.post_count} posts
               </p>
               <p className={styles.pageSubtitle}>
-                {category.description
-                  ? category.description.split(/\s+/).slice(0, 20).join(" ") +
-                  (category.description.split(/\s+/).length > 20 ? "..." : "")
-                  : "No description available"}
+                {truncateText(category.description || "", 10, 100)}
               </p>
               {category?.is_owner && (
                 <div className={styles.buttonGroup}>
@@ -267,10 +278,7 @@ const CategoryPage: React.FC = () => {
                     >
                       <h3 className={styles.forumName}>{thread.thread_name}</h3>
                       <p className={styles.forumDescription}>
-                        {thread.description
-                          ? thread.description.split(/\s+/).slice(0, 10).join(" ") +
-                          (thread.description.split(/\s+/).length > 10 ? "..." : "")
-                          : "No description available"}
+                        {truncateText(thread.description || "", 10, 50)}
                       </p>
                       <div className={styles.forumMeta}>
                         <div className={styles.metaItem}>

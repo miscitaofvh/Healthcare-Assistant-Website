@@ -94,16 +94,6 @@ const validateThreadName = (checkUniqueness = true) => {
     return validator;
 };
 
-// Thread content validation
-const validateThreadContent = () => {
-    return body("content")
-        .notEmpty().withMessage("Nội dung là bắt buộc")
-        .isLength({ min: MIN_DESCRIPTION_LENGTH, max: MAX_DESCRIPTION_LENGTH })
-        .withMessage(`Nội dung phải từ ${MIN_DESCRIPTION_LENGTH} đến ${MAX_DESCRIPTION_LENGTH} ký tự`)
-        .trim()
-        .escape();
-};
-
 // Thread description validation
 const validateThreadDescription = () => {
     return body("description")
@@ -191,7 +181,6 @@ const validateThreadOwnership = () => {
 const validateThreadCreate = [
     validateThreadName(),
     validateCategoryId(),
-    validateThreadContent(),
     validateThreadDescription(),
     handleValidationErrors
 ];
@@ -296,7 +285,6 @@ export default {
     // Reusable validators
     validateThreadId,
     validateThreadName,
-    validateThreadContent,
     validateThreadDescription,
     validateCategoryId,
     validateThreadStatus,

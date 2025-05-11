@@ -7,20 +7,19 @@ import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "../../../../utils/service/Forum/category";
 import requestThread from "../../../../utils/service/Forum/thread";
-import { NewThread, CategorySummary } from "../../../../types/forum";
-
+import { SummaryCategory } from "../../../../types/Forum/category";
+import { NewThread } from "../../../../types/Forum/thread";
 const CreateThread: React.FC = () => {
     const [searchParams] = useSearchParams();
     const categoryIdFromUrl = searchParams.get('category');
     
     const [newThread, setNewThread] = useState<NewThread>({
-        thread_id: 0,
         thread_name: "",
         description: "",
         category_id: categoryIdFromUrl ? parseInt(categoryIdFromUrl) : 0,
     });
     
-    const [categories, setCategories] = useState<CategorySummary[]>([]);
+    const [categories, setCategories] = useState<SummaryCategory[]>([]);
     const [formLoading, setFormLoading] = useState(false);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
     const navigate = useNavigate();

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleCreateTag } from "../../../../utils/service/Forum/tag";
-import { NewTag } from "../../../../types/forum";
-import { useNavigate } from "react-router-dom";
+import requestTag from "../../../../utils/service/Forum/tag";
+import { NewTag } from "../../../../types/Forum/tag";
 
 const CreateTag: React.FC = () => {
     const [newTag, setNewTag] = useState<NewTag>({
@@ -11,48 +14,35 @@ const CreateTag: React.FC = () => {
         description: ""
     });
     const [formLoading, setFormLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const navigate = useNavigate();
-
-    const validateInputs = (tag: NewTag): string | null => {
-        const tagName = tag.tag_name.trim();
-        let description = tag.description?.trim() || "";
-        if (!tagName) return "Tag name is required";
-        if (tagName.length < 2 || tagName.length > 50) return "Tag name must be from 2 to 50 characters";
-        if (description && (description.length < 10 || description.length > 200)) {
-            return "Description must be from 10 to 200 characters long";
-        }
-        return null;
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateInputs(newTag);
-        if (validationError) {
-            setError(validationError);
-            return;
-        }
-        
         try {
-            await handleCreateTag(
+            setFormLoading(true);
+            await requestTag.handleCreateTag(
                 {
                     tag_name: newTag.tag_name.trim(),
                     description: newTag.description?.trim() || undefined
                 },
-                setFormLoading,
-                setError,
-                setSuccess,
-                () => navigate("/forum/tags")
+                (error) => toast.error(error),
+                () => {
+                    toast.success("Tag created successfully!");
+                    navigate("/forum/tags");
+                },
+                setFormLoading
             );
         } catch (err) {
-            setError("An unexpected error occurred while creating the tag");
+            toast.error("An unexpected error occurred while creating the tag");
+        } finally {
+            setFormLoading(false);
         }
     };
 
     return (
         <div className={styles.forumContainer}>
+            <ToastContainer position="top-right" autoClose={5000} />
             <div className={styles.main_navbar}>
                 <Navbar />
             </div>
@@ -62,20 +52,6 @@ const CreateTag: React.FC = () => {
                     <h1 className={styles.pageTitle}>Create New Tag</h1>
                     <p className={styles.pageSubtitle}>Add a new tag to categorize forum content</p>
                 </div>
-
-                {error && (
-                    <div className={styles.errorAlert}>
-                        <span className={styles.errorIcon}>⚠️</span>
-                        {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div className={styles.alertSuccess}>
-                        <span className={styles.errorIcon}>✅</span>
-                        {success}
-                    </div>
-                )}
 
                 <div className={styles.forumCard}>
                     <form onSubmit={handleSubmit}>
@@ -92,29 +68,31 @@ const CreateTag: React.FC = () => {
                                     setNewTag({ ...newTag, tag_name: e.target.value })
                                 }
                                 required
-                                maxLength={50}
+                                maxLength={30}
                                 placeholder="Enter tag name (required)"
+                                disabled={formLoading}
                             />
                             <small className={styles.characterCount}>
-                                {newTag.tag_name.length}/50 characters
+                                {newTag.tag_name.length}/30 characters
                             </small>
 
-                            <label htmlFor="forumDescription" className={styles.metaLabel}>
+                            <label htmlFor="tagDescription" className={styles.metaLabel}>
                                 Description
                             </label>
                             <textarea
-                                id="forumDescription"
+                                id="tagDescription"
                                 className={styles.formTextarea}
-                                value={newTag.description}
+                                value={newTag.description || ""}
                                 onChange={(e) =>
                                     setNewTag({ ...newTag, description: e.target.value })
                                 }
-                                maxLength={200}
+                                maxLength={150}
                                 placeholder="Enter tag description (optional)"
                                 rows={4}
+                                disabled={formLoading}
                             />
                             <small className={styles.characterCount}>
-                                {newTag.description?.length || 0}/200 characters
+                                {newTag.description?.length || 0}/150 characters
                             </small>
                         </div>
 
@@ -134,8 +112,7 @@ const CreateTag: React.FC = () => {
                             >
                                 {formLoading ? (
                                     <>
-                                        <span className={styles.spinnerSmall}></span>
-                                        Creating...
+                                        <span className={styles.spinnerSmall}></span> Creating...
                                     </>
                                 ) : (
                                     "Create Tag"

@@ -1,20 +1,13 @@
-import {
-    getPosts,
-    getPostById,
-    createPost,
-    updatePost,
-    deletePost,
-    getTagByForumPost,
-    uploadImage
-} from "../../../utils/api/Forum/post";
-import { likePost, unlikePost, reportPost } from "../../../utils/api/Forum/like";
+import InteractPost from "../../../utils/api/Forum/post";
 import { Dispatch, SetStateAction } from "react";
-import { PostListResponse, Post, PostComment, PostNew, TagPost } from "../../../types/forum";
-import { CategorySummary, ThreadDropdown, TagSummary } from "../../../types/forum";
-import { on } from "events";
+import { PostListResponse, Post, NewPost } from "../../../types/Forum/post";
+import { CommentPost } from "../../../types/Forum/comment";
+import { Tag, SummaryTag } from "../../../types/Forum/tag";
+import { SummaryCategory } from "../../../types/Forum/category";
+import { ThreadDropdown } from "../../../types/Forum/thread";
 
 // Posts list functions
-export const loadPosts = async (
+const loadPosts = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setPosts: (posts: PostListResponse[]) => void,
     setError: Dispatch<SetStateAction<string>>,
@@ -22,7 +15,7 @@ export const loadPosts = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-        const response = await getPosts();
+        const response = await InteractPost.getPosts();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
@@ -44,11 +37,11 @@ export const loadPosts = async (
     }
 };
 
-export const loadPostPageById = async (
+const loadPostPageById = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setPost: (post: Post | null) => void,
-    setComments: (comments: PostComment[]) => void,
+    setComments: (comments: CommentPost[]) => void,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
     onSuccess?: () => void
@@ -58,7 +51,7 @@ export const loadPostPageById = async (
         setError('');
         setSuccess('');
 
-        const response = await getPostById(`${id}?includeComments=true&includeStats=true&includeCommentReplies=true`);
+        const response = await InteractPost.getPostById(`${id}?includeComments=true&includeStats=true&includeCommentReplies=true`);
 
         const { status, data } = response;
 
@@ -98,11 +91,11 @@ export const loadPostPageById = async (
     }
 };
 
-export const loadUpdatePostFE = async (
+const loadUpdatePostFE = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setPost: (post: Post | null) => void,
-    setCategories: (categories: CategorySummary[]) => void,
+    setCategories: (categories: SummaryCategory[]) => void,
     setThreads: (threads: ThreadDropdown[]) => void,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
@@ -113,7 +106,7 @@ export const loadUpdatePostFE = async (
         setError('');
         setSuccess('');
 
-        const response = await getPostById(id);
+        const response = await InteractPost.getPostById(id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
@@ -125,7 +118,7 @@ export const loadUpdatePostFE = async (
 
         setPost({
             ...post,
-            tag_name: post.tags.map((tag: TagSummary) => tag.tag_name),
+            tag_name: post.tags.map((tag: SummaryTag) => tag.tag_name),
         });
 
         setCategories([
@@ -158,9 +151,9 @@ export const loadUpdatePostFE = async (
     }
 };
 
-export const createPostFE = async (
+const createPostFE = async (
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    postNew: PostNew,
+    postNew: NewPost,
     setError: React.Dispatch<React.SetStateAction<string>>,
     setSuccess: React.Dispatch<React.SetStateAction<string>>,
     onSuccess?: () => void
@@ -170,7 +163,7 @@ export const createPostFE = async (
         setError('');
         setSuccess('');
 
-        const response = await createPost(postNew);
+        const response = await InteractPost.createPost(postNew);
 
         const { status, data } = response;
 
@@ -200,7 +193,7 @@ export const createPostFE = async (
     }
 };
 
-export const updatePostFE = async (
+const updatePostFE = async (
     id: string,
     postData: any,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
@@ -213,7 +206,7 @@ export const updatePostFE = async (
         setError('');
         setSuccess('');
 
-        const response = await updatePost(id || '', postData);
+        const response = await InteractPost.updatePost(id || '', postData);
 
         const { status, data } = response;
 
@@ -243,7 +236,7 @@ export const updatePostFE = async (
     }
 };
 
-export const deletePostFE = async (
+const deletePostFE = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
@@ -255,7 +248,7 @@ export const deletePostFE = async (
         setError('');
         setSuccess('');
 
-        const response = await deletePost(id);
+        const response = await InteractPost.deletePost(id);
 
         if (response.status !== 200 || !response.data?.success) {
             throw new Error(response.data?.message || 'Failed to delete post: Server error');
@@ -281,148 +274,11 @@ export const deletePostFE = async (
     }
 };
 
-export const likePostFE = async (
-    postId: string,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
-    refetchPost: () => Promise<void>
-): Promise<void> => {
-    try {
-        if (!postId) {
-            throw new Error('Invalid post ID');
-        }
-
-        setError('');
-        setSuccess('');
-
-        const response = await likePost(postId);
-
-        if (response.status !== 200 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to like post');
-        }
-
-        setSuccess(response.data.message || 'Post like updated');
-        await refetchPost();
-
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to like post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        setError(errorMessage);
-        setSuccess('');
-    }
+export default {
+    loadPosts,
+    loadPostPageById,
+    loadUpdatePostFE,
+    createPostFE,
+    updatePostFE,
+    deletePostFE
 };
-
-export const unlikePostFE = async (
-    postId: string,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
-    refetchPost: () => Promise<void>
-): Promise<void> => {
-    try {
-        if (!postId) {
-            throw new Error('Invalid post ID');
-        }
-
-        setError('');
-        setSuccess('');
-
-        const response = await unlikePost(postId);
-
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            throw new Error(response.data?.message || 'Failed to like post');
-        }
-
-        setSuccess(response.data.message || 'Post like updated');
-        await refetchPost();
-
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to like post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        setError(errorMessage);
-        setSuccess('');
-    }
-};
-
-export const reportPostFE = async (
-    postId: string,
-    reportReason: string,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
-    refetchPost: () => void
-): Promise<void> => {
-    try {
-        if (!postId) {
-            throw new Error('Invalid post ID');
-        }
-
-        setError('');
-        setSuccess('');
-
-        const response = await reportPost(postId, reportReason);
-
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            throw new Error(response.data?.message || 'Failed to like post');
-        }
-
-        setSuccess(response.data.message || 'Post like updated');
-        await refetchPost();
-
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to like post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        setError(errorMessage);
-        setSuccess('');
-    }
-};
-
-export const uploadPostImageFE = async (
-    formData: FormData
-): Promise<string> => { 
-    try {
-        const response = await uploadImage(formData);
-
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            throw new Error(data?.message || 'Failed to upload image');
-        }
-        let markdownImage = '';
-        if(data && data.imageUrl){
-            markdownImage = `![image](${data.imageUrl})`;
-        }
-
-        return markdownImage;
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to upload image';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        throw new Error(errorMessage);
-    }
-}

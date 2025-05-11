@@ -4,29 +4,23 @@ import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
-import {
-  loadUpdatePostFE,
-  updatePostFE,
-  uploadPostImageFE,
-} from "../../../../utils/service/Forum/post";
-import { loadTagsPostSummary } from "../../../../utils/service/Forum/tag";
-import {
-  CategorySummary,
-  ThreadDropdown,
-  TagPost,
-  Post,
-  PostNew,
-} from "../../../../types/forum";
+import requestPost from "../../../../utils/service/Forum/post";
+import requestTag from "../../../../utils/service/Forum/tag";
+import requestImage from "../../../../utils/service/Forum/image";
+import { SummaryCategory } from "../../../../types/Forum/category";
+import { ThreadDropdown } from "../../../../types/Forum/thread";
+import { Tag } from "../../../../types/Forum/tag";
+import { Post, NewPost } from "../../../../types/Forum/post";
 
 const UpdatePost: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [post, setPost] = useState<Post | null>(null);
-  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [categories, setCategories] = useState<SummaryCategory[]>([]);
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
-  const [tags, setTags] = useState<TagPost[]>([]);
-  const [availableTags, setAvailableTags] = useState<TagPost[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -38,8 +32,8 @@ const UpdatePost: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        await loadUpdatePostFE(id || "", setLoading, setPost, setCategories, setThreads, setError, () => {});
-        await loadTagsPostSummary(setTagsLoading, setTags, setError, () => {});
+        await requestPost.loadUpdatePostFE(id || "", setLoading, setPost, setCategories, setThreads, setError, () => {});
+        // await requestTag.loadTagsPostSummary(setTagsLoading, setTags, setError, () => {});
       } catch {
         setError("Failed to load post details.");
       } finally {
@@ -79,7 +73,7 @@ const UpdatePost: React.FC = () => {
   const handleAddTag = (tagName: string) => {
     if (!post || !tagName || post.tags.some(t => t.tag_name === tagName)) return;
     const tag = tags.find(t => t.tag_name === tagName);
-    if (tag) setPost(prev => ({ ...prev!, tags: [...prev!.tags, tag] }));
+    // if (tag) setPost(prev => ({ ...prev!, tags: [...prev!.tags, tag] }));
   };
 
   const removeTag = (tagName: string) => {
@@ -106,7 +100,7 @@ const UpdatePost: React.FC = () => {
           formData.append("subfolder", "forum-posts");
           formData.append("fileName", file.name || "image.png");
 
-          const markdownImage = await uploadPostImageFE(formData);
+          const markdownImage = await requestImage.uploadPostImageFE(formData);
           if (!markdownImage) throw new Error("Upload failed");
 
           const cursorPos = textareaRef.current?.selectionStart || 0;
@@ -130,14 +124,14 @@ const UpdatePost: React.FC = () => {
     if (!post) return setError("Invalid post data.");
 
     try {
-      const updatePayload: PostNew = {
+      const updatePayload: NewPost = {
         thread_id: post.thread_id,
         title: post.title,
         content: post.content,
         tag_name: post.tags.map(tag => tag.tag_name),
       };
 
-      await updatePostFE(id || "", updatePayload, setLoading, setError, setSuccess, () => {
+      await requestPost.updatePostFE(id || "", updatePayload, setLoading, setError, setSuccess, () => {
         navigate(`/forum/posts/${id}`);
       });
     } catch {

@@ -1,83 +1,77 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { handleUpdateTag, loadTags, loadTagByID } from "../../../../utils/service/Forum/tag";
-import { Tag, NewTag } from "../../../../types/forum";
+import requestTag from "../../../../utils/service/Forum/tag";
+import { Tag, NewTag } from "../../../../types/Forum/tag";
 
 const UpdateTag: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [tag, setTag] = useState<Tag | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [initialLoad, setInitialLoad] = useState(true);
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchTag = async () => {
       try {
-        await loadTagByID(
+        await requestTag.loadTagByID(
           parseInt(id || ""),
           setInitialLoad,
           setTag,
-          setError,
-          () => { }
+          (error) => toast.error(error),
+          () => {
+            toast.success("Tag loaded successfully");
+          }
         );
       } catch (err) {
-        setError("An unexpected error occurred");
-        setInitialLoad(false);
+        toast.error("An unexpected error occurred while loading tag");
       }
     };
 
     fetchTag();
   }, [id]);
 
-  const validateInputs = (tag: NewTag): string | null => {
-    const tagName = tag.tag_name.trim();
-    let description = tag.description?.trim() || "";
-    if (!tagName) return "Tag name is required";
-    if (tagName.length < 2 || tagName.length > 50) return "Tag name must be from 2 to 50 characters";
-    if (description && (description.length < 10 || description.length > 200)) {
-      return "Description must be from 10 to 200 characters long";
-    }
-    return null;
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag?.tag_id) return;
 
     const updatedTag: NewTag = {
-      tag_id: tag.tag_id,
       tag_name: tag.tag_name.trim(),
-      description: tag.description?.trim() || undefined,
+      description: tag.description?.trim() || "",
     };
 
-    const validationError = validateInputs(updatedTag);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     try {
-      await handleUpdateTag(
+      setFormLoading(true);
+      await requestTag.handleUpdateTag(
         tag.tag_id,
         updatedTag,
-        setFormLoading,
-        setError,
-        setSuccess,
+        (error) => toast.error(error),
         () => {
-          navigate("/forum/tags");
-        }
+          toast.success("Tag updated successfully!");
+          navigate(`/forum/tags/${tag.tag_id}`);
+        },
+        setFormLoading
       );
     } catch (err) {
-      setError("Failed to update tag. Please try again.");
+      toast.error("An unexpected error occurred while updating the tag");
+    } finally {
+      setFormLoading(false);
     }
+  };
+
+  const handleInputChange = (field: keyof Tag, value: string) => {
+    if (!tag) return;
+    setTag({ ...tag, [field]: value });
   };
 
   if (initialLoad) {
     return (
       <div className={styles.forumContainer}>
+        <ToastContainer position="top-right" autoClose={5000} />
         <div className={styles.main_navbar}>
           <Navbar />
         </div>
@@ -91,6 +85,7 @@ const UpdateTag: React.FC = () => {
 
   return (
     <div className={styles.forumContainer}>
+      <ToastContainer position="top-right" autoClose={5000} />
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
@@ -101,20 +96,6 @@ const UpdateTag: React.FC = () => {
           <p className={styles.pageSubtitle}>Modify your tag details below</p>
         </div>
 
-        {error && (
-          <div className={styles.errorAlert}>
-            <span className={styles.errorIcon}>⚠️</span>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className={styles.alertSuccess}>
-            <span className={styles.errorIcon}>✅</span>
-            {success}
-          </div>
-        )}
-
         {tag ? (
           <div className={styles.forumCard}>
             <form onSubmit={handleSubmit}>
@@ -123,33 +104,34 @@ const UpdateTag: React.FC = () => {
                   Tag Name *
                 </label>
                 <input
-                  type="text"
                   id="tagName"
                   className={styles.formInput}
                   value={tag.tag_name}
-                  onChange={(e) => setTag({ ...tag, tag_name: e.target.value })}
+                  onChange={(e) => handleInputChange("tag_name", e.target.value)}
                   required
-                  maxLength={50}
+                  maxLength={30}
                   placeholder="Enter tag name (required)"
+                  disabled={formLoading}
                 />
                 <small className={styles.characterCount}>
-                  {tag.tag_name.length}/50 characters
+                  {tag.tag_name.length}/30 characters
                 </small>
 
-                <label htmlFor="forumDescription" className={styles.metaLabel}>
+                <label htmlFor="tagDescription" className={styles.metaLabel}>
                   Description
                 </label>
                 <textarea
-                  id="forumDescription"
+                  id="tagDescription"
                   className={styles.formTextarea}
                   value={tag.description || ""}
-                  onChange={(e) => setTag({ ...tag, description: e.target.value })}
-                  maxLength={200}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  maxLength={150}
                   placeholder="Enter tag description (optional)"
                   rows={4}
+                  disabled={formLoading}
                 />
                 <small className={styles.characterCount}>
-                  {(tag.description?.length || 0)}/200 characters
+                  {(tag.description?.length || 0)}/150 characters
                 </small>
               </div>
 
@@ -162,9 +144,9 @@ const UpdateTag: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
+                <button 
+                  type="submit" 
+                  className={styles.primaryButton} 
                   disabled={formLoading}
                 >
                   {formLoading ? (

@@ -1,813 +1,579 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-
-import {
-    getAllTagsDB,
-    getSummaryTagsDB,
-    getSummaryTagByIdDB,
-    getSummaryLittleTagsDB,
-    getTagByIdDB,
-    getTagByNameDB,
-    getPostsByTagDB,
-    getPopularTagsDB,
-    getTagsForPostDB,
-    getTagsByUserDB,
-    createTagDB,
-    updateTagDB,
-    deleteTagDB,
-    getAllTagsByPostDB,
-    getTagsOfPostDB,
-    getTagOfPostByIdDB,
-    addTagsToPostDB,
-    removeTagFromPostDB
-} from "../../models/Forum/tag.js";
+import { StatusCodes } from "http-status-codes";
+import TagDB from "../../models/Forum/tag.js";
 
 dotenv.config();
 
-export const getAllTags = async (req, res) => {
+const handleError = (error, req, res, action = 'process') => {
+    console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
+
+    const errorMap = {
+        // Authentication errors
+        "No authentication token provided": StatusCodes.UNAUTHORIZED,
+        "Invalid or expired token": StatusCodes.UNAUTHORIZED,
+        "Invalid token payload": StatusCodes.UNAUTHORIZED,
+        "Unauthorized: User ID not found": StatusCodes.UNAUTHORIZED,
+
+        // Validation errors
+        "Valid tag ID is required": StatusCodes.BAD_REQUEST,
+        "Valid tag name is required": StatusCodes.BAD_REQUEST,
+        "Valid numeric post ID is required": StatusCodes.BAD_REQUEST,
+        "Invalid pagination parameters": StatusCodes.BAD_REQUEST,
+        "Invalid sort parameter": StatusCodes.BAD_REQUEST,
+        "Post ID and tag IDs are required": StatusCodes.BAD_REQUEST,
+        "Limit must be between 1 and 100": StatusCodes.BAD_REQUEST,
+
+        // Conflict errors
+        "Tag name already exists": StatusCodes.CONFLICT,
+
+        // Not found errors
+        "Tag not found": StatusCodes.NOT_FOUND,
+        "No tags found": StatusCodes.NOT_FOUND,
+        "No posts found for this tag": StatusCodes.NOT_FOUND,
+        "No tags found for this user": StatusCodes.NOT_FOUND
+    };
+
+    const statusCode = errorMap[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
+    const response = {
+        success: false,
+        message: error.message || `Failed to ${action} tag`,
+        timestamp: new Date().toISOString()
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+        response.debug = {
+            message: error.message,
+            stack: error.stack?.split("\n")[0]
+        };
+    }
+
+    if (error.message.includes("Invalid")) {
+        response.errorCode = "VALIDATION_ERROR";
+    }
+
+    return res.status(statusCode).json(response);
+};
+
+// Helper functions
+const validatePagination = (page, limit, maxLimit = 100) => {
+    if (page < 1 || limit < 1 || limit > maxLimit) {
+        throw new Error(`Invalid pagination parameters: Page must be ≥1 and limit between 1-${maxLimit}`);
+    }
+    return { page: parseInt(page), limit: parseInt(limit) };
+};
+
+const validateSorting = (sortBy, sortOrder, allowedFields) => {
+    const orderByField = allowedFields[sortBy] || allowedFields[Object.keys(allowedFields)[0]];
+    const orderDirection = sortOrder && sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    return { orderByField, orderDirection };
+};
+
+const getUserIdFromToken = (req) => {
+    if (!req.cookies?.auth_token) {
+        throw new Error("No authentication token provided");
+    }
+
+    const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+    if (!decoded.user_id) {
+        throw new Error("Invalid token payload");
+    }
+    return decoded.user_id;
+};
+
+// Controller methods
+const getAllTags = async (req, res) => {
     try {
-        // Pagination parameters
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const search = req.query.search || '';
-        const sortBy = req.query.sortBy || 'usage_count';
-        const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
+        const { page = 1, limit = 20, search = '', sortBy = 'usage_count', sortOrder = 'DESC' } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
 
-        if (page < 1 || limit < 1 || limit > 100) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid pagination parameters",
-                details: {
-                    validPage: "Must be ≥ 1",
-                    validLimit: "Must be between 1 and 100"
-                }
-            });
-        }
+        const allowedSortFields = {
+            'tag_name': 't.tag_name',
+            'usage_count': 'usage_count',
+            'last_used_at': 't.last_used_at',
+            'created_at': 't.created_at',
+            'post_count': 'post_count'
+        };
+        
+        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, allowedSortFields);
 
-        const validSortColumns = ['tag_name', 'usage_count', 'last_used_at', 'created_at', 'post_count'];
-        if (!validSortColumns.includes(sortBy)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid sort parameter",
-                validSortColumns
-            });
-        }
+        const { tags, totalTags } = await TagDB.getAllTagsDB(p, l, search, orderByField, orderDirection);
 
-        const { tags, totalTags } = await getAllTagsDB(page, limit, search, sortBy, sortOrder);
-
-        const totalPages = Math.ceil(totalTags / limit);
-
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: {
                 tags,
                 pagination: {
                     totalItems: totalTags,
-                    totalPages,
-                    currentPage: page,
-                    itemsPerPage: limit,
-                    hasNextPage: page < totalPages,
-                    hasPreviousPage: page > 1
+                    totalPages: Math.ceil(totalTags / l),
+                    currentPage: p,
+                    itemsPerPage: l,
+                    hasNextPage: p < Math.ceil(totalTags / l),
+                    hasPreviousPage: p > 1
                 },
                 filters: {
                     search,
                     sortBy,
                     sortOrder
+                },
+                metadata: {
+                    retrievedAt: new Date().toISOString(),
+                    cacheHint: {
+                        recommended: true,
+                        duration: "5m"
+                    }
                 }
             }
         });
     } catch (error) {
-        console.error("Error getting all tags:", error);
-
-        const statusCode = error.statusCode || 500;
-        const errorResponse = {
-            success: false,
-            message: "Error fetching tags",
-            error: error.message
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            errorResponse.stack = error.stack;
-        }
-
-        res.status(statusCode).json(errorResponse);
+        handleError(error, req, res, 'fetch all tags');
     }
 };
 
-export const getSummaryTags = async (req, res) => {
+const getSummaryTags = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const search = req.query.search || '';
-        const sortBy = req.query.sortBy || 'tag_name';
-        const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
+        const { page = 1, limit = 20, search = '', sortBy = 'tag_name', sortOrder = 'ASC' } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
 
-        if (page < 1 || limit < 1 || limit > 100) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid pagination parameters",
-                details: {
-                    validPage: "Must be ≥ 1",
-                    validLimit: "Must be between 1 and 100",
-                    received: { page, limit }
-                }
-            });
-        }
+        const allowedSortFields = {
+            'tag_id': 't.tag_id',
+            'tag_name': 't.tag_name',
+            'description': 't.description'
+        };
+        
+        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, allowedSortFields);
 
-        const validSortColumns = ['tag_id', 'tag_name', 'description'];
-        if (!validSortColumns.includes(sortBy)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid sort parameter",
-                validSortColumns,
-                received: sortBy
-            });
-        }
+        const { tags, totalTags } = await TagDB.getSummaryTagsDB(p, l, search, orderByField, orderDirection);
 
-        const { tags, totalTags } = await getSummaryTagsDB(page, limit, search, sortBy, sortOrder);
-
-        const totalPages = Math.ceil(totalTags / limit);
-
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: {
                 tags,
                 pagination: {
                     totalItems: totalTags,
-                    totalPages,
-                    currentPage: page,
-                    itemsPerPage: limit,
-                    hasNextPage: page < totalPages,
-                    hasPreviousPage: page > 1
+                    totalPages: Math.ceil(totalTags / l),
+                    currentPage: p,
+                    itemsPerPage: l
                 },
-                filters: {
-                    search,
-                    sortBy,
-                    sortOrder
+                metadata: {
+                    count: tags.length,
+                    retrievedAt: new Date().toISOString()
                 }
             }
         });
     } catch (error) {
-        console.error("Error getting summary tags:", error);
-
-        const statusCode = error.statusCode || 500;
-        const errorResponse = {
-            success: false,
-            message: error.message || "Error fetching summary tags",
-            error: error.message
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            errorResponse.stack = error.stack;
-            if (error.originalError) {
-                errorResponse.originalError = error.originalError.message;
-            }
-        }
-
-        res.status(statusCode).json(errorResponse);
+        handleError(error, req, res, 'fetch summary tags');
     }
 };
 
-export const getSummaryLittleTags = async (req, res) => {
+const getSummaryLittleTags = async (req, res) => {
     try {
-        const { tags, totalTags } = await getSummaryLittleTagsDB();
+        const { tags, totalTags } = await TagDB.getSummaryLittleTagsDB();
 
+        res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: {
                 tags,
                 pagination: {
                     totalItems: totalTags
+                },
+                metadata: {
+                    retrievedAt: new Date().toISOString()
                 }
             }
         });
     } catch (error) {
-        console.error("Error getting summary tags:", error);
-
-        const statusCode = error.statusCode || 500;
-        const errorResponse = {
-            success: false,
-            message: error.message || "Error fetching summary tags",
-            error: error.message
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            errorResponse.stack = error.stack;
-            if (error.originalError) {
-                errorResponse.originalError = error.originalError.message;
-            }
-        }
-
-        res.status(statusCode).json(errorResponse);
+        handleError(error, req, res, 'fetch little summary tags');
     }
 };
 
-export const getSummaryTagById = async (req, res) => {
+const getSummaryTagById = async (req, res) => {
     try {
         const { id } = req.params;
-
-        if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid tag ID is required",
-                details: {
-                    expected: "Positive integer",
-                    received: id
-                }
-            });
-        }
-
-        const tag = await getSummaryTagByIdDB(Number(id));
-
-        if (!tag) {
-            return res.status(404).json({
-                success: false,
-                message: "Tag not found",
-                tagId: id
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: tag
-        });
-
-    } catch (error) {
-        console.error(`Error getting tag with ID ${req.params.id}:`, error);
-
-        const statusCode = error.statusCode ||
-            (error.name === 'ValidationError' ? 400 : 500);
-
-        const errorResponse = {
-            success: false,
-            message: error.message || "Error fetching tag",
-            ...(process.env.NODE_ENV === 'development' && {
-                stack: error.stack,
-                ...(error.details && { details: error.details })
-            })
-        };
-
-        res.status(statusCode).json(errorResponse);
-    }
-};
-
-export const getTagById = async (req, res) => {
-    try {
-        const { id } = req.params;
-
         if (!id || !Number.isInteger(Number(id))) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid numeric tag ID is required",
-                errorCode: "INVALID_TAG_ID"
-            });
+            throw new Error("Valid tag ID is required");
         }
 
-        const tag = await getTagByIdDB(id);
+        const tag = await TagDB.getSummaryTagByIdDB(Number(id));
 
         if (!tag) {
-            return res.status(404).json({
-                success: false,
-                message: "Tag not found",
-                errorCode: "TAG_NOT_FOUND"
-            });
+            throw new Error("Tag not found");
         }
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
-            tag: tag
+            data: tag,
+            metadata: {
+                tagId: id,
+                retrievedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
-        console.error(`Error getting tag by ID ${req.params.id}:`, error);
-
-        const statusCode = error.statusCode || 500;
-        const response = {
-            success: false,
-            message: error.clientMessage || "Error fetching tag",
-            errorCode: error.errorCode || "TAG_FETCH_ERROR"
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            response.error = error.message;
-            response.stack = error.stack;
-        }
-
-        res.status(statusCode).json(response);
+        handleError(error, req, res, 'fetch tag summary by ID');
     }
 };
 
-export const getTagByName = async (req, res) => {
+const getTagById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id || !Number.isInteger(Number(id))) {
+            throw new Error("Valid numeric tag ID is required");
+        }
+
+        const tag = await TagDB.getTagByIdDB(id);
+
+        if (!tag) {
+            throw new Error("Tag not found");
+        }
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            tag: tag,
+            metadata: {
+                tagId: id,
+                retrievedAt: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        handleError(error, req, res, 'fetch tag by ID');
+    }
+};
+
+const getTagByName = async (req, res) => {
     try {
         const { name } = req.query;
-
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid tag name is required",
-                errorCode: "INVALID_TAG_NAME"
-            });
+            throw new Error("Valid tag name is required");
         }
 
         const normalizedTagName = name.trim().toLowerCase();
-        const tag = await getTagByNameDB(normalizedTagName);
+        const tag = await TagDB.getTagByNameDB(normalizedTagName);
 
         if (!tag) {
-            return res.status(404).json({
-                success: false,
-                message: "Tag not found",
-                errorCode: "TAG_NOT_FOUND"
-            });
+            throw new Error("Tag not found");
         }
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
-            data: tag
+            data: tag,
+            metadata: {
+                tagName: normalizedTagName,
+                retrievedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
-        console.error(`Error getting tag by name "${req.query.name}":`, error);
-
-        const statusCode = error.statusCode || 500;
-        const response = {
-            success: false,
-            message: error.clientMessage || "Error fetching tag by name",
-            errorCode: error.errorCode || "TAG_FETCH_ERROR"
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            response.error = error.message;
-            response.stack = error.stack;
-        }
-
-        res.status(statusCode).json(response);
+        handleError(error, req, res, 'fetch tag by name');
     }
 };
 
-export const getPostsByTag = async (req, res) => {
+const getPostsByTag = async (req, res) => {
     try {
         const { id } = req.params;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: "Tag ID is required",
-                error: "Missing tag ID parameter"
-            });
+        const { page = 1, limit = 10 } = req.query;
+        
+        if (!id || !Number.isInteger(Number(id))) {
+            throw new Error("Valid numeric tag ID is required");
         }
 
-        if (isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid Tag ID format",
-                error: "Tag ID must be a number"
-            });
-        }
+        const { page: p, limit: l } = validatePagination(page, limit);
 
-        const { posts, tag, totalPosts } = await getPostsByTagDB(id, page, limit);
+        const { posts, tag, totalPosts } = await TagDB.getPostsByTagDB(id, p, l);
 
         if (!tag) {
-            return res.status(404).json({
-                success: false,
-                message: "Tag not found"
-            });
+            throw new Error("Tag not found");
         }
 
-        const totalPages = Math.ceil(totalPosts / limit);
-
-        return res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             tag: tag,
             posts: posts,
             pagination: {
-                totalPosts,
-                totalPages,
-                currentPage: page,
-                postsPerPage: limit,
-                hasNextPage: page < totalPages,
-                hasPreviousPage: page > 1
+                totalItems: totalPosts,
+                totalPages: Math.ceil(totalPosts / l),
+                currentPage: p,
+                itemsPerPage: l,
+                hasNextPage: p < Math.ceil(totalPosts / l),
+                hasPreviousPage: p > 1
+            },
+            metadata: {
+                tagId: id,
+                retrievedAt: new Date().toISOString()
             }
         });
     } catch (error) {
-        console.error("Error getting posts by tag:", error);
-
-        const statusCode = error.statusCode || 500;
-        const errorMessage = error.message || "Error fetching posts";
-
-        return res.status(statusCode).json({
-            success: false,
-            message: errorMessage,
-            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        handleError(error, req, res, 'fetch posts by tag');
     }
 };
 
-export const getPopularTags = async (req, res) => {
+const getPopularTags = async (req, res) => {
     try {
-        const { limit = '10' } = req.query;
+        const { limit = 10 } = req.query;
         const parsedLimit = parseInt(limit, 10);
 
         if (isNaN(parsedLimit)) {
-            return res.status(400).json({
-                success: false,
-                message: "Limit must be a valid number",
-                errorCode: "INVALID_LIMIT_PARAM"
-            });
+            throw new Error("Limit must be a valid number");
         }
 
         if (parsedLimit < 1 || parsedLimit > 100) {
-            return res.status(400).json({
-                success: false,
-                message: "Limit must be between 1 and 100",
-                errorCode: "LIMIT_OUT_OF_RANGE",
-                validRange: { min: 1, max: 100 }
-            });
+            throw new Error("Limit must be between 1 and 100");
         }
 
-        const tags = await getPopularTagsDB(parsedLimit);
+        const tags = await TagDB.getPopularTagsDB(parsedLimit);
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: tags,
             meta: {
                 count: tags.length,
-                limit: parsedLimit
+                limit: parsedLimit,
+                retrievedAt: new Date().toISOString()
             }
         });
     } catch (error) {
-        console.error("Error in getPopularTags:", error);
-
-        const statusCode = error.statusCode || 500;
-        const response = {
-            success: false,
-            message: error.clientMessage || "Failed to retrieve popular tags",
-            errorCode: error.errorCode || "TAG_RETRIEVAL_ERROR"
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            response.error = error.message;
-            response.stack = error.stack;
-        }
-
-        res.status(statusCode).json(response);
+        handleError(error, req, res, 'fetch popular tags');
     }
 };
 
-export const getTagsForPost = async (req, res) => {
+const getTagsForPost = async (req, res) => {
     try {
         const { id } = req.params;
-
         if (!id || !Number.isInteger(Number(id))) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid numeric post ID is required",
-                errorCode: "INVALID_POST_ID"
-            });
+            throw new Error("Valid numeric post ID is required");
         }
 
-        const tags = await getTagsForPostDB(id);
+        const tags = await TagDB.getTagsForPostDB(id);
 
-        res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: tags,
             meta: {
                 count: tags.length,
-                postId: id
+                postId: id,
+                retrievedAt: new Date().toISOString()
             }
         });
     } catch (error) {
-        console.error(`Error getting tags for post ${req.params.id}:`, error);
-
-        const statusCode = error.statusCode || 500;
-        const response = {
-            success: false,
-            message: error.clientMessage || "Failed to retrieve tags for post",
-            errorCode: error.errorCode || "POST_TAGS_RETRIEVAL_ERROR"
-        };
-
-        if (process.env.NODE_ENV === 'development') {
-            response.error = error.message;
-            response.stack = error.stack;
-        }
-
-        res.status(statusCode).json(response);
+        handleError(error, req, res, 'fetch tags for post');
     }
 };
 
-export const getTagsByUser = async (req, res) => {
+const getTagsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
         if (!userId) {
-            return res.status(400).json({
-                success: false,
-                message: "User ID is required"
-            });
+            throw new Error("User ID is required");
         }
 
-        const tags = await getTagsByUserDB(userId);
-        res.status(200).json({
+        const tags = await TagDB.getTagsByUserDB(userId);
+
+        res.status(StatusCodes.OK).json({
             success: true,
-            data: tags
+            data: tags,
+            metadata: {
+                userId,
+                count: tags.length,
+                retrievedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
-        console.error("Error getting tags by user:", error);
-        res.status(500).json({
-            success: false,
-            message: "Error fetching user's tags",
-            error: error.message
-        });
+        handleError(error, req, res, 'fetch tags by user');
     }
 };
 
-export const createTag = async (req, res) => {
+const createTag = async (req, res) => {
     try {
         const { tag_name, description } = req.body;
-
-        if (!req.cookies?.auth_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication token required"
-            });
-        }
-
-        let decoded;
-        try {
-            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        } catch (jwtError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired authentication token"
-            });
-        }
-        
-        const author_id = decoded.user_id;
-
         if (!tag_name) {
-            return res.status(400).json({
-                success: false,
-                message: "Tag name is required"
-            });
+            throw new Error("Tag name is required");
         }
 
-        const result = await createTagDB(tag_name, description, author_id);
-        res.status(201).json({
+        const author_id = getUserIdFromToken(req);
+
+        const result = await TagDB.createTagDB(tag_name, description, author_id);
+
+        res.status(StatusCodes.CREATED).json({
             success: true,
-            data: result
+            data: result,
+            metadata: {
+                createdBy: author_id,
+                createdAt: new Date().toISOString()
+            }
         });
     } catch (error) {
-        console.error("Error creating tag:", error);
-        res.status(500).json({
-            success: false,
-            message: "Error creating tag",
-            error: error.message
-        });
+        handleError(error, req, res, 'create tag');
     }
 };
 
-export const updateTagById = async (req, res) => {
+const updateTagById = async (req, res) => {
     try {
         const { id } = req.params;
-
-        if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid tag ID is required",
-                details: {
-                    expected: "Positive integer",
-                    received: id
-                }
-            });
-        }
         const { tag_name, description } = req.body;
 
-        if (!req.cookies?.auth_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication token required"
-            });
+        if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
+            throw new Error("Valid tag ID is required");
         }
 
-        let decoded;
-        try {
-            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        } catch (jwtError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired authentication token"
-            });
-        }
+        const author_id = getUserIdFromToken(req);
 
-        const author_id = decoded.user_id;
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid user credentials"
-            });
-        }
-        const result = await updateTagDB(
+        const result = await TagDB.updateTagDB(
             Number(id),
-            tag_name.trim(),
+            tag_name?.trim(),
             description?.trim(),
             author_id
         );
 
-        return res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: result,
-            message: "Tag updated successfully"
+            message: "Tag updated successfully",
+            metadata: {
+                updatedAt: new Date().toISOString(),
+                updatedBy: author_id
+            }
         });
-
     } catch (error) {
-        console.error("Error updating tag:", error);
-
-        const statusCode = error.statusCode ||
-            (error.name === 'ValidationError' ? 400 :
-                error.message.includes('Unauthorized') ? 403 : 500);
-
-        const errorResponse = {
-            success: false,
-            message: error.message || "Error updating tag",
-            ...(process.env.NODE_ENV === 'development' && {
-                stack: error.stack,
-                ...(error.details && { details: error.details })
-            })
-        };
-
-        return res.status(statusCode).json(errorResponse);
+        handleError(error, req, res, 'update tag');
     }
 };
 
-export const deleteTagById = async (req, res) => {
+const deleteTagById = async (req, res) => {
     try {
         const { id } = req.params;
 
         if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid tag ID is required",
-                details: {
-                    expected: "Positive integer",
-                    received: id
-                }
-            });
+            throw new Error("Valid tag ID is required");
         }
 
-        if (!req.cookies?.auth_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication token required"
-            });
-        }
+        const author_id = getUserIdFromToken(req);
 
-        let decoded;
-        try {
-            decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
-        } catch (jwtError) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid or expired authentication token"
-            });
-        }
+        const result = await TagDB.deleteTagDB(Number(id), author_id);
 
-        const author_id = decoded.user_id;
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid user credentials"
-            });
-        }
-
-        const result = await deleteTagDB(
-            Number(id),
-            author_id
-        );
-
-        return res.status(200).json({
+        res.status(StatusCodes.OK).json({
             success: true,
             data: result,
-            message: "Tag deleted successfully"
+            message: "Tag deleted successfully",
+            metadata: {
+                deletedAt: new Date().toISOString(),
+                deletedBy: author_id
+            }
         });
-
     } catch (error) {
-        console.error("Error deleting tag:", error);
-
-        const statusCode = error.statusCode ||
-            (error.name === 'ValidationError' ? 400 :
-                error.message.includes('Unauthorized') ? 403 : 500);
-
-        const errorResponse = {
-            success: false,
-            message: error.message || "Error deleting tag",
-            ...(process.env.NODE_ENV === 'development' && {
-                stack: error.stack,
-                ...(error.details && { details: error.details })
-            })
-        };
-
-        return res.status(statusCode).json(errorResponse);
+        handleError(error, req, res, 'delete tag');
     }
 };
 
-export const getTagsOfPost = async (req, res) => {
-    try {
-        const { id } = req.params; // post_id
-        const tags = await getTagsOfPostDB(id);
-        res.status(200).json(tags);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching tags" });
-    }
-}
-
-export const getTagOfPostById = async (req, res) => {
+const getTagsOfPost = async (req, res) => {
     try {
         const { id } = req.params;
-        const tag = await getTagOfPostByIdDB(id);
-        res.status(200).json(tag);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching tags" });
-    }
-}
+        const tags = await TagDB.getTagsOfPostDB(id);
 
-export const addTagsToPost = async (req, res) => {
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: tags,
+            metadata: {
+                postId: id,
+                count: tags.length,
+                retrievedAt: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        handleError(error, req, res, 'fetch tags of post');
+    }
+};
+
+const getTagOfPostById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tag = await TagDB.getTagOfPostByIdDB(id);
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: tag,
+            metadata: {
+                tagId: id,
+                retrievedAt: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        handleError(error, req, res, 'fetch tag of post by ID');
+    }
+};
+
+const addTagsToPost = async (req, res) => {
     try {
         const { postId } = req.params;
         const { ids } = req.body;
-        const author_id = req.user.user_id;
-
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User ID not found"
-            });
-        }
 
         if (!postId || !ids || !Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID and tag IDs are required"
-            });
+            throw new Error("Post ID and tag IDs are required");
         }
 
-        const result = await addTagsToPostDB(postId, ids, author_id);
-        res.status(201).json({
+        const author_id = getUserIdFromToken(req);
+
+        const result = await TagDB.addTagsToPostDB(postId, ids, author_id);
+
+        res.status(StatusCodes.CREATED).json({
             success: true,
-            data: result
+            data: result,
+            metadata: {
+                postId,
+                addedTagsCount: ids.length,
+                addedAt: new Date().toISOString(),
+                addedBy: author_id
+            }
         });
     } catch (error) {
-        console.error("Error adding tags to post:", error);
-        if (error.message.includes("Unauthorized")) {
-            return res.status(403).json({
-                success: false,
-                message: error.message
-            });
-        }
-        res.status(500).json({
-            success: false,
-            message: "Error adding tags to post",
-            error: error.message
-        });
+        handleError(error, req, res, 'add tags to post');
     }
 };
 
-export const removeTagFromPost = async (req, res) => {
+const removeTagFromPost = async (req, res) => {
     try {
         const { postId, id } = req.params;
-        const author_id = req.user.user_id;
-
-        if (!author_id) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized: User ID not found"
-            });
-        }
 
         if (!postId || !id) {
-            return res.status(400).json({
-                success: false,
-                message: "Post ID and tag ID are required"
-            });
+            throw new Error("Post ID and tag ID are required");
         }
 
-        const result = await removeTagFromPostDB(postId, id, author_id);
-        res.status(200).json({
+        const author_id = getUserIdFromToken(req);
+
+        const result = await TagDB.removeTagFromPostDB(postId, id, author_id);
+
+        res.status(StatusCodes.OK).json({
             success: true,
-            data: result
+            data: result,
+            message: "Tag removed from post successfully",
+            metadata: {
+                postId,
+                tagId: id,
+                removedAt: new Date().toISOString(),
+                removedBy: author_id
+            }
         });
     } catch (error) {
-        console.error("Error removing tag from post:", error);
-        if (error.message.includes("Unauthorized")) {
-            return res.status(403).json({
-                success: false,
-                message: error.message
-            });
-        }
-        res.status(500).json({
-            success: false,
-            message: "Error removing tag from post",
-            error: error.message
-        });
+        handleError(error, req, res, 'remove tag from post');
     }
+};
+
+export default {
+    getAllTags,
+    getSummaryTags,
+    getSummaryLittleTags,
+    getSummaryTagById,
+    getTagById,
+    getTagByName,
+    getPostsByTag,
+    getPopularTags,
+    getTagsForPost,
+    getTagsByUser,
+    createTag,
+    updateTagById,
+    deleteTagById,
+    getTagsOfPost,
+    getTagOfPostById,
+    addTagsToPost,
+    removeTagFromPost
 };

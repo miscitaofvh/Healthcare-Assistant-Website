@@ -1,10 +1,26 @@
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InteractiveThread from "../../../utils/api/Forum/thread";
-import { Thread, NewThread, Post, ThreadSummary, ThreadDropdown, PaginationData } from "../../../types/forum";
+import { Thread, NewThread, ThreadSummary, ThreadDropdown } from "../../../types/Forum/thread";
+import { Post } from "../../../types/Forum/post";
+import { PaginationData } from "../../../types/Forum/pagination";
 import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Dispatch, SetStateAction } from "react";
-import { on } from 'events';
+
+
+const validateInputs = (thread: NewThread): string | null => {
+    const threadName = thread.thread_name.trim();
+    const description = thread.description?.trim() || "";
+
+    if (!threadName) return "Category name is required";
+    if (threadName.length < 3 || threadName.length > 50) {
+        return "Category name must be from 3 to 50 characters";
+    }
+    if (description && (description.length < 10 || description.length > 200)) {
+        return "Description must be from 10 to 200 characters long";
+    }
+    return null;
+};
 
 const loadThreads = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
@@ -145,6 +161,12 @@ const handleCreateThread = async (
     try {
         setFormLoading?.(true);
 
+        const validationError = validateInputs(newThread);
+        if (validationError) {
+            showError(validationError);
+            return;
+        }
+
         const response = await InteractiveThread.createThread(newThread);
 
         const { status, data } = response;
@@ -183,6 +205,12 @@ const handleUpdateThread = async (
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
+        
+        const validationError = validateInputs(newThread);
+        if (validationError) {
+            showError(validationError);
+            return;
+        }
 
         const response = await InteractiveThread.updateThread(thread_id, newThread);
 

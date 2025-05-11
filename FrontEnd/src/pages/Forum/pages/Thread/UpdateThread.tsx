@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "../../../../utils/service/Forum/thread";
-import { NewThread, ThreadSummary } from "../../../../types/forum";
+import { NewThread, ThreadSummary } from "../../../../types/Forum/thread";
 
 const UpdateThread: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -33,35 +33,16 @@ const UpdateThread: React.FC = () => {
         fetchThread();
     }, [id]);
 
-    const validateInputs = (thread: NewThread): string | null => {
-        const title = thread.thread_name.trim();
-        const description = thread.description?.trim() || "";
-        
-        if (!title) return "Thread title is required";
-        if (title.length < 3 || title.length > 50) return "Thread title must be from 3 to 50 characters";
-        if (!description) return "Thread content is required";
-        if (description.length < 10 || description.length > 200) return "Content must be from 10 to 200 characters";
-        if (!thread.category_id || thread.category_id <= 0) return "Please select a valid category";
-
-        return null;
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!thread?.thread_id) return;
 
         const updatedThread: NewThread = {
+            category_id: thread.category_id,
             thread_id: thread.thread_id,
             thread_name: thread.thread_name.trim(),
-            description: thread.description.trim(),
-            category_id: thread.category_id
+            description: thread.description.trim()
         };
-
-        const validationError = validateInputs(updatedThread);
-        if (validationError) {
-            toast.error(validationError);
-            return;
-        }
 
         try {
             setFormLoading(true);
