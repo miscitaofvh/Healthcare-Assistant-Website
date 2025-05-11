@@ -249,14 +249,14 @@ router.post("/comments/:commentId/replies",
 router.put("/comments/:commentId",
         auth.required,
         forumValidatorsComment.validateUpdateComment,
-        auth.requireOwnerOrAdmin("comment"),
+        auth.requireOwnerOrAdmin("commentForum"),
         asyncHandler(updateComment)
 );
 
 router.delete("/comments/:commentId",
         auth.required,
         forumValidatorsComment.validateCommentExists,
-        auth.requireOwnerOrAdmin("comment"),
+        auth.requireOwnerOrAdmin("commentForum"),
         asyncHandler(deleteComment)
 );
 
@@ -425,7 +425,7 @@ router.get("/tags/:tagId/posts",
 );
 
 // Tag Search
-router.get("/tags/search/name",
+router.get("/tags/search/tagName",
         forumValidatorsTag.validateTagQuery,
         asyncHandler(tagController.getTagByName)
 );
@@ -455,7 +455,7 @@ router.delete("/tags/:tagId",
 );
 
 // User Tags
-router.get("/tags/users/:userId",
+router.get("/tags/users/:username",
         forumValidatorsUser.validateUserExists,
         paginate(),
         asyncHandler(tagController.getTagsByUser)
@@ -468,9 +468,8 @@ router.get("/tags/posts/:postId",
         asyncHandler(tagController.getTagsForPost)
 );
 
-router.get("/tags/posts/:postId/:tagId",
+router.get("/tags/posts/:postId",
         forumValidatorsPost.validatePostExists,
-        forumValidatorsTag.validateTagExists,
         asyncHandler(tagController.getTagOfPostById)
 );
 
@@ -487,7 +486,7 @@ router.delete("/tags/posts/:postId/:tagId",
         forumValidatorsPost.validatePostExists,
         forumValidatorsTag.validateTagExists,
         forumValidatorsTag.validatePostTagRemove,
-        auth.requireOwnerOrAdmin("posts"),
+        auth.requireOwnerOrAdmin("post"),
         asyncHandler(tagController.removeTagFromPost)
 );
 

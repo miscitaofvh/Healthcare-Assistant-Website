@@ -244,7 +244,7 @@ const ThreadPage: React.FC = () => {
               )}
               <button
                 className={styles.secondaryButton}
-                onClick={() => navigate(`/forum/posts/create?thread=${thread.thread_id}`)}
+                onClick={() => navigate(`/forum/posts/create?category=${thread.category_id}&thread=${thread.thread_id}`)}
                 disabled={loading}
               >
                 Add New Post

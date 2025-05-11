@@ -6,7 +6,9 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { PostbyTag, Tag, PaginationData } from "../../../../types/forum";
+import { PostbyTag } from "../../../../types/Forum/post";
+import { Tag } from "../../../../types/Forum/tag";
+import { PaginationData } from "../../../../types/Forum/pagination";
 import requestTag from "../../../../utils/service/Forum/tag";
 
 const TagPage: React.FC = () => {
@@ -84,7 +86,7 @@ const TagPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!tagToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       await requestTag.handleDeleteTag(
@@ -203,12 +205,12 @@ const TagPage: React.FC = () => {
             <div className={styles.headerSection}>
               <h1 className={styles.pageTitle}>#{tag.tag_name}</h1>
               <p className={styles.pageSubtitle}>
-                {tag.usage_count} posts
+                {tag.post_count} posts
               </p>
               <p className={styles.pageSubtitle}>
                 {tag.description || "No description available"}
               </p>
-              
+
               {tag?.is_owner && (
                 <div className={styles.buttonGroup}>
                   <button
@@ -226,7 +228,7 @@ const TagPage: React.FC = () => {
                 </div>
               )}
             </div>
-
+            
             {/* Posts List */}
             <div className={styles.headerSection}>
               <h2 className={styles.pageTitle}>Posts with this Tag</h2>
@@ -267,7 +269,7 @@ const TagPage: React.FC = () => {
                         </div>
                         <div className={styles.metaItem}>
                           <span className={styles.metaLabel}>Author:</span>
-                          <span className={styles.metaValue}>{post.author}</span>
+                          <span className={styles.metaValue}>{post.created_by}</span>
                         </div>
                         <div className={styles.metaItem}>
                           <span className={styles.metaLabel}>Likes:</span>

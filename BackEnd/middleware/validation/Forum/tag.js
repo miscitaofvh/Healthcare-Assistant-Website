@@ -38,7 +38,7 @@ const validateTagId = (location = 'param') => {
         .custom(async (value, { req }) => {
             try {
                 const [result] = await connection.execute(
-                    'SELECT * FROM forum_tags WHERE tag_id = ?',
+                    'SELECT 1 FROM forum_tags WHERE tag_id = ?',
                     [value]
                 );
                 if (result.length === 0) {
@@ -70,7 +70,7 @@ const validateTagName = (checkUniqueness = true) => {
     if (checkUniqueness) {
         validator.custom(async (value, { req }) => {
             const [result] = await connection.execute(
-                'SELECT tag_id FROM forum_tags WHERE tag_name = ?',
+                'SELECT 1 FROM forum_tags WHERE tag_name = ?',
                 [value]
             );
             if (result.length > 0 && result[0].tag_id !== req.params?.tagId) {
@@ -100,7 +100,7 @@ const validatePostId = () => {
         .custom(async (value, { req }) => {
             try {
                 const [result] = await connection.execute(
-                    'SELECT * FROM forum_posts WHERE post_id = ?',
+                    'SELECT 1 FROM forum_posts WHERE post_id = ?',
                     [value]
                 );
                 if (result.length === 0) {
@@ -126,7 +126,7 @@ const validateTagIds = () => {
             }
 
             const [existingTags] = await connection.execute(
-                'SELECT tag_id FROM forum_tags WHERE tag_id IN (?)',
+                'SELECT 1 FROM forum_tags WHERE tag_id IN (?)',
                 [tagIds]
             );
             if (existingTags.length !== tagIds.length) {
@@ -186,14 +186,14 @@ const validateTagQuery = [
 
     query("sortBy")
         .optional()
-        .isIn(['tag_name', 'usage_count', 'created_at', 'last_used_at'])
+        .isIn(['tag_name', 'usage_count', 'created_at', 'last_used_at', 'post_count'])
         .withMessage("Trường sắp xếp không hợp lệ")
         .default('usage_count'),
 
     query("sortOrder")
         .optional()
-        .isIn(['asc', 'desc'])
-        .withMessage("Thứ tự sắp xếp phải là 'asc' hoặc 'desc'")
+        .isIn(['ASC', 'DESC'])
+        .withMessage("Thứ tự sắp xếp phải là 'ASC' hoặc 'DESC'")
         .default('desc'),
 
     query("page")
@@ -233,7 +233,7 @@ const validatePostTagRemove = [
     validateTagId(),
     body().custom(async (_, { req }) => {
         const [mapping] = await connection.execute(
-            'SELECT * FROM forum_tags_mapping WHERE post_id = ? AND tag_id = ?',
+            'SELECT 1 FROM forum_tags_mapping WHERE post_id = ? AND tag_id = ?',
             [req.params.postId, req.params.tagId]
         );
         if (mapping.length === 0) {

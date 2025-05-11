@@ -41,7 +41,7 @@ const TagList: React.FC = () => {
     { value: 'tag_name', label: 'Name' },
     { value: 'created_at', label: 'Created Date' },
     { value: 'last_used_at', label: 'Last Used' },
-    { value: 'usage_count', label: 'Usage Count' }
+    { value: 'post_count', label: 'Post Count' }
   ];
 
   const loadData = useCallback((page: number = 1, limit: number = pagination.limit, 

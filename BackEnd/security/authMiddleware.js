@@ -155,28 +155,20 @@ export const auth = {
                 let isOwner = false;
 
                 switch (resourceType.toLowerCase()) {
-                    case 'article':
-                        const [article] = await connection.execute(
-                            'SELECT author_id FROM articles WHERE article_id = ?',
-                            [resourceId]
-                        );
-                        isOwner = article[0]?.author_id === req.user.user_id;
-                        break;
-                    
                     case 'category':
                         const [category] = await connection.execute(
                             'SELECT user_id FROM forum_categories WHERE category_id = ?',
                             [resourceId]
                         );
                         isOwner = category[0]?.user_id === req.user.user_id;
-                        break;      
+                        break;
                     case 'thread':
                         const [thread] = await connection.execute(
                             'SELECT user_id FROM forum_threads WHERE thread_id = ?',
                             [resourceId]
                         );
                         isOwner = thread[0]?.user_id === req.user.user_id;
-                        break;  
+                        break;
 
                     case 'post':
                         const [post] = await connection.execute(
@@ -188,14 +180,18 @@ export const auth = {
 
                     case 'comment':
                         const [comment] = await connection.execute(
-                            `SELECT user_id FROM (
-                                SELECT user_id FROM article_comments WHERE comment_id = ?
-                                UNION
-                                SELECT user_id FROM forum_comments WHERE comment_id = ?
-                            ) AS combined`,
-                            [resourceId, resourceId]
+                            `SELECT user_id FROM forum_comments WHERE comment_id = ?`,
+                            [resourceId]
                         );
                         isOwner = comment[0]?.user_id === req.user.user_id;
+                        break;
+
+                    case 'tag':
+                        const [tag] = await connection.execute(
+                            `SELECT user_id FROM forum_tags WHERE tag_id = ?`,
+                            [resourceId]
+                        );
+                        isOwner = tag[0]?.user_id === req.user.user_id;
                         break;
 
                     case 'report':
@@ -203,7 +199,7 @@ export const auth = {
                             `SELECT user_id FROM forum_reports WHERE report_id = ?`,
                             [resourceId]
                         );
-                        isOwner = comment[0]?.user_id === req.user.user_id;
+                        isOwner = report[0]?.user_id === req.user.user_id;
                         break;
 
                     default:

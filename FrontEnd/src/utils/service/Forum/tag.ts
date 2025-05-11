@@ -34,7 +34,7 @@ const loadTags = async (
         setLoading(true);
 
         const response = await InteractTag.getAllTags(page, limit, sortBy, sortOrder);
-
+        
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

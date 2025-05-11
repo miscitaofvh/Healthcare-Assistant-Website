@@ -95,36 +95,23 @@ const getAllTags = async (req, res) => {
             'created_at': 't.created_at',
             'post_count': 'post_count'
         };
-        
+
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, allowedSortFields);
 
-        const { tags, totalTags } = await TagDB.getAllTagsDB(p, l, search, orderByField, orderDirection);
+        const { tags, pagination } = await TagDB.getAllTagsDB(p, l, search, orderByField, orderDirection);
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: {
-                tags,
-                pagination: {
-                    totalItems: totalTags,
-                    totalPages: Math.ceil(totalTags / l),
-                    currentPage: p,
-                    itemsPerPage: l,
-                    hasNextPage: p < Math.ceil(totalTags / l),
-                    hasPreviousPage: p > 1
-                },
-                filters: {
-                    search,
-                    sortBy,
-                    sortOrder
-                },
-                metadata: {
-                    retrievedAt: new Date().toISOString(),
-                    cacheHint: {
-                        recommended: true,
-                        duration: "5m"
-                    }
+            tags: tags,
+            pagination: pagination,
+            metadata: {
+                retrievedAt: new Date().toISOString(),
+                cacheHint: {
+                    recommended: true,
+                    duration: "5m"
                 }
             }
+
         });
     } catch (error) {
         handleError(error, req, res, 'fetch all tags');
@@ -141,25 +128,18 @@ const getSummaryTags = async (req, res) => {
             'tag_name': 't.tag_name',
             'description': 't.description'
         };
-        
+
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, allowedSortFields);
 
-        const { tags, totalTags } = await TagDB.getSummaryTagsDB(p, l, search, orderByField, orderDirection);
+        const { tags, pagination } = await TagDB.getSummaryTagsDB(p, l, search, orderByField, orderDirection);
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: {
-                tags,
-                pagination: {
-                    totalItems: totalTags,
-                    totalPages: Math.ceil(totalTags / l),
-                    currentPage: p,
-                    itemsPerPage: l
-                },
-                metadata: {
-                    count: tags.length,
-                    retrievedAt: new Date().toISOString()
-                }
+            tags: tags,
+            pagination: pagination,
+            metadata: {
+                count: tags.length,
+                retrievedAt: new Date().toISOString()
             }
         });
     } catch (error) {
@@ -169,20 +149,15 @@ const getSummaryTags = async (req, res) => {
 
 const getSummaryLittleTags = async (req, res) => {
     try {
-        const { tags, totalTags } = await TagDB.getSummaryLittleTagsDB();
+        const { tags } = await TagDB.getSummaryLittleTagsDB();
 
         res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: {
-                tags,
-                pagination: {
-                    totalItems: totalTags
-                },
-                metadata: {
-                    retrievedAt: new Date().toISOString()
-                }
+            tags: tags,
+            metadata: {
+                retrievedAt: new Date().toISOString()
             }
         });
     } catch (error) {
@@ -192,22 +167,15 @@ const getSummaryLittleTags = async (req, res) => {
 
 const getSummaryTagById = async (req, res) => {
     try {
-        const { id } = req.params;
-        if (!id || !Number.isInteger(Number(id))) {
-            throw new Error("Valid tag ID is required");
-        }
+        const { tagId } = req.params;
 
-        const tag = await TagDB.getSummaryTagByIdDB(Number(id));
-
-        if (!tag) {
-            throw new Error("Tag not found");
-        }
+        const tag = await TagDB.getSummaryTagByIdDB(Number(tagId));
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: tag,
+            tag: tag,
             metadata: {
-                tagId: id,
+                tagId: tagId,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -218,22 +186,15 @@ const getSummaryTagById = async (req, res) => {
 
 const getTagById = async (req, res) => {
     try {
-        const { id } = req.params;
-        if (!id || !Number.isInteger(Number(id))) {
-            throw new Error("Valid numeric tag ID is required");
-        }
+        const { tagId } = req.params;
 
-        const tag = await TagDB.getTagByIdDB(id);
-
-        if (!tag) {
-            throw new Error("Tag not found");
-        }
+        const tag = await TagDB.getTagByIdDB(tagId);
 
         res.status(StatusCodes.OK).json({
             success: true,
             tag: tag,
             metadata: {
-                tagId: id,
+                tagId: tagId,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -244,23 +205,14 @@ const getTagById = async (req, res) => {
 
 const getTagByName = async (req, res) => {
     try {
-        const { name } = req.query;
-        if (!name || typeof name !== 'string' || name.trim().length === 0) {
-            throw new Error("Valid tag name is required");
-        }
-
-        const normalizedTagName = name.trim().toLowerCase();
-        const tag = await TagDB.getTagByNameDB(normalizedTagName);
-
-        if (!tag) {
-            throw new Error("Tag not found");
-        }
+        const { tagName } = req.query;
+        const tag = await TagDB.getTagByNameDB(name);
 
         res.status(StatusCodes.OK).json({
             success: true,
             data: tag,
             metadata: {
-                tagName: normalizedTagName,
+                tagName: tagName,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -271,35 +223,29 @@ const getTagByName = async (req, res) => {
 
 const getPostsByTag = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { tagId } = req.params;
         const { page = 1, limit = 10 } = req.query;
-        
-        if (!id || !Number.isInteger(Number(id))) {
-            throw new Error("Valid numeric tag ID is required");
-        }
 
         const { page: p, limit: l } = validatePagination(page, limit);
 
-        const { posts, tag, totalPosts } = await TagDB.getPostsByTagDB(id, p, l);
-
-        if (!tag) {
-            throw new Error("Tag not found");
+        let author_id = null;
+        try {
+            if ((req.cookies.auth_token)) {
+                const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+                author_id = decoded.user_id;
+            }
+        } catch(error) {
         }
+
+        const { posts, tag, pagination } = await TagDB.getPostsByTagDB(tagId, p, l, author_id);
 
         res.status(StatusCodes.OK).json({
             success: true,
             tag: tag,
             posts: posts,
-            pagination: {
-                totalItems: totalPosts,
-                totalPages: Math.ceil(totalPosts / l),
-                currentPage: p,
-                itemsPerPage: l,
-                hasNextPage: p < Math.ceil(totalPosts / l),
-                hasPreviousPage: p > 1
-            },
+            pagination: pagination,
             metadata: {
-                tagId: id,
+                tagId: tagId,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -311,24 +257,15 @@ const getPostsByTag = async (req, res) => {
 const getPopularTags = async (req, res) => {
     try {
         const { limit = 10 } = req.query;
-        const parsedLimit = parseInt(limit, 10);
 
-        if (isNaN(parsedLimit)) {
-            throw new Error("Limit must be a valid number");
-        }
-
-        if (parsedLimit < 1 || parsedLimit > 100) {
-            throw new Error("Limit must be between 1 and 100");
-        }
-
-        const tags = await TagDB.getPopularTagsDB(parsedLimit);
+        const tags = await TagDB.getPopularTagsDB(limit);
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: tags,
+            tags: tags,
             meta: {
                 count: tags.length,
-                limit: parsedLimit,
+                limit: limit,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -339,16 +276,13 @@ const getPopularTags = async (req, res) => {
 
 const getTagsForPost = async (req, res) => {
     try {
-        const { id } = req.params;
-        if (!id || !Number.isInteger(Number(id))) {
-            throw new Error("Valid numeric post ID is required");
-        }
+        const { postId } = req.params;
 
-        const tags = await TagDB.getTagsForPostDB(id);
+        const tags = await TagDB.getTagsForPostDB(postId);
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: tags,
+            tags: tags,
             meta: {
                 count: tags.length,
                 postId: id,
@@ -362,12 +296,9 @@ const getTagsForPost = async (req, res) => {
 
 const getTagsByUser = async (req, res) => {
     try {
-        const { userId } = req.params;
-        if (!userId) {
-            throw new Error("User ID is required");
-        }
+        const { username } = req.params;
 
-        const tags = await TagDB.getTagsByUserDB(userId);
+        const tags = await TagDB.getTagsByUserDB(username);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -386,9 +317,6 @@ const getTagsByUser = async (req, res) => {
 const createTag = async (req, res) => {
     try {
         const { tag_name, description } = req.body;
-        if (!tag_name) {
-            throw new Error("Tag name is required");
-        }
 
         const author_id = getUserIdFromToken(req);
 
@@ -409,17 +337,13 @@ const createTag = async (req, res) => {
 
 const updateTagById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { tagId } = req.params;
         const { tag_name, description } = req.body;
-
-        if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
-            throw new Error("Valid tag ID is required");
-        }
 
         const author_id = getUserIdFromToken(req);
 
         const result = await TagDB.updateTagDB(
-            Number(id),
+            Number(tagId),
             tag_name?.trim(),
             description?.trim(),
             author_id
@@ -441,15 +365,11 @@ const updateTagById = async (req, res) => {
 
 const deleteTagById = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!id || !Number.isInteger(Number(id)) || Number(id) <= 0) {
-            throw new Error("Valid tag ID is required");
-        }
+        const { tagId } = req.params;
 
         const author_id = getUserIdFromToken(req);
 
-        const result = await TagDB.deleteTagDB(Number(id), author_id);
+        const result = await TagDB.deleteTagDB(Number(tagId), author_id);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -472,7 +392,7 @@ const getTagsOfPost = async (req, res) => {
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: tags,
+            tags: tags,
             metadata: {
                 postId: id,
                 count: tags.length,
@@ -486,14 +406,14 @@ const getTagsOfPost = async (req, res) => {
 
 const getTagOfPostById = async (req, res) => {
     try {
-        const { id } = req.params;
-        const tag = await TagDB.getTagOfPostByIdDB(id);
+        const { postId } = req.params;
+        const tags = await TagDB.getTagOfPostByIdDB(postId);
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: tag,
+            tags: tags,
             metadata: {
-                tagId: id,
+                postId: postId,
                 retrievedAt: new Date().toISOString()
             }
         });
@@ -506,10 +426,6 @@ const addTagsToPost = async (req, res) => {
     try {
         const { postId } = req.params;
         const { ids } = req.body;
-
-        if (!postId || !ids || !Array.isArray(ids) || ids.length === 0) {
-            throw new Error("Post ID and tag IDs are required");
-        }
 
         const author_id = getUserIdFromToken(req);
 
@@ -532,15 +448,11 @@ const addTagsToPost = async (req, res) => {
 
 const removeTagFromPost = async (req, res) => {
     try {
-        const { postId, id } = req.params;
-
-        if (!postId || !id) {
-            throw new Error("Post ID and tag ID are required");
-        }
+        const { postId, tagId } = req.params;
 
         const author_id = getUserIdFromToken(req);
 
-        const result = await TagDB.removeTagFromPostDB(postId, id, author_id);
+        const result = await TagDB.removeTagFromPostDB(postId, tagId, author_id);
 
         res.status(StatusCodes.OK).json({
             success: true,

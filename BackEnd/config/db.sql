@@ -88,6 +88,7 @@ CREATE INDEX idx_category_name ON article_categories(category_name);
 CREATE TABLE article_tags (
     tag_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tag_name VARCHAR(100) UNIQUE NOT NULL,
+    user_id CHAR(36) NOT NULL,
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
