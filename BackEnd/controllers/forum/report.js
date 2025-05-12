@@ -1,30 +1,16 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import {
-    reportCommentDB,
-    getReportsForCommentDB,
-    updateReportStatusForCommentDB,
-    getAllReportsDB,
-    getReportByIdDB,
-    getReportsByUserDB,
-    getReportsByPostDB,
-    createReportDB,
-    updateReportDB,
-    updateReportAdminDB,
-    deleteReportDB,
-    getReportsByStatusDB,
-    deleteReportByIdDB
-} from "../../models/Forum/report.js";
+import ReportDB from "../../models/Forum/report.js";
 
 dotenv.config();
 
-export const reportComment = async (req, res) => {
+const reportComment = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { commentId } = req.params;
         const { reason } = req.body;
 
-        const result = await reportCommentDB(userId, commentId, reason);
+        const result = await ReportDB.reportCommentDB(userId, commentId, reason);
 
         res.status(200).json({
             success: true,
@@ -39,7 +25,7 @@ export const reportComment = async (req, res) => {
     }
 };
 
-export const getReportsForComment = async (req, res) => {
+const getReportsForComment = async (req, res) => {
     try {
         const { commentId } = req.params;
 
@@ -57,7 +43,7 @@ export const getReportsForComment = async (req, res) => {
             });
         }
 
-        const reports = await getReportsForCommentDB(commentId.trim());
+        const reports = await ReportDB.getReportsForCommentDB(commentId.trim());
 
         res.status(200).json({
             success: true,
@@ -83,7 +69,7 @@ export const getReportsForComment = async (req, res) => {
     }
 };
 
-export const updateReportStatusForComment = async (req, res) => {
+const updateReportStatusForComment = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const admin_id = decoded.user_id;
@@ -98,7 +84,7 @@ export const updateReportStatusForComment = async (req, res) => {
         const { commentId, reportId } = req.params; // commentId = comment_id, reportId = report_id
         const { status } = req.body; // status (e.g., "resolved", "pending", "dismissed")
 
-        const result = await updateReportStatusForCommentDB(admin_id, reportId, status, commentId);
+        const result = await ReportDB.updateReportStatusForCommentDB(admin_id, reportId, status, commentId);
 
         res.status(200).json({
             success: true,
@@ -113,9 +99,9 @@ export const updateReportStatusForComment = async (req, res) => {
     }
 };
 
-export const getAllReports = async (req, res) => {
+const getAllReports = async (req, res) => {
     try {
-        const reports = await getAllReportsDB();
+        const reports = await ReportDB.getAllReportsDB();
         res.status(200).json({
             success: true,
             data: reports
@@ -130,9 +116,9 @@ export const getAllReports = async (req, res) => {
     }
 };
 
-export const getReportById = async (req, res) => {
+const getReportById = async (req, res) => {
     try {
-        const report = await getReportByIdDB(id);
+        const report = await ReportDB.getReportByIdDB(id);
         if (!report) {
             return res.status(404).json({
                 success: false,
@@ -154,7 +140,7 @@ export const getReportById = async (req, res) => {
     }
 };
 
-export const getReportsByUser = async (req, res) => {
+const getReportsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
         if (!userId) {
@@ -164,7 +150,7 @@ export const getReportsByUser = async (req, res) => {
             });
         }
 
-        const reports = await getReportsByUserDB(userId);
+        const reports = await ReportDB.getReportsByUserDB(userId);
         res.status(200).json({
             success: true,
             data: reports
@@ -179,7 +165,7 @@ export const getReportsByUser = async (req, res) => {
     }
 };
 
-export const getReportsByPost = async (req, res) => {
+const getReportsByPost = async (req, res) => {
     try {
         const { postId } = req.params;
         if (!postId) {
@@ -189,7 +175,7 @@ export const getReportsByPost = async (req, res) => {
             });
         }
 
-        const reports = await getReportsByPostDB(postId);
+        const reports = await ReportDB.getReportsByPostDB(postId);
         res.status(200).json({
             success: true,
             data: reports
@@ -204,7 +190,7 @@ export const getReportsByPost = async (req, res) => {
     }
 };
 
-export const createReport = async (req, res) => {
+const createReport = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
@@ -224,7 +210,7 @@ export const createReport = async (req, res) => {
             });
         }
 
-        const result = await createReportDB(postId, userId, reason);
+        const result = await ReportDB.createReportDB(postId, userId, reason);
         res.status(201).json({
             success: true,
             data: result
@@ -239,7 +225,7 @@ export const createReport = async (req, res) => {
     }
 };
 
-export const updateReport = async (req, res) => {
+const updateReport = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
@@ -253,7 +239,7 @@ export const updateReport = async (req, res) => {
             });
         }
 
-        const result = await updateReportDB(id, status, userId, resolutionNotes);
+        const result = await ReportDB.updateReportDB(id, status, userId, resolutionNotes);
         res.status(200).json({
             success: true,
             data: result
@@ -268,7 +254,7 @@ export const updateReport = async (req, res) => {
     }
 };
 
-export const updateReportAdmin = async (req, res) => {
+const updateReportAdmin = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
@@ -282,7 +268,7 @@ export const updateReportAdmin = async (req, res) => {
             });
         }
 
-        const result = await updateReportAdminDB(id, status, userId, resolutionNotes);
+        const result = await ReportDB.updateReportAdminDB(id, status, userId, resolutionNotes);
         res.status(200).json({
             success: true,
             data: result
@@ -297,7 +283,7 @@ export const updateReportAdmin = async (req, res) => {
     }
 };
 
-export const deleteReport = async (req, res) => {
+const deleteReport = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
@@ -317,7 +303,7 @@ export const deleteReport = async (req, res) => {
             });
         }
 
-        const result = await deleteReportDB(id, userId);
+        const result = await ReportDB.deleteReportDB(id, userId);
         res.status(200).json({
             success: true,
             data: result
@@ -338,7 +324,7 @@ export const deleteReport = async (req, res) => {
     }
 };
 
-export const getReportsByStatus = async (req, res) => {
+const getReportsByStatus = async (req, res) => {
     try {
         const { status } = req.params;
         if (!status) {
@@ -348,7 +334,7 @@ export const getReportsByStatus = async (req, res) => {
             });
         }
 
-        const reports = await getReportsByStatusDB(status);
+        const reports = await ReportDB.getReportsByStatusDB(status);
         res.status(200).json({
             success: true,
             data: reports
@@ -363,7 +349,7 @@ export const getReportsByStatus = async (req, res) => {
     }
 };
 
-export const deleteReportById = async (req, res) => {
+const deleteReportById = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const userId = decoded.user_id;
@@ -383,7 +369,7 @@ export const deleteReportById = async (req, res) => {
             });
         }
 
-        const result = await deleteReportByIdDB(id, userId);
+        const result = await ReportDB.deleteReportByIdDB(id, userId);
         res.status(200).json({
             success: true,
             data: result
@@ -404,6 +390,18 @@ export const deleteReportById = async (req, res) => {
     }
 };
 
-
-
-
+export default {
+    reportComment,
+    getReportsForComment,
+    updateReportStatusForComment,
+    getAllReports,
+    getReportById,
+    getReportsByUser,
+    getReportsByPost,
+    createReport,
+    updateReport,
+    updateReportAdmin,
+    deleteReport,
+    getReportsByStatus,
+    deleteReportById
+}

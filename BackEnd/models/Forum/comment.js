@@ -1,6 +1,6 @@
 import connection from '../../config/connection.js';
 
-export const getCommentsByPostIdDB = async (postId, page = 1, limit = 20) => {
+const getCommentsByPostIdDB = async (postId, page = 1, limit = 20) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -11,6 +11,8 @@ export const getCommentsByPostIdDB = async (postId, page = 1, limit = 20) => {
                 c.comment_id,
                 c.content,
                 c.created_at,
+                c.depth,
+                c.thread_path,
                 u.username AS author,
                 COUNT(l.like_id) AS like_count
             FROM forum_comments c
@@ -37,7 +39,7 @@ export const getCommentsByPostIdDB = async (postId, page = 1, limit = 20) => {
     }
 };
 
-export const getCommentRepliesDB = async (commentId) => {
+const getCommentRepliesDB = async (commentId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -47,10 +49,15 @@ export const getCommentRepliesDB = async (commentId) => {
                 c.comment_id,
                 c.content,
                 c.created_at,
-                u.username AS author
+                c.depth,
+                c.thread_path,
+                u.username AS author,
+                COUNT(l.like_id) AS like_count
             FROM forum_comments c
             JOIN users u ON c.user_id = u.user_id
+            LEFT JOIN forum_comment_likes l ON c.comment_id = l.comment_id
             WHERE c.parent_comment_id = ?
+            GROUP BY c.comment_id
             ORDER BY c.created_at ASC
         `, [commentId]);
 
@@ -60,7 +67,7 @@ export const getCommentRepliesDB = async (commentId) => {
     }
 };
 
-export const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
+const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
     let conn;
     try {
         if (!userId) {
@@ -70,13 +77,14 @@ export const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
         conn = await connection.getConnection();
         const offset = (page - 1) * limit;
 
-        // Main comments query with pagination
         const [comments] = await conn.execute(`
             SELECT 
                 c.comment_id,
                 c.content,
                 c.created_at,
                 c.last_updated,
+                c.depth,
+                c.thread_path,
                 p.post_id,
                 SUBSTRING(p.content, 1, 100) AS post_preview,
                 t.thread_name,
@@ -91,18 +99,17 @@ export const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
             GROUP BY c.comment_id
             ORDER BY c.created_at DESC
             LIMIT ? OFFSET ?
-        `, [userId, limit, offset]);
+        `, [userId, limit.toString(), offset.toString()]);
 
-        // Total count query
         const [total] = await conn.execute(`
-            SELECT COUNT(*) as total 
+            SELECT COUNT(*) as count 
             FROM forum_comments 
             WHERE user_id = ?
         `, [userId]);
 
         return {
             comments,
-            totalCount: total[0].total
+            totalCount: total[0].count
         };
     } catch (error) {
         console.error("Error getting comments by user:", error);
@@ -113,16 +120,21 @@ export const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
 };
 
 const generateThreadPath = async (conn, parent_comment_id) => {
+    if (!parent_comment_id) return null;
+    
     const [parent] = await conn.execute(
         "SELECT thread_path FROM forum_comments WHERE comment_id = ?",
         [parent_comment_id]
     );
-    return parent[0]?.thread_path 
+    
+    if (!parent[0]) throw new Error("Parent comment not found");
+    
+    return parent[0].thread_path 
         ? `${parent[0].thread_path}-${parent_comment_id}`
         : `${parent_comment_id}`;
 };
 
-export const addCommentToPostDB = async ({ userId, postId, content, parent_comment_id = null }) => {
+const addCommentToPostDB = async ({ userId, postId, content, parent_comment_id = null }) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -132,20 +144,33 @@ export const addCommentToPostDB = async ({ userId, postId, content, parent_comme
         let thread_path = null;
 
         if (parent_comment_id) {
-            // Get parent comment details
             const [parentComment] = await conn.execute(
-                "SELECT depth, thread_path FROM forum_comments WHERE comment_id = ? AND post_id = ?",
-                [parent_comment_id, postId]
+                "SELECT depth, thread_path, post_id FROM forum_comments WHERE comment_id = ?",
+                [parent_comment_id]
             );
             
             if (!parentComment[0]) {
-                throw new Error("Parent comment not found in this post");
+                throw new Error("Parent comment not found");
+            }
+            
+            if (parentComment[0].post_id !== postId) {
+                throw new Error("Parent comment does not belong to this post");
             }
 
             depth = parentComment[0].depth + 1;
             thread_path = parentComment[0].thread_path 
-                ? `${parentComment[0].thread_path}.${parent_comment_id}`
-                : parent_comment_id.toString();
+                ? `${parentComment[0].thread_path}-${parent_comment_id}`
+                : `${parent_comment_id}`;
+        }
+
+        // Verify post exists
+        const [postCheck] = await conn.execute(
+            "SELECT post_id FROM forum_posts WHERE post_id = ?",
+            [postId]
+        );
+        
+        if (!postCheck[0]) {
+            throw new Error("Post not found");
         }
 
         const [result] = await conn.execute(`
@@ -167,6 +192,13 @@ export const addCommentToPostDB = async ({ userId, postId, content, parent_comme
             thread_path
         ]);
 
+        // Update comment_count in forum_posts
+        await conn.execute(`
+            UPDATE forum_posts 
+            SET comment_count = comment_count + 1 
+            WHERE post_id = ?
+        `, [postId]);
+
         await conn.commit();
         
         return {
@@ -177,14 +209,14 @@ export const addCommentToPostDB = async ({ userId, postId, content, parent_comme
         };
     } catch (error) {
         if (conn) await conn.rollback();
-        console.error("Database error in createCommentDB:", error);
+        console.error("Database error in addCommentToPostDB:", error);
         throw error;
     } finally {
         if (conn) conn.release();
     }
 };
 
-export const addReplyToCommentDB = async ({ userId, parentCommentId, content }) => {
+const addReplyToCommentDB = async ({ userId, parentCommentId, content }) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -226,12 +258,20 @@ export const addReplyToCommentDB = async ({ userId, parentCommentId, content }) 
             newThreadPath
         ]);
 
+        // Update comment_count in forum_posts
+        await conn.execute(`
+            UPDATE forum_posts 
+            SET comment_count = comment_count + 1 
+            WHERE post_id = ?
+        `, [parent[0].post_id]);
+
         await conn.commit();
         
         return {
             commentId: result.insertId,
             parentCommentId,
-            depth: newDepth
+            depth: newDepth,
+            thread_path: newThreadPath
         };
     } catch (error) {
         if (conn) await conn.rollback();
@@ -242,11 +282,26 @@ export const addReplyToCommentDB = async ({ userId, parentCommentId, content }) 
     }
 };
 
-export const updateCommentDB = async ({ commentId, userId, content }) => {
+const updateCommentDB = async ({ commentId, userId, content }) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
+
+        // Check if user owns the comment
+        const [comment] = await conn.execute(`
+            SELECT user_id 
+            FROM forum_comments 
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        if (!comment[0]) {
+            throw new Error("Comment not found");
+        }
+
+        if (comment[0].user_id !== userId) {
+            throw new Error("Cannot update this comment");
+        }
 
         // Update comment
         await conn.execute(`
@@ -261,7 +316,9 @@ export const updateCommentDB = async ({ commentId, userId, content }) => {
                 comment_id,
                 content,
                 last_updated,
-                created_at
+                created_at,
+                depth,
+                thread_path
             FROM forum_comments
             WHERE comment_id = ?
         `, [commentId]);
@@ -277,16 +334,40 @@ export const updateCommentDB = async ({ commentId, userId, content }) => {
     }
 };
 
-export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) => {
+const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
+        // Get comment details
+        const [comment] = await conn.execute(`
+            SELECT user_id, post_id 
+            FROM forum_comments 
+            WHERE comment_id = ?
+        `, [commentId]);
+
+        if (!comment[0]) {
+            throw new Error("Comment not found");
+        }
+
+        // Check permissions
+        if (!isAdmin && comment[0].user_id !== userId) {
+            throw new Error("Cannot delete this comment");
+        }
+
+        // Delete comment
         await conn.execute(`
             DELETE FROM forum_comments 
             WHERE comment_id = ?
         `, [commentId]);
+
+        // Update comment_count in forum_posts
+        await conn.execute(`
+            UPDATE forum_posts 
+            SET comment_count = comment_count - 1 
+            WHERE post_id = ? AND comment_count > 0
+        `, [comment[0].post_id]);
 
         await conn.commit();
     } catch (error) {
@@ -296,4 +377,15 @@ export const deleteCommentDB = async ({ commentId, userId, isAdmin = false }) =>
     } finally {
         if (conn) conn.release();
     }
+};
+
+export default {
+    getCommentsByPostIdDB,
+    getCommentRepliesDB,
+    getAllCommentsByUserDB,
+    generateThreadPath,
+    addCommentToPostDB,
+    addReplyToCommentDB,
+    updateCommentDB,
+    deleteCommentDB
 };

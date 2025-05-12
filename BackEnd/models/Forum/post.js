@@ -503,113 +503,11 @@ const getPostsByUserDB = async (userId, page = 1, limit = 10) => {
     }
 };
 
-const likePostDB = async (postId, userId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Check if post exists
-        const [post] = await conn.execute(`
-            SELECT post_id 
-            FROM forum_posts 
-            WHERE post_id = ?
-        `, [postId]);
-
-        if (post.length === 0) {
-            throw new Error('Post not found');
-        }
-
-        // Check if already liked
-        const [existingLike] = await conn.execute(`
-            SELECT like_id 
-            FROM forum_likes 
-            WHERE post_id = ? AND user_id = ?
-        `, [postId, userId]);
-
-        if (existingLike.length > 0) {
-            throw new Error('Post already liked by user');
-        }
-
-        // Add like
-        await conn.execute(`
-            INSERT INTO forum_likes (
-                post_id, 
-                user_id
-            ) VALUES (?, ?)
-        `, [postId, userId]);
-
-        // Update post like count
-        await conn.execute(`
-            UPDATE forum_posts 
-            SET like_count = like_count + 1 
-            WHERE post_id = ?
-        `, [postId]);
-
-        // Record activity
-        await conn.execute(`
-            INSERT INTO forum_activities (
-                user_id, 
-                activity_type, 
-                target_type, 
-                target_id
-            ) VALUES (?, 'like', 'post', ?)
-        `, [userId, postId]);
-
-        await conn.commit();
-
-        return { success: true, message: 'Post liked successfully' };
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error('Error in likePostDB:', error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-const unlikePostDB = async (postId, userId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        // Remove like
-        const [result] = await conn.execute(`
-            DELETE FROM forum_likes 
-            WHERE post_id = ? AND user_id = ?
-        `, [postId, userId]);
-
-        if (result.affectedRows === 0) {
-            throw new Error('Like not found or already removed');
-        }
-
-        // Update post like count
-        await conn.execute(`
-            UPDATE forum_posts 
-            SET like_count = GREATEST(0, like_count - 1) 
-            WHERE post_id = ?
-        `, [postId]);
-
-        await conn.commit();
-
-        return { success: true, message: 'Post unliked successfully' };
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error('Error in unlikePostDB:', error);
-        throw error;
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
 export default {
     getAllPostsDB,
     getPostByIdDB,
     createPostDB,
     updatePostDB,
     deletePostDB,
-    getPostsByUserDB,
-    likePostDB,
-    unlikePostDB
+    getPostsByUserDB
 };

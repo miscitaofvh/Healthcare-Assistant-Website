@@ -67,40 +67,6 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Custom validations
-const validateCommentOwnership = async (commentId, { req }) => {
-    const [comment] = await connection.execute(
-        'SELECT user_id FROM forum_comments WHERE comment_id = ?',
-        [commentId]
-    );
-    
-    if (!comment.length) {
-        throw new Error('Bình luận không tồn tại');
-    }
-    
-    if (comment[0].user_id !== req.user?.user_id) {
-        throw new Error('Bạn không có quyền thao tác với bình luận này');
-    }
-    
-    return true;
-};
-
-const validateCommentInPost = async (commentId, { req }) => {
-    const postId = req.body.postId || req.params.postId;
-    if (!postId) throw new Error('Thiếu ID bài viết');
-    
-    const [comment] = await connection.execute(
-        'SELECT comment_id FROM forum_comments WHERE comment_id = ? AND post_id = ?',
-        [commentId, postId]
-    );
-    
-    if (!comment.length) {
-        throw new Error('Bình luận không tồn tại hoặc không thuộc bài viết này');
-    }
-    
-    return true;
-};
-
 const validateReportReason = () => {
     return validateContent('reason', MIN_REASON_LENGTH, MAX_REASON_LENGTH)
         .custom(reason => {
@@ -146,31 +112,10 @@ const validateReplyComment = [
 ];
 
 const validateUpdateComment = [
-    validateCommentId('body'),
     validateContent(),
-    body().custom(async (_, { req }) => {
-        await validateCommentOwnership(req.body.commentId, { req });
-        return true;
-    }),
     handleValidationErrors
 ];
 
-const validateDeleteComment = [
-    validatePostId(),
-    validateCommentId('body'),
-    body().custom(async (_, { req }) => {
-        await validateCommentInPost(req.body.commentId, { req });
-        return true;
-    }),
-    body().custom(async (_, { req }) => {
-        // Allow admin to delete any comment
-        if (req.user?.role !== 'admin') {
-            await validateCommentOwnership(req.body.commentId, { req });
-        }
-        return true;
-    }),
-    handleValidationErrors
-];
 
 const validateReportComment = [
     validatePostId(),
@@ -185,7 +130,6 @@ export default {
     validateCommentPost,
     validateReplyComment,
     validateUpdateComment,
-    validateDeleteComment,
     validateReportComment,
     
     // Utility validators for reuse

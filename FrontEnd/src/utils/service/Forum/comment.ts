@@ -61,6 +61,43 @@ const addCommenttoPost = async (
     }
 };
 
+const updateComment = async (
+    commentId: string,
+    updatedText: string,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    showSuccess: (message: string) => void = toast.success,
+    showError: (message: string) => void = toast.error,
+    refetchComments: () => void
+): Promise<void> => {
+    try {
+        setLoading(true);
+
+        const response = await InteractComment.updateComment(commentId, { content: updatedText });
+        const { data, status } = response;
+
+        if (status !== 200 || !data?.success) {
+            showError(data?.message || 'Failed to update comment');
+            return;
+        }
+
+        showSuccess('Comment updated successfully');
+        await refetchComments();
+
+    } catch (err: unknown) {
+        let errorMessage = 'Failed to update comment';
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+
+        showError(errorMessage);
+    } finally {
+        setLoading(false);
+    }
+};
+
 const deleteCommentFromPost = async (
     commentId: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
@@ -73,10 +110,11 @@ const deleteCommentFromPost = async (
 
         const response = await InteractComment.deleteComment(commentId);
 
-        const { data, status } =  response;
+        const { data, status } = response;
 
         if (status !== 200 || !data?.success) {
             showError(data?.message || 'Failed to delete comment');
+            return; 
         }
 
         showSuccess(data.message || 'Comment deleted successfully');
@@ -102,5 +140,6 @@ const deleteCommentFromPost = async (
 export default {
     addCommenttoPost,
     deleteCommentFromPost,
+    updateComment,
     countTotalComments
 };

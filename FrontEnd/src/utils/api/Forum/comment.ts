@@ -11,6 +11,11 @@ async function createComment(id: string, comment: any) {
     return response;
 }   
 
+async function updateComment(commentId: string, comment: any) {
+    const response = await requestAPI(BASE_URL, `/comments/${commentId}`, "PUT", comment);
+    return response;
+}
+
 async function deleteComment(commentId: string) {
     const response = await requestAPI(BASE_URL, `/comments/${commentId}`, "DELETE");
     return response;
@@ -19,5 +24,6 @@ async function deleteComment(commentId: string) {
 export default {
     getComments,
     createComment,
+    updateComment,
     deleteComment
 };

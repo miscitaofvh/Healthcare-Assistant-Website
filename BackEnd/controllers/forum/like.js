@@ -1,21 +1,17 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
-import {
-    likePostDB,
-    unlikePostDB,
-    likeCommentDB,
-    unlikeCommentDB
-} from "../../models/Forum/like.js";
+import LikeDB from "../../models/Forum/like.js";
+import like from "../../models/Forum/like.js";
 
 dotenv.config();
 
-export const likePost = async (req, res) => {
+const likePost = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { postId } = req.params;
 
-        const result = await likePostDB(userId, postId);
+        const result = await LikeDB.likePostDB(userId, postId);
         res.status(200).json({
             success: true,
             data: result
@@ -30,12 +26,12 @@ export const likePost = async (req, res) => {
     }
 };
 
-export const unlikePost = async (req, res) => {
+const unlikePost = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { postId } = req.params;
 
-        const result = await unlikePostDB(userId, postId);
+        const result = await LikeDB.unlikePostDB(userId, postId);
         res.status(200).json({
             success: true,
             data: result
@@ -50,12 +46,12 @@ export const unlikePost = async (req, res) => {
     }
 };
 
-export const likeComment = async (req, res) => {
+const likeComment = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { commentId } = req.params;
 
-        const result = await likeCommentDB(userId, commentId);
+        const result = await LikeDB.likeCommentDB(userId, commentId);
         
         return res.status(200).json({
             success: true,
@@ -74,13 +70,13 @@ export const likeComment = async (req, res) => {
     }
 };
 
-export const unlikeComment = async (req, res) => {
+const unlikeComment = async (req, res) => {
     try {
         const user_id = req.user.user_id;
         const { commentId } = req.params;
         const { postId } = req.body;
 
-        const result = await unlikeCommentDB(user_id, commentId, postId);
+        const result = await LikeDB.unlikeCommentDB(user_id, commentId, postId);
 
         res.status(200).json({
             success: true,
@@ -95,35 +91,9 @@ export const unlikeComment = async (req, res) => {
     }
 };
 
-export const getAllLikesByUser = async (req, res) => {
-    try {
-        const { user_id } = req.params; // user_id
-        const likes = await getAllLikesByUserDB(user_id);
-        res.status(200).json(likes);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching likes by user" });
-    }
-}
-
-export const getAllLikesByPost = async (req, res) => {
-    try {
-        const { post_id } = req.params; // post_id
-        const likes = await getAllLikesByPostDB(post_id);
-        res.status(200).json(likes);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching likes by post" });
-    }
-}
-
-export const getLikesOfPost = async (req, res) => {
-    try {
-        const { id } = req.params; // post_id
-        const likes = await getLikesOfPostDB(id);
-        res.status(200).json(likes);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching likes" });
-    }
+export default {
+    likePost,
+    unlikePost,
+    likeComment,
+    unlikeComment
 }

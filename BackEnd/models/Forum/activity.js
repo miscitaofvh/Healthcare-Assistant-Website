@@ -1,6 +1,6 @@
 import connection from "../../config/connection.js";
 
-export const getAllActivitiesDB = async (limit = 20, offset = 0) => {
+const getAllActivitiesDB = async (limit = 20, offset = 0) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -27,7 +27,7 @@ export const getAllActivitiesDB = async (limit = 20, offset = 0) => {
 };
 
 // Get all activities by user
-export const getForumActivityByUserDB = async (userId, limit = 20, offset = 0) => {
+const getForumActivityByUserDB = async (userId, limit = 20, offset = 0) => {
     if (!userId) throw new Error("User ID is required");
     
     let conn;
@@ -57,7 +57,7 @@ export const getForumActivityByUserDB = async (userId, limit = 20, offset = 0) =
 };
 
 // Get activities by user ID
-export const getActivitiesByUserIdDB = async (userId, limit = 20, offset = 0) => {
+const getActivitiesByUserIdDB = async (userId, limit = 20, offset = 0) => {
     if (!userId) throw new Error("User ID is required");
     
     let conn;
@@ -86,7 +86,7 @@ export const getActivitiesByUserIdDB = async (userId, limit = 20, offset = 0) =>
 };
 
 // Get activities by user and type
-export const getActivitiesByUserAndTypeDB = async (userId, type, limit = 20, offset = 0) => {
+const getActivitiesByUserAndTypeDB = async (userId, type, limit = 20, offset = 0) => {
     if (!userId) throw new Error("User ID is required");
     if (!type) throw new Error("Activity type is required");
     
@@ -116,7 +116,7 @@ export const getActivitiesByUserAndTypeDB = async (userId, type, limit = 20, off
 };
 
 // Get activities by type (for all users)
-export const getActivitiesByTypeDB = async (type, limit = 20, offset = 0) => {
+const getActivitiesByTypeDB = async (type, limit = 20, offset = 0) => {
     if (!type) throw new Error("Activity type is required");
     
     let conn;
@@ -146,7 +146,7 @@ export const getActivitiesByTypeDB = async (type, limit = 20, offset = 0) => {
 };
 
 // Create a new activity (post, comment, like, etc.)
-export const createActivityDB = async (userId, type, targetType, targetId) => {
+const createActivityDB = async (userId, type, targetType, targetId) => {
     if (!userId || !type || !targetType || !targetId) {
         throw new Error("Missing required parameters");
     }
@@ -178,7 +178,7 @@ export const createActivityDB = async (userId, type, targetType, targetId) => {
 };
 
 // Delete an activity by its ID
-export const deleteActivityByIdDB = async (activityId) => {
+const deleteActivityByIdDB = async (activityId) => {
     if (!activityId) throw new Error("Activity ID is required");
     
     let conn;
@@ -204,7 +204,7 @@ export const deleteActivityByIdDB = async (activityId) => {
 };
 
 // Get activities for a specific target (e.g., a post or comment)
-export const getActivitiesByTargetDB = async (targetType, targetId, limit = 20, offset = 0) => {
+const getActivitiesByTargetDB = async (targetType, targetId, limit = 20, offset = 0) => {
     if (!targetType || !targetId) {
         throw new Error("Target type and ID are required");
     }
@@ -234,7 +234,7 @@ export const getActivitiesByTargetDB = async (targetType, targetId, limit = 20, 
 };
 
 // Get activity stats (total posts, comments, likes, reports) by user ID
-export const getActivityStatsByUserIdDB = async (userId) => {
+const getActivityStatsByUserIdDB = async (userId) => {
     if (!userId) throw new Error("User ID is required");
     
     let conn;
@@ -260,7 +260,7 @@ export const getActivityStatsByUserIdDB = async (userId) => {
     }
 };
 
-export const getActivityCountDB = async (filters = {}) => {
+const getActivityCountDB = async (filters = {}) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -296,3 +296,17 @@ export const getActivityCountDB = async (filters = {}) => {
         if (conn) conn.release();
     }
 };
+
+
+export default {
+    getAllActivitiesDB,
+    getForumActivityByUserDB,
+    getActivitiesByUserIdDB,
+    getActivitiesByUserAndTypeDB,
+    getActivitiesByTypeDB,
+    createActivityDB,
+    deleteActivityByIdDB,
+    getActivitiesByTargetDB,
+    getActivityStatsByUserIdDB,
+    getActivityCountDB
+}

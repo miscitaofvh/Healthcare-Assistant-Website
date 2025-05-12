@@ -1,6 +1,6 @@
 import connection from '../../config/connection.js';
 
-export const reportCommentDB = async (userId, commentId, reason) => {
+const reportCommentDB = async (userId, commentId, reason) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -21,7 +21,7 @@ export const reportCommentDB = async (userId, commentId, reason) => {
     }
 };
 
-export const getReportsForCommentDB = async (commentId) => {
+const getReportsForCommentDB = async (commentId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -54,7 +54,7 @@ export const getReportsForCommentDB = async (commentId) => {
     }
 };
 
-export const updateReportStatusForCommentDB = async (adminId, reportId, status, commentId) => {
+const updateReportStatusForCommentDB = async (adminId, reportId, status, commentId) => {
     let conn;
     try {
         if (!adminId || !reportId || !status || !commentId) {
@@ -95,7 +95,7 @@ export const updateReportStatusForCommentDB = async (adminId, reportId, status, 
     }
 };
 
-export const getAllReportsDB = async () => {
+const getAllReportsDB = async () => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -128,7 +128,7 @@ export const getAllReportsDB = async () => {
     }
 };
 
-export const getReportByIdDB = async (reportId) => {
+const getReportByIdDB = async (reportId) => {
     let conn;
     try {
         if (!reportId) {
@@ -165,7 +165,7 @@ export const getReportByIdDB = async (reportId) => {
     }
 };
 
-export const getReportsByUserDB = async (userId) => {
+const getReportsByUserDB = async (userId) => {
     let conn;
     try {
         if (!userId) {
@@ -203,7 +203,7 @@ export const getReportsByUserDB = async (userId) => {
     }
 };
 
-export const getReportsByPostDB = async (postId) => {
+const getReportsByPostDB = async (postId) => {
     let conn;
     try {
         if (!postId) {
@@ -236,7 +236,7 @@ export const getReportsByPostDB = async (postId) => {
     }
 };
 
-export const createReportDB = async (postId, userId, reason) => {
+const createReportDB = async (postId, userId, reason) => {
     let conn;
     try {
         if (!postId || !userId || !reason) {
@@ -286,7 +286,7 @@ export const createReportDB = async (postId, userId, reason) => {
     }
 };
 
-export const updateReportDB = async (reportId, status, resolvedBy, resolutionNotes) => {
+const updateReportDB = async (reportId, status, resolvedBy, resolutionNotes) => {
     let conn;
     try {
         if (!reportId || !status || !resolvedBy) {
@@ -327,7 +327,7 @@ export const updateReportDB = async (reportId, status, resolvedBy, resolutionNot
     }
 };
 
-export const updateReportAdminDB = async (reportId, status, resolvedBy, resolutionNotes) => {
+const updateReportAdminDB = async (reportId, status, resolvedBy, resolutionNotes) => {
     let conn;
     try {
         if (!reportId || !status || !resolvedBy) {
@@ -368,7 +368,7 @@ export const updateReportAdminDB = async (reportId, status, resolvedBy, resoluti
     }
 };
 
-export const deleteReportDB = async (reportId, userId) => {
+const deleteReportDB = async (reportId, userId) => {
     let conn;
     try {
         if (!reportId || !userId) {
@@ -404,7 +404,7 @@ export const deleteReportDB = async (reportId, userId) => {
     }
 };
 
-export const getReportsByStatusDB = async (status) => {
+const getReportsByStatusDB = async (status) => {
     let conn;
     try {
         if (!status) {
@@ -442,7 +442,7 @@ export const getReportsByStatusDB = async (status) => {
     }
 };
 
-export const deleteReportByIdDB = async (reportId, userId) => {
+const deleteReportByIdDB = async (reportId, userId) => {
     let conn;
     try {
         if (!reportId || !userId) {
@@ -479,7 +479,7 @@ export const deleteReportByIdDB = async (reportId, userId) => {
     }
 };
 
-export const getAllReports = async (req, res) => {
+const getAllReports = async (req, res) => {
     try {
         const reports = await getAllReportsDB();
         res.status(200).json({
@@ -496,7 +496,7 @@ export const getAllReports = async (req, res) => {
     }
 };
 
-export const getReportById = async (req, res) => {
+const getReportById = async (req, res) => {
     try {
         const { id } = req.params;
         if (!id) {
@@ -528,7 +528,7 @@ export const getReportById = async (req, res) => {
     }
 };
 
-export const getReportsByUser = async (req, res) => {
+const getReportsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
         if (!userId) {
@@ -553,7 +553,7 @@ export const getReportsByUser = async (req, res) => {
     }
 };
 
-export const getReportsByPost = async (req, res) => {
+const getReportsByPost = async (req, res) => {
     try {
         const { postId } = req.params;
         if (!postId) {
@@ -578,8 +578,7 @@ export const getReportsByPost = async (req, res) => {
     }
 };
 
-
-export const updateReportStatus = async (req, res) => {
+const updateReportStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, resolutionNotes } = req.body;
@@ -614,7 +613,7 @@ export const updateReportStatus = async (req, res) => {
     }
 };
 
-export const deleteReport = async (req, res) => {
+const deleteReport = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.user_id;
@@ -653,3 +652,26 @@ export const deleteReport = async (req, res) => {
         });
     }
 };
+
+export default {
+    reportCommentDB,
+    getReportsForCommentDB,
+    updateReportStatusForCommentDB,
+    getAllReportsDB,
+    getReportByIdDB,
+    getReportsByUserDB,
+    getReportsByPostDB,
+    createReportDB,
+    updateReportDB,
+    updateReportAdminDB,
+    deleteReportDB,
+    getReportsByStatusDB,
+    deleteReportByIdDB,
+    getAllReports,
+    getReportById,
+    getReportsByUser,
+    getReportsByPost,
+    updateReportStatus,
+    deleteReport,
+    
+}

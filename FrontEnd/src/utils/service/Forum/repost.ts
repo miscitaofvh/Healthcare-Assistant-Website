@@ -52,6 +52,7 @@ const reportCommentFE = async (
 
         if (status !== 200 || data?.success) {
             showError(response.data?.message || 'Failed to report comment');
+            return;
         }
 
         showSuccess('Comment reported successfully');

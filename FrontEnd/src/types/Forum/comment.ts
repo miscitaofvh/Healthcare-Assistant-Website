@@ -1,16 +1,17 @@
 export interface CommentPost {
-    post_id: number;
-    comment_id: number;
-    commented_by: string;
-    parent_comment_id: number | null;
-    depth: number;
-    is_owner?: boolean;
-    is_liked?: boolean;
-    replies?: CommentPost[];
-    like_count?: number;
-    content: string;
-    created_at: string;
-    last_updated: string;
+  post_id: number;
+  comment_id: number;
+  commented_by: string;
+  parent_comment_id: number | null;
+  depth: number;
+  thread_path: string | null;
+  is_owner?: boolean;
+  is_liked?: boolean;
+  replies?: CommentPost[];
+  like_count?: number;
+  content: string;
+  created_at: string;
+  last_updated: string;
 }
 
 export interface ReplyComment {

@@ -4,8 +4,7 @@ import InteractTag from "../../../utils/api/Forum/tag";
 import { Tag, NewTag, SummaryTag } from "../../../types/Forum/tag";
 import { PostbyTag } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";
-import { set } from "date-fns";
-import { on } from "events";
+
 
 const validateTagInputs = (tag: NewTag): string | null => {
     const tagName = tag.tag_name.trim();

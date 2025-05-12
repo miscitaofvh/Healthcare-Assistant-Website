@@ -2,21 +2,11 @@ import express from "express";
 import categoryController from "../controllers/forum/category.js"
 import threadController from "../controllers/forum/thread.js";
 import postController from "../controllers/forum/post.js";
-import {
-        getCommentsByPostId, getCommentReplies, getAllCommentsByUser, addCommentToPost, addReplyToComment,
-        updateComment, deleteComment
-} from "../controllers/forum/comment.js";
+import commentController from "../controllers/forum/comment.js";
 import tagController from "../controllers/forum/tag.js";
-import { likePost, unlikePost, getLikesOfPost, likeComment, unlikeComment } from "../controllers/forum/like.js";
-import {
-        reportComment, getAllReports, getReportById, getReportsByUser, getReportsByPost, createReport,
-        updateReport, deleteReport, getReportsByStatus, deleteReportById,
-        getReportsForComment, updateReportStatusForComment
-} from "../controllers/forum/report.js";
-import {
-        getAllActivities, getForumActivityByUser, getActivitiesByUserAndType, getActivitiesByType,
-        createActivity, deleteActivityById, getActivitiesByTarget, getActivityStatsByid
-} from "../controllers/forum/activity.js";
+import likeController from "../controllers/forum/like.js";
+import reportController from "../controllers/forum/report.js";
+import activityController from "../controllers/forum/activity.js";
 
 import { uploadImage } from "../controllers/forum/uploadImage.js";
 import forumValidatorsUser from "../middleware/validation/user.js"
@@ -44,7 +34,10 @@ const asyncHandler = (fn) => (req, res, next) => {
 // ===================================================================================================================================
 // ===================================================================================================================================
 // Upload image
-router.post('/upload-image', upload.single('forumImage'), uploadImage);
+router.post('/upload-image', 
+        auth.required,
+        upload.single('forumImage'), 
+        uploadImage);
 
 // ===================================================================================================================================
 // ===================================================================================================================================
@@ -222,41 +215,42 @@ router.delete("/posts/:postId",
 // Comment Routes
 router.get("/posts/:postId/comments",
         paginate(),
-        asyncHandler(getCommentsByPostId));
+        asyncHandler(commentController.getCommentsByPostId));
 
 router.get("/comments/:commentId/replies",
-        asyncHandler(getCommentReplies));
+        asyncHandler(commentController.getCommentReplies));
 
 router.get("/users/:userId/comments",
         paginate(),
-        asyncHandler(getAllCommentsByUser));
+        asyncHandler(commentController.getAllCommentsByUser));
 
 router.post("/posts/:postId/comments",
         auth.required,
         commentLimiter,
         forumValidatorsComment.validateCommentPost,
-        asyncHandler(addCommentToPost)
+        asyncHandler(commentController.addCommentToPost)
 );
 
 router.post("/comments/:commentId/replies",
         auth.required,
         commentLimiter,
         forumValidatorsComment.validateReplyComment,
-        asyncHandler(addReplyToComment)
+        asyncHandler(commentController.addReplyToComment)
 );
 
 router.put("/comments/:commentId",
         auth.required,
+        forumValidatorsComment.validateCommentExists,
         forumValidatorsComment.validateUpdateComment,
-        auth.requireOwnerOrAdmin("commentForum"),
-        asyncHandler(updateComment)
+        auth.requireOwnerOrAdmin("comment"),
+        asyncHandler(commentController.updateComment)
 );
 
 router.delete("/comments/:commentId",
         auth.required,
         forumValidatorsComment.validateCommentExists,
-        auth.requireOwnerOrAdmin("commentForum"),
-        asyncHandler(deleteComment)
+        auth.requireOwnerOrAdmin("comment"),
+        asyncHandler(commentController.deleteComment)
 );
 
 // ===================================================================================================================================
@@ -266,32 +260,26 @@ router.post("/posts/:postId/likes",
         auth.required,
         likeLimiter,
         forumValidatorsPost.validatePostExists,
-        asyncHandler(likePost)
+        asyncHandler(likeController.likePost)
 );
 
 router.delete("/posts/:postId/likes",
         auth.required,
         forumValidatorsPost.validatePostExists,
-        asyncHandler(unlikePost)
-);
-
-router.get("/posts/:postId/likes",
-        forumValidatorsPost.validatePostExists,
-        paginate(),
-        asyncHandler(getLikesOfPost)
+        asyncHandler(likeController.unlikePost)
 );
 
 router.post("/comments/:commentId/likes",
         auth.required,
         forumValidatorsComment.validateCommentExists,
         likeLimiter,
-        asyncHandler(likeComment)
+        asyncHandler(likeController.likeComment)
 );
 
 router.delete("/comments/:commentId/likes",
         auth.required,
         forumValidatorsComment.validateCommentExists,
-        asyncHandler(unlikeComment)
+        asyncHandler(likeController.unlikeComment)
 );
 
 // ===================================================================================================================================
@@ -302,14 +290,14 @@ router.get("/reports",
         auth.required,
         auth.requireModerator,
         paginate(),
-        asyncHandler(getAllReports)
+        asyncHandler(reportController.getAllReports)
 );
 
 router.get("/reports/:reportId",
         auth.required,
         auth.requireModerator,
         forumValidatorsReport.validateReportExists,
-        asyncHandler(getReportById)
+        asyncHandler(reportController.getReportById)
 );
 
 router.put("/reports/:reportId",
@@ -317,14 +305,14 @@ router.put("/reports/:reportId",
         auth.requireModerator,
         forumValidatorsReport.validateReportExists,
         forumValidatorsReport.validateReportUpdate,
-        asyncHandler(updateReport)
+        asyncHandler(reportController.updateReport)
 );
 
 router.delete("/reports/:reportId",
         auth.required,
         auth.requireModerator,
         forumValidatorsReport.validateReportExists,
-        asyncHandler(deleteReportById)
+        asyncHandler(reportController.deleteReportById)
 );
 
 router.get("/reports/status/:status",
@@ -332,7 +320,7 @@ router.get("/reports/status/:status",
         auth.requireModerator,
         forumValidatorsReport.validateReportStatus,
         paginate(),
-        asyncHandler(getReportsByStatus)
+        asyncHandler(reportController.getReportsByStatus)
 );
 
 // user report
@@ -340,7 +328,7 @@ router.get("/users/:userId/reports",
         auth.required,
         auth.requireModerator,
         paginate(),
-        asyncHandler(getReportsByUser)
+        asyncHandler(reportController.getReportsByUser)
 );
 
 // report post
@@ -349,7 +337,7 @@ router.get("/posts/:postId/reports",
         auth.requireModerator,
         forumValidatorsPost.validatePostExists,
         paginate(),
-        asyncHandler(getReportsByPost)
+        asyncHandler(reportController.getReportsByPost)
 );
 
 router.post("/posts/:postId/reports",
@@ -357,28 +345,28 @@ router.post("/posts/:postId/reports",
         reportLimiter,
         forumValidatorsPost.validatePostExists,
         forumValidatorsReport.validateReportPost,
-        asyncHandler(createReport)
+        asyncHandler(reportController.createReport)
 );
 
 // report comment
 router.get("/comments/:commentId/reports",
         auth.required,
         auth.requireModerator,
-        asyncHandler(getReportsForComment));
+        asyncHandler(reportController.getReportsForComment));
 
 router.post("/comments/:commentId/reports",
         auth.required,
         reportLimiter,
         forumValidatorsComment.validateCommentExists,
         forumValidatorsReport.validateReportComment,
-        asyncHandler(reportComment)
+        asyncHandler(reportController.reportComment)
 );
 
 router.put("/reports/:reportId",
         auth.required,
         forumValidatorsReport.validateReportUpdate,
         auth.requireOwnerOrAdmin("report"),
-        asyncHandler(updateReport)
+        asyncHandler(reportController.updateReport)
 );
 
 // ===================================================================================================================================
@@ -491,14 +479,14 @@ router.delete("/tags/posts/:postId/:tagId",
 // ===================================================================================================================================
 // ===================================================================================================================================
 // Forum Activities Routes
-router.get("/activities", asyncHandler(getAllActivities)); // Get all activities (admin/moderator dashboard)
-router.get("/activities/user/:id", asyncHandler(getForumActivityByUser)); // Get all activities by a specific user
-router.get("/activities/user/:id/type/:type", asyncHandler(getActivitiesByUserAndType)); // Get all activities by a specific user filtered by type (post, comment, like, report...)
-router.get("/activities/type/:type", asyncHandler(getActivitiesByType)); // Get all activities filtered by type (post, comment, like, report...)
-router.post("/activities", validateActivity, asyncHandler(createActivity)); // Create a new activity manually (optional, mainly for system auto-log)
-router.delete("/activities/:activityId", asyncHandler(deleteActivityById)); // Delete an activity by activity ID (admin tools)
-router.get("/activities/target/:targetType/:targetId", asyncHandler(getActivitiesByTarget)); // Get activities by target (example: all likes on a post, all comments to a post, etc.)
-router.get("/activities/user/:id/count", asyncHandler(getActivityStatsByid)); // Get count statistics: how many posts, comments, likes the user has done
+router.get("/activities", asyncHandler(activityController.getAllActivities)); // Get all activities (admin/moderator dashboard)
+router.get("/activities/user/:id", asyncHandler(activityController.getForumActivityByUser)); // Get all activities by a specific user
+router.get("/activities/user/:id/type/:type", asyncHandler(activityController.getActivitiesByUserAndType)); // Get all activities by a specific user filtered by type (post, comment, like, report...)
+router.get("/activities/type/:type", asyncHandler(activityController.getActivitiesByType)); // Get all activities filtered by type (post, comment, like, report...)
+router.post("/activities", validateActivity, asyncHandler(activityController.createActivity)); // Create a new activity manually (optional, mainly for system auto-log)
+router.delete("/activities/:activityId", asyncHandler(activityController.deleteActivityById)); // Delete an activity by activity ID (admin tools)
+router.get("/activities/target/:targetType/:targetId", asyncHandler(activityController.getActivitiesByTarget)); // Get activities by target (example: all likes on a post, all comments to a post, etc.)
+router.get("/activities/user/:id/count", asyncHandler(activityController.getActivityStatsByid)); // Get count statistics: how many posts, comments, likes the user has done
 
 
 

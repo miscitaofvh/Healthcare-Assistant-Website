@@ -16,6 +16,7 @@ import {
   FaFlag,
   FaRegHeart,
 } from "react-icons/fa";
+import { GrUpdate } from "react-icons/gr";
 import { AiFillDelete } from "react-icons/ai";
 import { FiMoreVertical } from "react-icons/fi";
 import { MdReportProblem } from "react-icons/md";
@@ -29,6 +30,38 @@ import requestComment from "../../../../utils/service/Forum/comment";
 import requestLike from "../../../../utils/service/Forum/like";
 import requestReport from "../../../../utils/service/Forum/repost";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
+
+// Transform flat comments into a tree structure
+const buildCommentTree = (comments: CommentPost[]): CommentPost[] => {
+  const commentMap: { [key: number]: CommentPost } = {};
+  const tree: CommentPost[] = [];
+
+  // Initialize comment map and add replies array
+  comments.forEach((comment) => {
+    commentMap[comment.comment_id] = { ...comment, replies: [] };
+  });
+
+  // Build tree by assigning replies to their parent
+  comments.forEach((comment) => {
+    if (comment.parent_comment_id) {
+      const parent = commentMap[comment.parent_comment_id];
+      if (parent) {
+        parent.replies!.push(commentMap[comment.comment_id]);
+      }
+    } else {
+      tree.push(commentMap[comment.comment_id]);
+    }
+  });
+
+  // Sort replies by created_at
+  tree.forEach((comment) => {
+    if (comment.replies) {
+      comment.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+  });
+
+  return tree;
+};
 
 const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +81,8 @@ const ForumPage: React.FC = () => {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
+  const [editingComment, setEditingComment] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
 
   const loadInitialData = useCallback(async () => {
     if (!id) {
@@ -62,7 +97,10 @@ const ForumPage: React.FC = () => {
         id,
         setLoading,
         setPost,
-        setComments,
+        (rawComments: CommentPost[]) => {
+          const commentTree = buildCommentTree(rawComments);
+          setComments(commentTree);
+        },
         (errorMessage) => toast.error(errorMessage),
         (successMessage) => toast.success(successMessage)
       );
@@ -114,6 +152,30 @@ const ForumPage: React.FC = () => {
     }
   };
 
+  const handleEditComment = async (commentId: number) => {
+    if (!editCommentContent.trim()) {
+      toast.error("Comment content cannot be empty");
+      return;
+    }
+
+    try {
+      await requestComment.updateComment(
+        commentId.toString(),
+        editCommentContent,
+        setLoading,
+        () => toast.success("Comment updated successfully"),
+        (errorMessage) => toast.error(errorMessage),
+        () => {
+          setEditingComment(null);
+          setEditCommentContent("");
+          loadInitialData();
+        }
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update comment");
+    }
+  };
+
   const handleReportComment = async (commentId: number) => {
     if (!reportReason.trim()) {
       toast.error("Please provide a reason for reporting");
@@ -128,7 +190,7 @@ const ForumPage: React.FC = () => {
         (successMessage) => toast.success(successMessage),
         () => {
           setReportReason("");
-          setShowReportPopup(false);
+          setReportingComment(null);
         }
       );
     } catch (err: any) {
@@ -264,13 +326,11 @@ const ForumPage: React.FC = () => {
     return comments.map((comment) => (
       <div
         key={comment.comment_id}
-        className={`${styles.commentCard} ${comment.parent_comment_id ? styles.replyComment : ""
-          }`}
-        style={{ marginLeft: `${comment.depth * 20}px` }}
+        className={`${styles.commentCard} ${comment.parent_comment_id ? styles.replyComment : ""}`}
+        style={{ marginLeft: `${(comment.depth || 0) * 20}px` }}
       >
         <div className={styles.commentHeader}>
           <span className={styles.commentAuthor}>{comment.commented_by}</span>
-          <br />
           <span className={styles.commentDate}>
             {formatDate(comment.created_at)}
             {comment.created_at !== comment.last_updated && (
@@ -285,18 +345,43 @@ const ForumPage: React.FC = () => {
         </div>
 
         <div className={styles.commentContent}>
-          <p>{comment.content}</p>
+          {editingComment === comment.comment_id ? (
+            <div className={styles.editForm}>
+              <textarea
+                className={styles.formTextarea}
+                value={editCommentContent}
+                onChange={(e) => setEditCommentContent(e.target.value)}
+                rows={3}
+              />
+              <div className={styles.buttonGroup}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => setEditingComment(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => handleEditComment(comment.comment_id)}
+                  disabled={!editCommentContent.trim()}
+                >
+                  Update Comment
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p>{comment.content}</p>
+          )}
         </div>
 
         <div className={styles.commentActions}>
           <button
-            className={`${styles.actionButton} ${comment.is_liked ? styles.liked : styles.notLiked
-              }`}
+            className={`${styles.actionButton} ${comment.is_liked ? styles.liked : styles.notLiked}`}
             onClick={() => handleCommentLike(comment)}
             disabled={isCommentLiking[comment.comment_id]}
-            aria-label={
-              comment.is_liked ? "Unlike this comment" : "Like this comment"
-            }
+            aria-label={comment.is_liked ? "Unlike this comment" : "Like this comment"}
           >
             {comment.is_liked ? (
               <FaHeart color="#ff0000" className={styles.heartIcon} />
@@ -304,7 +389,7 @@ const ForumPage: React.FC = () => {
               <FaRegHeart className={styles.heartIcon} />
             )}
             <span className={styles.likeCount}>
-              {comment.like_count || 0 > 0 ? comment.like_count : ""}
+              {comment.like_count && comment.like_count > 0 ? comment.like_count : ""}
             </span>
             {isCommentLiking[comment.comment_id] && (
               <span className={styles.spinner} aria-hidden="true" />
@@ -334,17 +419,28 @@ const ForumPage: React.FC = () => {
             <FaFlag /> Report
           </button>
 
-          {comment.is_owner && (
-            <button
-              className={`${styles.actionButton} ${styles.deleteButton}`}
-              onClick={() => {
-                setCommentToDelete(comment.comment_id);
-                setShowDeleteModal(true);
-              }}
-            >
-              <FaTrash /> Delete
-            </button>
-          )}
+          {comment.is_owner ? (
+            <>
+              <button
+                className={`${styles.actionButton} ${styles.updateButton}`}
+                onClick={() => {
+                  setEditingComment(comment.comment_id);
+                  setEditCommentContent(comment.content);
+                }}
+              >
+                <GrUpdate /> Update
+              </button>
+              <button
+                className={`${styles.actionButton} ${styles.deleteButton}`}
+                onClick={() => {
+                  setCommentToDelete(comment.comment_id);
+                  setShowDeleteModal(true);
+                }}
+              >
+                <FaTrash /> Delete
+              </button>
+            </>
+          ) : null}
         </div>
 
         {replyingTo?.commentId === comment.comment_id && (
@@ -460,15 +556,25 @@ const ForumPage: React.FC = () => {
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
-      
+
       <div className={styles.headerContainer}>
         {/* Breadcrumbs */}
         <div className={styles.breadcrumbs}>
-          <span onClick={() => navigate("/forum")}>Forum</span> &gt;
-          <span onClick={() => navigate(`/forum/categories/${post.category_id}`)}>
+          <span onClick={() => navigate("/forum")} className={styles.breadcrumbLink}>
+            Forum
+          </span>
+          <span className={styles.breadcrumbSeparator}> &gt; </span>
+          <span
+            onClick={() => navigate(`/forum/categories/${post.category_id}`)}
+            className={styles.breadcrumbLink}
+          >
             {post.category_name}
-          </span> &gt;
-          <span onClick={() => navigate(`/forum/threads/${post.thread_id}`)}>
+          </span>
+          <span className={styles.breadcrumbSeparator}> &gt; </span>
+          <span
+            onClick={() => navigate(`/forum/threads/${post.thread_id}`)}
+            className={styles.breadcrumbLink}
+          >
             {post.thread_name}
           </span>
         </div>
@@ -509,8 +615,7 @@ const ForumPage: React.FC = () => {
 
           <div className={styles.postActions}>
             <button
-              className={`${styles.likeButton} ${post.is_liked ? styles.unlike : ""
-                }`}
+              className={`${styles.likeButton} ${post.is_liked ? styles.unlike : ""}`}
               onClick={handlePostLike}
               disabled={isPostLiking}
             >

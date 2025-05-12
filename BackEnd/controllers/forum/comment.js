@@ -2,15 +2,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 
-import {
-    getCommentsByPostIdDB,
-    getCommentRepliesDB,
-    getAllCommentsByUserDB,
-    addCommentToPostDB,
-    addReplyToCommentDB,
-    updateCommentDB,
-    deleteCommentDB
-} from "../../models/Forum/comment.js";
+import CommentDB from "../../models/Forum/comment.js";
 
 dotenv.config();
 
@@ -98,13 +90,13 @@ const handleError = (error, req, res, action = 'process') => {
 };
 
 // Controller methods
-export const getCommentsByPostId = async (req, res) => {
+const getCommentsByPostId = async (req, res) => {
     try {
         const { postId } = req.params;
         const validatedPostId = validateId(postId, "Post ID");
         const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
-        const { comments, totalCount } = await getCommentsByPostIdDB(validatedPostId, page, limit);
+        const { comments, totalCount } = await CommentDB.getCommentsByPostIdDB(validatedPostId, page, limit);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -130,12 +122,12 @@ export const getCommentsByPostId = async (req, res) => {
     }
 };
 
-export const getCommentReplies = async (req, res) => {
+const getCommentReplies = async (req, res) => {
     try {
         const { commentId } = req.params;
         const validatedCommentId = validateId(commentId, "Comment ID");
 
-        const replies = await getCommentRepliesDB(validatedCommentId);
+        const replies = await CommentDB.getCommentRepliesDB(validatedCommentId);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -152,13 +144,13 @@ export const getCommentReplies = async (req, res) => {
     }
 };
 
-export const getAllCommentsByUser = async (req, res) => {
+const getAllCommentsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const validatedUserId = validateId(userId, "User ID");
         const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
 
-        const { comments, totalCount } = await getAllCommentsByUserDB(validatedUserId, page, limit);
+        const { comments, totalCount } = await CommentDB.getAllCommentsByUserDB(validatedUserId, page, limit);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -184,7 +176,7 @@ export const getAllCommentsByUser = async (req, res) => {
     }
 };
 
-export const addCommentToPost = async (req, res) => {
+const addCommentToPost = async (req, res) => {
     try {
         const decoded = validateToken(req.cookies?.auth_token);
         const userId = decoded.user_id;
@@ -200,7 +192,7 @@ export const addCommentToPost = async (req, res) => {
             validateId(parent_comment_id, "Parent comment ID");
         }
 
-        const commentId = await addCommentToPostDB({
+        const commentId = await CommentDB.addCommentToPostDB({
             userId,
             postId: validatedPostId,
             content: validatedContent,
@@ -223,7 +215,7 @@ export const addCommentToPost = async (req, res) => {
     }
 };
 
-export const addReplyToComment = async (req, res) => {
+const addReplyToComment = async (req, res) => {
     try {
         const decoded = validateToken(req.cookies?.auth_token);
         const userId = decoded.user_id;
@@ -235,7 +227,7 @@ export const addReplyToComment = async (req, res) => {
         const { content } = req.body;
         const validatedContent = validateContent(content);
 
-        const result = await addReplyToCommentDB({
+        const result = await CommentDB.addReplyToCommentDB({
             userId,
             parentCommentId: validatedCommentId,
             content: validatedContent
@@ -260,7 +252,7 @@ export const addReplyToComment = async (req, res) => {
     }
 };
 
-export const updateComment = async (req, res) => {
+const updateComment = async (req, res) => {
     try {
         const decoded = validateToken(req.cookies?.auth_token);
         const userId = decoded.user_id;
@@ -272,7 +264,7 @@ export const updateComment = async (req, res) => {
         const { content } = req.body;
         const validatedContent = validateContent(content);
 
-        const result = await updateCommentDB({
+        const result = await CommentDB.updateCommentDB({
             commentId: validatedCommentId,
             userId,
             content: validatedContent
@@ -293,7 +285,7 @@ export const updateComment = async (req, res) => {
     }
 };
 
-export const deleteComment = async (req, res) => {
+const deleteComment = async (req, res) => {
     try {
         const decoded = validateToken(req.cookies?.auth_token);
         const userId = decoded.user_id;
@@ -304,7 +296,7 @@ export const deleteComment = async (req, res) => {
 
         const isAdmin = decoded.role === 'admin';
 
-        await deleteCommentDB({
+        await CommentDB.deleteCommentDB({
             commentId: validatedCommentId,
             userId,
             isAdmin
@@ -324,3 +316,13 @@ export const deleteComment = async (req, res) => {
         handleError(error, req, res, 'delete comment');
     }
 };
+
+export default {
+    getCommentsByPostId,
+    getCommentReplies,
+    getAllCommentsByUser,
+    addCommentToPost,
+    addReplyToComment,
+    updateComment,
+    deleteComment
+}

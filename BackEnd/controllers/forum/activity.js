@@ -1,26 +1,15 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
-import {
-    getAllActivitiesDB,
-    getForumActivityByUserDB,
-    getActivitiesByUserIdDB,
-    getActivitiesByUserAndTypeDB,
-    getActivitiesByTypeDB,
-    createActivityDB,
-    deleteActivityByIdDB,
-    getActivitiesByTargetDB,
-    getActivityStatsByUserIdDB,
-    getActivityCountDB
-} from "../../models/Forum/activity.js";
+import ActivityDB from "../../models/Forum/activity.js";
 
 dotenv.config();
 
-export const getAllActivities = async (req, res) => {
+const getAllActivities = async (req, res) => {
     try {
         const { limit = 20, offset = 0 } = req.query;
-        const activities = await getAllActivitiesDB(parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB();
+        const activities = await ActivityDB.getAllActivitiesDB(parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB();
 
         res.status(200).json({
             success: true,
@@ -42,7 +31,7 @@ export const getAllActivities = async (req, res) => {
 };
 
 // Get all activities by user (full info)
-export const getForumActivityByUser = async (req, res) => {
+const getForumActivityByUser = async (req, res) => {
     try {
         const { id } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -54,8 +43,8 @@ export const getForumActivityByUser = async (req, res) => {
             });
         }
 
-        const activities = await getForumActivityByUserDB(id, parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB({ id });
+        const activities = await ActivityDB.getForumActivityByUserDB(id, parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB({ id });
 
         res.status(200).json({
             success: true,
@@ -77,7 +66,7 @@ export const getForumActivityByUser = async (req, res) => {
 };
 
 // Get only basic activities by user (id, type, timestamp)
-export const getActivitiesByid = async (req, res) => {
+const getActivitiesByid = async (req, res) => {
     try {
         const { id } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -89,8 +78,8 @@ export const getActivitiesByid = async (req, res) => {
             });
         }
 
-        const activities = await getActivitiesByUserIdDB(id, parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB({ id });
+        const activities = await ActivityDB.getActivitiesByUserIdDB(id, parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB({ id });
 
         res.status(200).json({
             success: true,
@@ -112,7 +101,7 @@ export const getActivitiesByid = async (req, res) => {
 };
 
 // Get activities by user and type (ex: likes, comments, posts)
-export const getActivitiesByUserAndType = async (req, res) => {
+const getActivitiesByUserAndType = async (req, res) => {
     try {
         const { id, type } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -124,8 +113,8 @@ export const getActivitiesByUserAndType = async (req, res) => {
             });
         }
 
-        const activities = await getActivitiesByUserAndTypeDB(id, type, parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB({ id, type });
+        const activities = await ActivityDB.getActivitiesByUserAndTypeDB(id, type, parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB({ id, type });
 
         res.status(200).json({
             success: true,
@@ -147,7 +136,7 @@ export const getActivitiesByUserAndType = async (req, res) => {
 };
 
 // Get activities by type (all users)
-export const getActivitiesByType = async (req, res) => {
+const getActivitiesByType = async (req, res) => {
     try {
         const { type } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -159,8 +148,8 @@ export const getActivitiesByType = async (req, res) => {
             });
         }
 
-        const activities = await getActivitiesByTypeDB(type, parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB({ type });
+        const activities = await ActivityDB.getActivitiesByTypeDB(type, parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB({ type });
 
         res.status(200).json({
             success: true,
@@ -182,7 +171,7 @@ export const getActivitiesByType = async (req, res) => {
 };
 
 // Create a new activity (post, comment, like, report, etc.)
-export const createActivity = async (req, res) => {
+const createActivity = async (req, res) => {
     try {
         const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
         const id = decoded.user_id;
@@ -195,7 +184,7 @@ export const createActivity = async (req, res) => {
             });
         }
 
-        const activityId = await createActivityDB(id, type, targetType, targetId);
+        const activityId = await ActivityDB.createActivityDB(id, type, targetType, targetId);
         res.status(201).json({
             success: true,
             message: "Activity created successfully",
@@ -212,7 +201,7 @@ export const createActivity = async (req, res) => {
 };
 
 // Delete an activity by its ID
-export const deleteActivityById = async (req, res) => {
+const deleteActivityById = async (req, res) => {
     try {
         const { activityId } = req.params;
         if (!activityId) {
@@ -222,7 +211,7 @@ export const deleteActivityById = async (req, res) => {
             });
         }
 
-        await deleteActivityByIdDB(activityId);
+        await ActivityDB.deleteActivityByIdDB(activityId);
         res.status(200).json({
             success: true,
             message: "Activity deleted successfully"
@@ -238,7 +227,7 @@ export const deleteActivityById = async (req, res) => {
 };
 
 // Get activities for a specific target (post, comment, etc.)
-export const getActivitiesByTarget = async (req, res) => {
+const getActivitiesByTarget = async (req, res) => {
     try {
         const { targetType, targetId } = req.params;
         const { limit = 20, offset = 0 } = req.query;
@@ -250,8 +239,8 @@ export const getActivitiesByTarget = async (req, res) => {
             });
         }
 
-        const activities = await getActivitiesByTargetDB(targetType, targetId, parseInt(limit), parseInt(offset));
-        const total = await getActivityCountDB({ targetType, targetId });
+        const activities = await ActivityDB.getActivitiesByTargetDB(targetType, targetId, parseInt(limit), parseInt(offset));
+        const total = await ActivityDB.getActivityCountDB({ targetType, targetId });
 
         res.status(200).json({
             success: true,
@@ -273,7 +262,7 @@ export const getActivitiesByTarget = async (req, res) => {
 };
 
 // Get stats (total posts, comments, likes, reports) by user
-export const getActivityStatsByid = async (req, res) => {
+const getActivityStatsByid = async (req, res) => {
     try {
         const { id } = req.params;
         if (!id) {
@@ -283,7 +272,7 @@ export const getActivityStatsByid = async (req, res) => {
             });
         }
 
-        const stats = await getActivityStatsByUserIdDB(id);
+        const stats = await ActivityDB.getActivityStatsByUserIdDB(id);
         res.status(200).json({
             success: true,
             data: stats
@@ -297,3 +286,15 @@ export const getActivityStatsByid = async (req, res) => {
         });
     }
 };
+
+export default {
+    getAllActivities,
+    getForumActivityByUser,
+    getActivitiesByid,
+    getActivitiesByUserAndType,
+    getActivitiesByType,
+    createActivity,
+    deleteActivityById,
+    getActivitiesByTarget,
+    getActivityStatsByid
+}
