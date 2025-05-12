@@ -63,6 +63,7 @@ const loadCategoriesSummary = async (
 ): Promise<void> => {
     try {
         const response = await InteractiveCategory.getSummaryCategories();
+        
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

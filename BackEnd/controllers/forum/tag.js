@@ -120,23 +120,11 @@ const getAllTags = async (req, res) => {
 
 const getSummaryTags = async (req, res) => {
     try {
-        const { page = 1, limit = 20, search = '', sortBy = 'tag_name', sortOrder = 'ASC' } = req.query;
-        const { page: p, limit: l } = validatePagination(page, limit);
-
-        const allowedSortFields = {
-            'tag_id': 't.tag_id',
-            'tag_name': 't.tag_name',
-            'description': 't.description'
-        };
-
-        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder, allowedSortFields);
-
-        const { tags, pagination } = await TagDB.getSummaryTagsDB(p, l, search, orderByField, orderDirection);
+        const tags = await TagDB.getSummaryTagsDB();
 
         res.status(StatusCodes.OK).json({
             success: true,
             tags: tags,
-            pagination: pagination,
             metadata: {
                 count: tags.length,
                 retrievedAt: new Date().toISOString()

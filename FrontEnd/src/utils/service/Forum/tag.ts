@@ -4,6 +4,8 @@ import InteractTag from "../../../utils/api/Forum/tag";
 import { Tag, NewTag, SummaryTag } from "../../../types/Forum/tag";
 import { PostbyTag } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";
+import { set } from "date-fns";
+import { on } from "events";
 
 const validateTagInputs = (tag: NewTag): string | null => {
     const tagName = tag.tag_name.trim();
@@ -91,42 +93,58 @@ const loadTagByID = async (
 };
 
 const loadTagsSummary = async (
-    onSuccess: (tags: SummaryTag[]) => void,
-    onError: (error: string) => void
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: (tags: SummaryTag[]) => void,
+    showError: (message: string) => void = toast.error,
+    onSuccess?: () => void
+    
 ): Promise<void> => {
     try {
+        setLoading(true);
+
         const response = await InteractTag.getAllTagsSummary();
+
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            onError(data?.message ?? "Unknown server error occurred");
+            showError(data?.message ?? "Unknown server error occurred");
             return;
         }
 
-        onSuccess(data.tags ?? []);
+        setTags(data.tags ?? []);
+        onSuccess?.();
+
     } catch (err: any) {
         const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tag summary";
-        onError(errorMsg);
+        showError(errorMsg);
+    } finally {
+        setLoading(false);
     }
 };
 
 const loadTagsPostSummary = async (
-    onSuccess: (tags: Tag[]) => void,
-    onError: (error: string) => void
+    setTagsLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: (tags: SummaryTag[]) => void,
+    showError: (message: string) => void = toast.error,
+    onSuccess: () => void,
 ): Promise<void> => {
     try {
+        setTagsLoading(true);
         const response = await InteractTag.getAllTagsLittleSummary();
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            onError(data?.message ?? "Unknown server error occurred");
+            showError(data?.message ?? "Unknown server error occurred");
             return;
         }
 
-        onSuccess(data.tags ?? []);
+        setTags(data.tags ?? []);
+        onSuccess?.();
     } catch (err: any) {
         const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tag post summary";
-        onError(errorMsg);
+        showError(errorMsg);
+    } finally {
+        setTagsLoading(false);
     }
 };
 

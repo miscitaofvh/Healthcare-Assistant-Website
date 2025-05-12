@@ -1,5 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ReactMarkdown from "react-markdown";
+import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import {
+  FaEdit,
+  FaUser,
+  FaCalendar,
+  FaFolder,
+  FaComments,
+  FaHeart,
+  FaReply,
+  FaTrash,
+  FaFlag,
+  FaRegHeart,
+} from "react-icons/fa";
+import { AiFillDelete } from "react-icons/ai";
+import { FiMoreVertical } from "react-icons/fi";
+import { MdReportProblem } from "react-icons/md";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import { Post } from "../../../../types/Forum/post";
@@ -8,12 +28,7 @@ import requestPost from "../../../../utils/service/Forum/post";
 import requestComment from "../../../../utils/service/Forum/comment";
 import requestLike from "../../../../utils/service/Forum/like";
 import requestReport from "../../../../utils/service/Forum/repost";
-import ReactMarkdown from "react-markdown";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
-import { FaEdit, FaUser, FaCalendar, FaFolder, FaComments, FaHeart, FaReply, FaTrash, FaFlag, FaRegHeart } from 'react-icons/fa';
-import { AiFillDelete } from "react-icons/ai";
-import { FiMoreVertical } from "react-icons/fi";
-import { MdReportProblem } from "react-icons/md";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 
 const ForumPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,61 +38,43 @@ const ForumPage: React.FC = () => {
   const [mainCommentText, setMainCommentText] = useState("");
   const [replyCommentTexts, setReplyCommentTexts] = useState<Record<number, string>>({});
   const [replyingTo, setReplyingTo] = useState<{ commentId: number; username: string } | null>(null);
-  const [reportingComment, setReportingComment] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isPostLiking, setIsPostLiking] = useState<boolean>(false);
   const [isCommentLiking, setIsCommentLiking] = useState<Record<number, boolean>>({});
+  const [reportingComment, setReportingComment] = useState<number | null>(null);
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
-  const [reportSuccess, setReportSuccess] = useState("");
-  const [reportError, setReportError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
 
-
-  useEffect(() => {
+  const loadInitialData = useCallback(async () => {
     if (!id) {
-      setError("Invalid post ID.");
+      toast.error("Invalid post ID.");
       setLoading(false);
       return;
     }
-    loadInitialData();
-  }, [id]);
 
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(""), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  const loadInitialData = async () => {
     try {
       setLoading(true);
-
       await requestPost.loadPostPageById(
-        id || "",
+        id,
         setLoading,
         setPost,
         setComments,
-        setError,
-        setSuccess
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage)
       );
-
     } catch (err: any) {
-      setError(err?.message || "Failed to load post details.");
+      toast.error(err?.message || "Failed to load post details.");
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const onCommentSubmit = async (parentId?: number) => {
     const text = parentId
@@ -88,14 +85,14 @@ const ForumPage: React.FC = () => {
 
     try {
       const parentDepth = parentId
-        ? comments.find(c => c.comment_id === parentId)?.depth || 0
+        ? comments.find((c) => c.comment_id === parentId)?.depth || 0
         : 0;
 
       await requestComment.addCommenttoPost(
         id || "",
         text,
         parentId?.toString(),
-        parentId ? parentDepth + 1 : 0, // Increment depth for replies
+        parentId ? parentDepth + 1 : 0,
         () => {
           if (parentId) {
             const newReplyTexts = { ...replyCommentTexts };
@@ -105,28 +102,21 @@ const ForumPage: React.FC = () => {
             setMainCommentText("");
           }
         },
-        setError,
-        setSuccess,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         async () => {
           setReplyingTo(null);
-          await requestPost.loadPostPageById(
-            id || "",
-            setLoading,
-            setPost,
-            setComments,
-            setError,
-            setSuccess
-          );
+          await loadInitialData();
         }
       );
-    } catch (error) {
-      alert("Comment submission error:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit comment");
     }
   };
 
   const handleReportComment = async (commentId: number) => {
     if (!reportReason.trim()) {
-      setError("Please provide a reason for reporting");
+      toast.error("Please provide a reason for reporting");
       return;
     }
 
@@ -134,21 +124,21 @@ const ForumPage: React.FC = () => {
       await requestReport.reportCommentFE(
         commentId.toString(),
         reportReason,
-        setError,
-        setSuccess,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         () => {
-          setReportingComment(null);
           setReportReason("");
+          setShowReportPopup(false);
         }
       );
-    } catch (error) {
-      alert("Failed to report comment:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to report comment");
     }
   };
 
   const handlePostLike = async () => {
     if (!post) {
-      setError("Post not found.");
+      toast.error("Post not found.");
       return;
     }
 
@@ -157,20 +147,20 @@ const ForumPage: React.FC = () => {
       if (post.is_liked) {
         await requestLike.unlikePostFE(
           post.post_id.toString(),
-          setError,
-          setSuccess,
+          (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likePostFE(
           post.post_id.toString(),
-          setError,
-          setSuccess,
+          (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
-    } catch (error) {
-      alert("Like action failed:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to like post");
     } finally {
       setIsPostLiking(false);
     }
@@ -178,104 +168,104 @@ const ForumPage: React.FC = () => {
 
   const handleCommentLike = async (comment: CommentPost) => {
     try {
-      setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: true }));
+      setIsCommentLiking((prev) => ({ ...prev, [comment.comment_id]: true }));
 
       if (comment.is_liked) {
         await requestLike.unlikeCommentFE(
           comment.comment_id.toString(),
           post?.post_id.toString() || "",
-          setError,
-          setSuccess,
+          (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likeCommentFE(
           comment.comment_id.toString(),
-          setError,
-          setSuccess,
+          (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
-    } catch (error) {
-      alert("Comment like action failed:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to like comment");
     } finally {
-      setIsCommentLiking(prev => ({ ...prev, [comment.comment_id]: false }));
+      setIsCommentLiking((prev) => ({ ...prev, [comment.comment_id]: false }));
     }
   };
 
-  const handleDeletePost = async (postId: string) => {
-    if (!postId) return;
+  const handleDeletePost = async () => {
+    if (!post) return;
     setIsDeleting(true);
     try {
       await requestPost.deletePostFE(
-        postId,
+        post.post_id.toString(),
         setLoading,
-        setError,
-        setSuccess,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         () => navigate("/forum")
       );
-    } catch (error) {
-      setError("Failed to delete post:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete post");
     } finally {
       setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!commentId) return;
+  const handleDeleteComment = async () => {
+    if (!commentToDelete) return;
     setIsDeleting(true);
     try {
       await requestComment.deleteCommentFromPost(
-        commentId,
+        commentToDelete.toString(),
         setLoading,
-        setError,
-        setSuccess,
-        () => loadInitialData()
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
+        () => {
+          loadInitialData();
+          setCommentToDelete(null);
+        }
       );
-    } catch (error) {
-      setError("Failed to delete comment:");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete comment");
     } finally {
       setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
   const handleReportSubmit = async () => {
     if (!post) return;
     if (!reportReason.trim()) {
-      setReportError("Reason is required.");
+      toast.error("Reason is required.");
       return;
     }
 
     setReportSubmitting(true);
     try {
-      const res = requestReport.reportPostFE(
+      await requestReport.reportPostFE(
         post.post_id.toString(),
         reportReason,
-        setReportError,
-        setReportSuccess,
+        (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         () => {
           setShowReportPopup(false);
           setReportReason("");
         }
       );
-
-
-      setReportSuccess("Report submitted successfully.");
-      setShowReportPopup(false);
-      setReportReason("");
     } catch (err: any) {
-      setReportError(err.message || "Failed to report post.");
+      toast.error(err.message || "Failed to report post");
     } finally {
       setReportSubmitting(false);
     }
   };
 
-
   const renderComments = (comments: CommentPost[]) => {
     return comments.map((comment) => (
       <div
         key={comment.comment_id}
-        className={`${styles.commentCard} ${comment.parent_comment_id ? styles.replyComment : ''}`}
+        className={`${styles.commentCard} ${comment.parent_comment_id ? styles.replyComment : ""
+          }`}
         style={{ marginLeft: `${comment.depth * 20}px` }}
       >
         <div className={styles.commentHeader}>
@@ -284,7 +274,10 @@ const ForumPage: React.FC = () => {
           <span className={styles.commentDate}>
             {formatDate(comment.created_at)}
             {comment.created_at !== comment.last_updated && (
-              <span className={styles.updatedBadge} title={`Last updated ${formatDate(comment.last_updated)}`}>
+              <span
+                className={styles.updatedBadge}
+                title={`Last updated ${formatDate(comment.last_updated)}`}
+              >
                 (edited)
               </span>
             )}
@@ -297,10 +290,13 @@ const ForumPage: React.FC = () => {
 
         <div className={styles.commentActions}>
           <button
-            className={`${styles.actionButton} ${comment.is_liked ? styles.liked : styles.notLiked}`}
+            className={`${styles.actionButton} ${comment.is_liked ? styles.liked : styles.notLiked
+              }`}
             onClick={() => handleCommentLike(comment)}
             disabled={isCommentLiking[comment.comment_id]}
-            aria-label={comment.is_liked ? "Unlike this comment" : "Like this comment"}
+            aria-label={
+              comment.is_liked ? "Unlike this comment" : "Like this comment"
+            }
           >
             {comment.is_liked ? (
               <FaHeart color="#ff0000" className={styles.heartIcon} />
@@ -308,7 +304,7 @@ const ForumPage: React.FC = () => {
               <FaRegHeart className={styles.heartIcon} />
             )}
             <span className={styles.likeCount}>
-              {comment.like_count || 0 > 0 ? comment.like_count : ''}
+              {comment.like_count || 0 > 0 ? comment.like_count : ""}
             </span>
             {isCommentLiking[comment.comment_id] && (
               <span className={styles.spinner} aria-hidden="true" />
@@ -330,19 +326,25 @@ const ForumPage: React.FC = () => {
 
           <button
             className={styles.actionButton}
-            onClick={() => setReportingComment(reportingComment === comment.comment_id ? null : comment.comment_id)}
+            onClick={() => {
+              setReportingComment(comment.comment_id);
+              setReportReason("");
+            }}
           >
             <FaFlag /> Report
           </button>
 
-          {(comment.is_owner) ? (
+          {comment.is_owner && (
             <button
               className={`${styles.actionButton} ${styles.deleteButton}`}
-              onClick={() => handleDeleteComment(comment.comment_id.toString())}
+              onClick={() => {
+                setCommentToDelete(comment.comment_id);
+                setShowDeleteModal(true);
+              }}
             >
               <FaTrash /> Delete
             </button>
-          ) : null}
+          )}
         </div>
 
         {replyingTo?.commentId === comment.comment_id && (
@@ -351,10 +353,12 @@ const ForumPage: React.FC = () => {
               className={styles.formTextarea}
               placeholder={`Reply to @${comment.commented_by}...`}
               value={replyCommentTexts[comment.comment_id] || ""}
-              onChange={(e) => setReplyCommentTexts({
-                ...replyCommentTexts,
-                [comment.comment_id]: e.target.value
-              })}
+              onChange={(e) =>
+                setReplyCommentTexts({
+                  ...replyCommentTexts,
+                  [comment.comment_id]: e.target.value,
+                })
+              }
               rows={3}
             />
             <div className={styles.buttonGroup}>
@@ -415,9 +419,13 @@ const ForumPage: React.FC = () => {
     ));
   };
 
-  if (!post) {
+  if (!post && loading) {
     return (
       <div className={styles.forumContainer}>
+        <ToastContainer />
+        <div className={styles.main_navbar}>
+          <Navbar />
+        </div>
         <div className={styles.loadingState}>
           <div className={styles.spinner}></div>
           <p>Loading post...</p>
@@ -426,30 +434,37 @@ const ForumPage: React.FC = () => {
     );
   }
 
+  if (!post) {
+    return (
+      <div className={styles.forumContainer}>
+        <ToastContainer />
+        <div className={styles.main_navbar}>
+          <Navbar />
+        </div>
+        <div className={styles.emptyState}>
+          <p className={styles.emptyMessage}>Post not found.</p>
+          <button
+            className={styles.primaryButton}
+            onClick={() => navigate("/forum")}
+          >
+            Back to Forum
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.forumContainer}>
+      <ToastContainer />
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
-
+      
       <div className={styles.headerContainer}>
-
-        {error && (
-          <div className={styles.errorAlert}>
-            <span className={styles.errorIcon}>⚠️</span> {error}
-          </div>
-        )}
-
-        {success && (
-          <div className={styles.alertSuccess}>
-            <span className={styles.successIcon}>✅</span> {success}
-          </div>
-        )}
-
-        <br /> <br />
-        {/* Post section */}
+        {/* Breadcrumbs */}
         <div className={styles.breadcrumbs}>
-          <span onClick={() => navigate('/forum')}>Forum</span> &gt;
+          <span onClick={() => navigate("/forum")}>Forum</span> &gt;
           <span onClick={() => navigate(`/forum/categories/${post.category_id}`)}>
             {post.category_name}
           </span> &gt;
@@ -458,6 +473,7 @@ const ForumPage: React.FC = () => {
           </span>
         </div>
 
+        {/* Post section */}
         <div className={styles.postHeader}>
           <div className={styles.postMeta}>
             <div className={styles.metaGroup}>
@@ -469,7 +485,10 @@ const ForumPage: React.FC = () => {
                 <FaCalendar className={styles.metaIcon} />
                 {formatDate(post.created_at)}
                 {post.created_at !== post.last_updated && (
-                  <span className={styles.updatedBadge} title={`Last updated ${formatDate(post.last_updated)}`}>
+                  <span
+                    className={styles.updatedBadge}
+                    title={`Last updated ${formatDate(post.last_updated)}`}
+                  >
                     (edited)
                   </span>
                 )}
@@ -490,17 +509,20 @@ const ForumPage: React.FC = () => {
 
           <div className={styles.postActions}>
             <button
-              className={`${styles.likeButton} ${post.is_liked ? styles.unlike : ''}`}
+              className={`${styles.likeButton} ${post.is_liked ? styles.unlike : ""
+                }`}
               onClick={handlePostLike}
               disabled={isPostLiking}
             >
-              <FaHeart className={post.is_liked ? styles.heartIcon : ''} />
+              <FaHeart className={post.is_liked ? styles.heartIcon : ""} />
               <span className={styles.likeCount}>{post.like_count}</span>
-              {isPostLiking && <span className={styles.spinner} aria-hidden="true" />}
+              {isPostLiking && (
+                <span className={styles.spinner} aria-hidden="true" />
+              )}
             </button>
 
             <div className={styles.tagContainer}>
-              {post.tags.map(tag => (
+              {post.tags.map((tag) => (
                 <span
                   key={tag.tag_id}
                   className={styles.tag}
@@ -518,7 +540,7 @@ const ForumPage: React.FC = () => {
           {post.is_owner ? (
             <div className={styles.dropdown}>
               <button className={styles.dropdownToggle}>
-                <FiMoreVertical /> {/* Three dots icon */}
+                <FiMoreVertical />
               </button>
               <div className={styles.dropdownMenu}>
                 <button
@@ -529,58 +551,32 @@ const ForumPage: React.FC = () => {
                 </button>
                 <button
                   className={`${styles.dropdownItem} ${styles.deleteItem}`}
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this post?')) {
-                      handleDeletePost(post.post_id.toString());
-                    }
-                  }}
+                  onClick={() => setShowDeleteModal(true)}
                 >
                   <AiFillDelete className={styles.dropdownIcon} /> Delete Post
                 </button>
-
-                <button className={styles.reportButton} onClick={() => setShowReportPopup(true)}>
+                <button
+                  className={styles.reportButton}
+                  onClick={() => setShowReportPopup(true)}
+                >
                   <MdReportProblem className={styles.reportIcon} /> Report
                 </button>
               </div>
             </div>
-          ) : null }
+          ) : null}
         </div>
 
         <div className={styles.postContent}>
-          <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
+          <ReactMarkdown>
+            {post.content || "*No content to display*"}
+          </ReactMarkdown>
         </div>
-
-        {showReportPopup && (
-          <div className={styles.popupOverlay}>
-            <div className={styles.popup}>
-              <h3>Report Post</h3>
-              <textarea
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-                placeholder="Enter reason for reporting"
-                className={styles.textarea}
-              />
-              {reportError && <div className={styles.errorText}>{reportError}</div>}
-              <div className={styles.popupActions}>
-                <button
-                  className={styles.primaryButton}
-                  onClick={handleReportSubmit}
-                  disabled={reportSubmitting}
-                >
-                  {reportSubmitting ? "Submitting..." : "Submit Report"}
-                </button>
-                <button className={styles.cancelButton} onClick={() => setShowReportPopup(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
 
         {/* Comment section */}
         <div className={styles.commentsSection}>
-          <h2 className={styles.pageTitle}>Comments ({requestComment.countTotalComments(comments)})</h2>
+          <h2 className={styles.pageTitle}>
+            Comments ({requestComment.countTotalComments(comments)})
+          </h2>
 
           <form
             onSubmit={(e) => {
@@ -615,12 +611,63 @@ const ForumPage: React.FC = () => {
               renderComments(comments)
             ) : (
               <div className={styles.emptyState}>
-                <p className={styles.emptyMessage}>No comments yet. Be the first to comment!</p>
+                <p className={styles.emptyMessage}>
+                  No comments yet. Be the first to comment!
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Report Popup */}
+      {showReportPopup && (
+        <div className={styles.popupOverlay}>
+          <div className={styles.popup}>
+            <h3>Report Post</h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Enter reason for reporting"
+              className={styles.textarea}
+            />
+            <div className={styles.popupActions}>
+              <button
+                className={styles.primaryButton}
+                onClick={handleReportSubmit}
+                disabled={reportSubmitting}
+              >
+                {reportSubmitting ? "Submitting..." : "Submit Report"}
+              </button>
+              <button
+                className={styles.cancelButton}
+                onClick={() => setShowReportPopup(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title={commentToDelete ? "Delete Comment" : "Delete Post"}
+        message={
+          commentToDelete
+            ? "Are you sure you want to delete this comment? This action cannot be undone."
+            : "Are you sure you want to delete this post? All comments will be permanently removed. This action cannot be undone."
+        }
+        onConfirm={commentToDelete ? handleDeleteComment : handleDeletePost}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setCommentToDelete(null);
+        }}
+        confirmText={commentToDelete ? "Delete Comment" : "Delete Post"}
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

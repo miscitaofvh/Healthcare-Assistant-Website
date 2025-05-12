@@ -54,8 +54,7 @@ router.get("/categories",
         asyncHandler(categoryController.getAllCategories)
 );
 
-router.get("/categories/summary",
-        paginate({ limit: 5 }),
+router.get("/categories/summary/",
         asyncHandler(categoryController.getSummaryCategories)
 );
 
@@ -392,7 +391,6 @@ router.get("/tags",
 );
 
 router.get("/tags/summary",
-        paginate({ limit: 5 }),
         forumValidatorsTag.validateTagQuery,
         asyncHandler(tagController.getSummaryTags)
 );

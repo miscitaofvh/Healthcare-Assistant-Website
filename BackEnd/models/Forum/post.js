@@ -68,16 +68,15 @@ const getAllPostsDB = async (page, limit, orderByField, orderDirection) => {
     }
 };
 
-const getPostByIdDB = async (postId, options = {}) => {
+const getPostByIdDB = async (postId, options = {}, author_id) => {
     const {
         includeComments = false,
-        includeCommentReplies = true,
+        includeCommentReplies = false,
         includeStats = true,
         includeTags = true,
         includeAuthor = true,
         includeThread = true,
         includeCategory = true,
-        currentUserId = null
     } = options;
 
     let conn;
@@ -88,43 +87,43 @@ const getPostByIdDB = async (postId, options = {}) => {
         // Main post query
         const postSql = `
             SELECT 
-                p.*,
+                p.post_id,
+                p.title,
+                p.content,
+                p.created_at, p.last_updated,
+                ${includeStats ? `
+                p.view_count,
+                p.like_count,
+                p.comment_count,` : ''}
                 ${includeAuthor ? `
-                u.user_id AS author_id,
-                u.username AS author_name,
-                u.join_date AS author_join_date,
+                u.username AS created_by,
                 ` : ''}
+                p.thread_id,
                 ${includeThread ? `
-                t.thread_id,
                 t.thread_name,
                 t.description AS thread_description,
                 ` : ''}
                 ${includeCategory ? `
                 c.category_id,
                 c.category_name,
+                c.description as category_description,
                 ` : ''}
-                ${includeStats ? `
-                COUNT(DISTINCT l.like_id) AS like_count,
-                COUNT(DISTINCT cm.comment_id) AS comment_count,
-                ` : ''}
-                ${currentUserId ? `
+                ${author_id ? `
                 EXISTS(
                     SELECT 1 FROM forum_likes 
                     WHERE post_id = p.post_id AND user_id = ?
                 ) AS is_liked,
                 ` : 'false AS is_liked,'}
-                ${currentUserId ? `p.user_id = ? AS is_owner` : 'false AS is_owner'}
+                ${author_id ? `p.user_id = ? AS is_owner` : 'false AS is_owner'}
             FROM forum_posts p
             ${includeAuthor ? 'JOIN users u ON p.user_id = u.user_id' : ''}
             ${includeThread ? 'JOIN forum_threads t ON p.thread_id = t.thread_id' : ''}
             ${includeCategory ? 'JOIN forum_categories c ON t.category_id = c.category_id' : ''}
-            ${includeStats ? 'LEFT JOIN forum_likes l ON p.post_id = l.post_id' : ''}
-            ${includeStats ? 'LEFT JOIN forum_comments cm ON p.post_id = cm.post_id' : ''}
             WHERE p.post_id = ?
             GROUP BY p.post_id
         `;
 
-        const postParams = currentUserId ? [currentUserId, currentUserId, postId] : [postId];
+        const postParams = author_id ? [author_id, author_id, postId] : [postId];
         const [postRows] = await conn.execute(postSql, postParams);
 
         if (postRows.length === 0) {
@@ -133,7 +132,6 @@ const getPostByIdDB = async (postId, options = {}) => {
 
         const post = postRows[0];
 
-        // Get tags if requested
         if (includeTags) {
             const [tags] = await conn.execute(`
                 SELECT ft.tag_id, ft.tag_name
@@ -144,7 +142,6 @@ const getPostByIdDB = async (postId, options = {}) => {
             post.tags = tags;
         }
 
-        // Get comments if requested
         if (includeComments) {
             const commentsSql = `
                 SELECT 
@@ -152,13 +149,13 @@ const getPostByIdDB = async (postId, options = {}) => {
                     u.user_id AS author_id,
                     u.username AS author_name,
                     COUNT(DISTINCT cl.like_id) AS like_count,
-                    ${currentUserId ? `
+                    ${author_id ? `
                     EXISTS(
                         SELECT 1 FROM forum_comment_likes 
                         WHERE comment_id = c.comment_id AND user_id = ?
                     ) AS is_liked,
                     ` : 'false AS is_liked,'}
-                    ${currentUserId ? `c.user_id = ? AS is_owner` : 'false AS is_owner'}
+                    ${author_id ? `c.user_id = ? AS is_owner` : 'false AS is_owner'}
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.user_id
                 LEFT JOIN forum_comment_likes cl ON c.comment_id = cl.comment_id
@@ -167,7 +164,7 @@ const getPostByIdDB = async (postId, options = {}) => {
                 ORDER BY c.thread_path, c.created_at
             `;
 
-            const commentsParams = currentUserId ? [currentUserId, currentUserId, postId] : [postId];
+            const commentsParams = author_id ? [author_id, author_id, postId] : [postId];
             const [comments] = await conn.execute(commentsSql, commentsParams);
 
             if (includeCommentReplies) {
@@ -203,7 +200,6 @@ const createPostDB = async (userId, threadId, title, content, tags = []) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Verify thread exists and get category
         const [thread] = await conn.execute(`
             SELECT thread_id, category_id 
             FROM forum_threads 
@@ -215,8 +211,6 @@ const createPostDB = async (userId, threadId, title, content, tags = []) => {
         }
 
         const categoryId = thread[0].category_id;
-
-        // Insert the post
         const [postResult] = await conn.execute(`
             INSERT INTO forum_posts (
                 thread_id, 
@@ -228,61 +222,60 @@ const createPostDB = async (userId, threadId, title, content, tags = []) => {
 
         const postId = postResult.insertId;
 
-        // Process tags if provided
         if (tags && tags.length > 0) {
-            // Get existing tags
-            const [existingTags] = await conn.execute(`
+            const [existingTags] = await conn.query(`
                 SELECT tag_id, tag_name 
                 FROM forum_tags 
                 WHERE tag_name IN (?)
             `, [tags]);
 
-            const tagMap = new Map(existingTags.map(tag => [tag.tag_name.toLowerCase(), tag.tag_id]));
-            const tagsToInsert = tags.filter(tag => !tagMap.has(tag.toLowerCase()));
+            const tagMap = new Map(existingTags.map(tag => [tag.tag_name, tag.tag_id]));
+            const tagsToInsert = tags.filter(tag => !tagMap.has(tag));
 
-            // Insert new tags
-            if (tagsToInsert.length > 0) {
-                const tagInsertValues = tagsToInsert.map(tag => [tag, userId]).flat();
-                const placeholders = tagsToInsert.map(() => '(?, ?)').join(', ');
+            for (const tag of tagsToInsert) {
+                try {
+                    const [insertResult] = await conn.execute(`
+                        INSERT INTO forum_tags (tag_name, user_id) 
+                        VALUES (?, ?)
+                    `, [tag, userId]);
 
-                const [insertResult] = await conn.execute(`
-                    INSERT INTO forum_tags (tag_name, user_id) 
-                    VALUES ${placeholders}
-                `, tagInsertValues);
-
-                // Add new tags to the map
-                for (let i = 0; i < tagsToInsert.length; i++) {
-                    tagMap.set(
-                        tagsToInsert[i].toLowerCase(),
-                        insertResult.insertId + i
-                    );
+                    tagMap.set(tag, insertResult.insertId);
+                } catch (err) {
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        const [[existingTag]] = await conn.execute(`
+                            SELECT tag_id FROM forum_tags WHERE tag_name = ?
+                        `, [tag]);
+                        tagMap.set(tag, existingTag.tag_id);
+                    } else {
+                        throw err;
+                    }
                 }
             }
 
-            // Create tag mappings
-            const tagMappingValues = tags.map(tag => [postId, tagMap.get(tag.toLowerCase())]);
+            const tagMappingValues = tags.map(tag => [postId, tagMap.get(tag)]);
             await conn.query(`
                 INSERT INTO forum_tags_mapping (post_id, tag_id) 
                 VALUES ?
             `, [tagMappingValues]);
 
-            // Update tag usage counts
-            await conn.execute(`
-                UPDATE forum_tags 
-                SET usage_count = usage_count + 1, 
-                    last_used_at = NOW() 
-                WHERE tag_id IN (?)
-            `, [Array.from(tagMap.values())]);
+            if (tagMap.size > 0) {
+                const tagIds = Array.from(tagMap.values());
+                await conn.execute(`
+                    UPDATE forum_tags 
+                    SET usage_count = usage_count + 1, 
+                        last_used_at = NOW() 
+                    WHERE tag_id IN (${tagIds.map(() => '?').join(',')})
+                `, tagIds);
+            }
         }
 
-        // Record activity
         await conn.execute(`
             INSERT INTO forum_activities (
                 user_id, 
                 activity_type, 
                 target_type, 
                 target_id
-            ) VALUES (?, 'post', 'post', ?)
+            ) VALUES (?, 'post', 'create', ?)
         `, [userId, postId]);
 
         await conn.commit();
@@ -302,54 +295,31 @@ const createPostDB = async (userId, threadId, title, content, tags = []) => {
     }
 };
 
-const updatePostDB = async (postId, userId, updateData) => {
+const updatePostDB = async (postId, userId, title, content, tags = []) => {
     let conn;
     try {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Verify post exists and belongs to user (unless admin)
-        const [post] = await conn.execute(`
-            SELECT user_id 
-            FROM forum_posts 
-            WHERE post_id = ?
-        `, [postId]);
-
-        if (post.length === 0) {
-            throw new Error('Post not found');
-        }
-
-        if (post[0].user_id !== userId) {
-            throw new Error('Unauthorized to update this post');
-        }
-
-        // Build dynamic update query
         const updates = [];
         const params = [];
 
-        if (updateData.title !== undefined) {
+        if (title !== undefined) {
             updates.push('title = ?');
-            params.push(updateData.title);
+            params.push(title);
         }
 
-        if (updateData.content !== undefined) {
+        if (content !== undefined) {
             updates.push('content = ?');
-            params.push(updateData.content);
-        }
-
-        if (updateData.threadId !== undefined) {
-            updates.push('thread_id = ?');
-            params.push(updateData.threadId);
+            params.push(content);
         }
 
         if (updates.length === 0) {
             throw new Error('No valid fields to update');
         }
 
-        // Add postId to params
         params.push(postId);
 
-        // Execute update
         await conn.execute(`
             UPDATE forum_posts 
             SET ${updates.join(', ')}, 
@@ -357,26 +327,23 @@ const updatePostDB = async (postId, userId, updateData) => {
             WHERE post_id = ?
         `, params);
 
-        // Handle tags if provided
-        if (updateData.tags !== undefined) {
-            // Remove existing tag mappings
+        if (tags) {
             await conn.execute(`
                 DELETE FROM forum_tags_mapping 
                 WHERE post_id = ?
             `, [postId]);
 
-            if (updateData.tags.length > 0) {
-                // Process tags similar to createPostDB
-                const [existingTags] = await conn.execute(`
+            if (tags.length > 0) {
+                const [existingTags] = await conn.query(`
                     SELECT tag_id, tag_name 
                     FROM forum_tags 
                     WHERE tag_name IN (?)
-                `, [updateData.tags]);
+                `, [tags]);
 
-                const tagMap = new Map(existingTags.map(tag => [tag.tag_name.toLowerCase(), tag.tag_id]));
-                const tagsToInsert = updateData.tags.filter(tag => !tagMap.has(tag.toLowerCase()));
+                const tagMap = new Map(existingTags.map(tag => [tag.tag_name, tag.tag_id]));
+                const tagsToInsert = tags.filter(tag => !tagMap.has(tag));
 
-                // Insert new tags
+
                 if (tagsToInsert.length > 0) {
                     const tagInsertValues = tagsToInsert.map(tag => [tag, userId]).flat();
                     const placeholders = tagsToInsert.map(() => '(?, ?)').join(', ');
@@ -386,45 +353,43 @@ const updatePostDB = async (postId, userId, updateData) => {
                         VALUES ${placeholders}
                     `, tagInsertValues);
 
-                    // Add new tags to the map
                     for (let i = 0; i < tagsToInsert.length; i++) {
                         tagMap.set(
-                            tagsToInsert[i].toLowerCase(),
+                            tagsToInsert[i],
                             insertResult.insertId + i
                         );
                     }
                 }
 
-                // Create tag mappings
-                const tagMappingValues = updateData.tags.map(tag => [postId, tagMap.get(tag.toLowerCase())]);
+                const tagMappingValues = tags.map(tag => [postId, tagMap.get(tag)]);
                 await conn.query(`
                     INSERT INTO forum_tags_mapping (post_id, tag_id) 
                     VALUES ?
                 `, [tagMappingValues]);
 
-                // Update tag usage counts
-                await conn.execute(`
-                    UPDATE forum_tags 
-                    SET usage_count = usage_count + 1, 
-                        last_used_at = NOW() 
-                    WHERE tag_id IN (?)
-                `, [Array.from(tagMap.values())]);
+                if (tagMap.size > 0) {
+                    const tagIds = Array.from(tagMap.values());
+                    await conn.execute(`
+                        UPDATE forum_tags 
+                        SET usage_count = usage_count + 1, 
+                            last_used_at = NOW() 
+                        WHERE tag_id IN (${tagIds.map(() => '?').join(',')})
+                    `, tagIds);
+                }
             }
         }
 
-        // Record activity
         await conn.execute(`
             INSERT INTO forum_activities (
                 user_id, 
                 activity_type, 
                 target_type, 
                 target_id
-            ) VALUES (?, 'post_update', 'post', ?)
+            ) VALUES (?, 'post', 'update', ?)
         `, [userId, postId]);
 
         await conn.commit();
 
-        // Return updated post
         return getPostByIdDB(postId, {
             includeComments: false,
             includeStats: true,
@@ -445,23 +410,6 @@ const deletePostDB = async (postId, userId, isAdmin = false, reason = null) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        // Verify post exists
-        const [post] = await conn.execute(`
-            SELECT user_id 
-            FROM forum_posts 
-            WHERE post_id = ?
-        `, [postId]);
-
-        if (post.length === 0) {
-            throw new Error('Post not found');
-        }
-
-        // Check authorization (owner or admin)
-        if (post[0].user_id !== userId && !isAdmin) {
-            throw new Error('Unauthorized to delete this post');
-        }
-
-        // Record deletion
         await conn.execute(`
             INSERT INTO forum_post_deletions (
                 post_id, 
@@ -470,20 +418,18 @@ const deletePostDB = async (postId, userId, isAdmin = false, reason = null) => {
             ) VALUES (?, ?, ?)
         `, [postId, userId, reason || null]);
 
-        // Delete post (cascades to comments, likes, tags_mapping)
         await conn.execute(`
             DELETE FROM forum_posts 
             WHERE post_id = ?
         `, [postId]);
 
-        // Record activity
         await conn.execute(`
             INSERT INTO forum_activities (
                 user_id, 
                 activity_type, 
                 target_type, 
                 target_id
-            ) VALUES (?, 'post_delete', 'post', ?)
+            ) VALUES (?, 'post', 'delete', ?)
         `, [userId, postId]);
 
         await conn.commit();

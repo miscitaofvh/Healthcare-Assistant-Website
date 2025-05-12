@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 
 import InteractComment from "../../../utils/api/Forum/comment";
 import { CommentPost } from "../../../types/Forum/comment";
@@ -23,26 +24,15 @@ const addCommenttoPost = async (
     parentCommentId: string | undefined,
     depth: number | undefined,
     setCommentText: (text: string) => void,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => Promise<void>
 ): Promise<void> => {
     try {
-        if (!postId) {
-            setError('Invalid post ID');
-        }
-
-        const trimmedComment = commentText.trim();
-        if (!trimmedComment) {
-            setError('Comment cannot be empty');
-        }
-
-        setError('');
-        setSuccess('');
 
         const commentData = {
             postId,
-            content: trimmedComment,
+            content: commentText,
             parent_comment_id: parentCommentId,
             depth: depth || 0
         };
@@ -51,12 +41,12 @@ const addCommenttoPost = async (
         const { status, data } = response;
 
         if (status !== 201 || !data?.success) {
-            setError(data?.message || 'Failed to create comment');
+            showError(data?.message || 'Failed to create comment');
             return;
         }
 
         setCommentText('');
-        setSuccess(parentCommentId ? 'Reply posted successfully' : 'Comment posted successfully');
+        showSuccess(parentCommentId ? 'Reply posted successfully' : 'Comment posted successfully');
 
         await onSuccess();
 
@@ -67,32 +57,29 @@ const addCommenttoPost = async (
                 ? err
                 : 'Failed to post comment';
 
-        setError(errorMessage);
-        setSuccess('');
+        showSuccess(errorMessage);
     }
 };
 
 const deleteCommentFromPost = async (
     commentId: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
-    refetchComments: () => Promise<void>
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
+    refetchComments: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         const response = await InteractComment.deleteComment(commentId);
 
         const { data, status } =  response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message || 'Failed to delete comment');
+            showError(data?.message || 'Failed to delete comment');
         }
 
-        setSuccess(data.message || 'Comment deleted successfully');
+        showSuccess(data.message || 'Comment deleted successfully');
         await refetchComments();
 
     } catch (err: unknown) {
@@ -104,8 +91,7 @@ const deleteCommentFromPost = async (
             errorMessage = err;
         }
 
-        setError(errorMessage);
-        setSuccess('');
+        showError(errorMessage);
     } finally {
         setLoading(false);
     }

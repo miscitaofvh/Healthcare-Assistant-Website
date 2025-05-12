@@ -6,12 +6,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import InteractPost from "../../../../utils/service/Forum/post";
-import { PostListResponse } from "../../../../types/Forum/post";
+import { PostListMain } from "../../../../types/Forum/post";
 import { PaginationData } from "../../../../types/Forum/pagination";
 import { formatDate, stripMarkdown } from "../../../../utils/helpers/dateFormatter";
 
 const PostList: React.FC = () => {
-  const [posts, setPosts] = useState<PostListResponse[]>([]);
+  const [posts, setPosts] = useState<PostListMain[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState<PaginationData>({
     currentPage: 1,
@@ -197,6 +197,10 @@ const PostList: React.FC = () => {
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>Likes:</span>
                       <span className={styles.metaValue}>{post.like_count}</span>
+                    </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Comments:</span>
+                      <span className={styles.metaValue}>{post.comment_count}</span>
                     </div>
                     {post.tags.length > 0 && (
                       <div className={styles.metaItem}>

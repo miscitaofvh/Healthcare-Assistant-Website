@@ -72,9 +72,8 @@ const getAllTagsDB = async (page = 1, limit = 20, search = '', sortBy = 'usage_c
     }
 };
 
-const getSummaryTagsDB = async (page = 1, limit = 20, search = '', sortBy = 'tag_name', sortOrder = 'DESC') => {
+const getSummaryTagsDB = async () => {
     let conn;
-    const offset = (page - 1) * limit;
 
     try {
         conn = await connection.getConnection();
@@ -83,46 +82,17 @@ const getSummaryTagsDB = async (page = 1, limit = 20, search = '', sortBy = 'tag
         const tagsSql = `
             SELECT 
                 t.tag_id, 
-                t.tag_name, 
-                t.description,
-                COUNT(DISTINCT tm.post_id) AS post_count,
-                (
-                    SELECT COUNT(*) OVER()
-                    FROM forum_tags
-                    WHERE tag_name LIKE ?
-                ) AS total_count
+                t.tag_name,
+                t.description
             FROM forum_tags t
-            LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
-            WHERE t.tag_name LIKE ?
-            GROUP BY t.tag_id
-            ORDER BY ${conn.escapeId(sortBy)} ${sortOrder === 'ASC' ? 'ASC' : 'DESC'}
-            LIMIT ? OFFSET ?
         `;
 
-        const [tags] = await conn.execute(tagsSql, [
-            `%${search}%`,
-            `%${search}%`,
-            limit.toString(),
-            offset.toString()
-        ]);
-
-        const totalTags = tags.length > 0 ? tags[0].total_count : 0;
-        const cleanTags = tags.map(({ total_count, ...rest }) => rest);
+        const tags  = await conn.execute(tagsSql);
 
         await conn.commit();
 
-        return {
-            tags: cleanTags,
-            pagination: {
-                totalItems: Number(totalTags),
-                currentPage: page,
-                totalPages: Math.ceil(Number(totalTags) / limit),
-                itemsPerPage: limit,
-                limit: limit,
-                sortBy: sortBy,
-                sortOrder: sortOrder
-            }
-        };
+        return tags[0] || {};
+
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in getSummaryTagsDB:", error);

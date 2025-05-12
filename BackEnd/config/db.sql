@@ -382,8 +382,8 @@ CREATE INDEX idx_forum_thread ON forum(thread_id);
 CREATE TABLE forum_activities (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
-    activity_type ENUM('post', 'comment', 'like', 'report') NOT NULL,
-    target_type ENUM('post', 'comment') NOT NULL,
+    activity_type ENUM('category', 'thread', 'post', 'comment', 'like', 'report') NOT NULL,
+    target_type ENUM('create', 'update', 'delete') NOT NULL,
     target_id INT UNSIGNED NOT NULL,
     activity_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

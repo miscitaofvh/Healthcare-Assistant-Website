@@ -8,7 +8,7 @@ async function getAllCategories(page = 1, limit = 10, sortBy = 'name', sortOrder
 }
 
 async function getSummaryCategories() {
-    const response = await requestAPI(BASE_URL, "/categories/summary/", "GET");
+    const response = await requestAPI(BASE_URL, "/categories/summary", "GET");
     return response;
 }
 

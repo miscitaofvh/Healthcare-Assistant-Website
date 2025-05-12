@@ -17,7 +17,7 @@ export interface PostbyTag {
     report_count?: number;
 }
 
-export interface PostListResponse {
+export interface PostListMain {
     created_by: string;
     category_id: number;
     category_name: string;
@@ -29,6 +29,7 @@ export interface PostListResponse {
     created_at: string;
     last_updated: string;
     like_count: number;
+    comment_count: number;
     tags: SummaryTag[];
 }
 
@@ -48,13 +49,12 @@ export interface NewPost {
     thread_id: number;
     title: string;
     content: string;
-    tag_name: string[];
+    tags: string[];
 }
 
 export interface Post {
     post_id: number;
     created_by: string;
-    created_by_id: number;
     title: string;
     content: string;
     created_at: string;

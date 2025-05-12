@@ -2,7 +2,7 @@ import { toast } from 'react-toastify';
 import { Dispatch, SetStateAction } from "react";
 
 import InteractPost from "../../../utils/api/Forum/post";
-import { PostListResponse, Post, NewPost } from "../../../types/Forum/post";
+import { PostListMain, Post, NewPost } from "../../../types/Forum/post";
 import { CommentPost } from "../../../types/Forum/comment";
 import { PaginationData } from "../../../types/Forum/pagination";
 import { SummaryTag } from "../../../types/Forum/tag";
@@ -12,7 +12,7 @@ import { ThreadDropdown } from "../../../types/Forum/thread";
 // Posts list functions
 const loadPosts = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setPosts: (posts: PostListResponse[]) => void,
+    setPosts: (posts: PostListMain[]) => void,
     setPagination: Dispatch<SetStateAction<PaginationData>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
@@ -56,25 +56,22 @@ const loadPosts = async (
 
 const loadPostPageById = async (
     id: string,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setLoading: Dispatch<SetStateAction<boolean>>,
     setPost: (post: Post | null) => void,
     setComments: (comments: CommentPost[]) => void,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess?: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         const response = await InteractPost.getPostById(`${id}?includeComments=true&includeStats=true&includeCommentReplies=true`);
 
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
-            setSuccess("");
+            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
             return;
         }
         const post = data.post;
@@ -86,11 +83,15 @@ const loadPostPageById = async (
         const comments = Array.isArray(post.comments) ? post.comments : [];
         setPost(post);
         setComments(comments);
-        // setSuccess('Post loaded successfully');
 
-        if (onSuccess) {
-            onSuccess();
-        }
+        showSuccess("Post loaded successfully");
+
+        setTimeout(() => {
+            if (onSuccess) {
+                onSuccess();
+            }
+        }, 2000);
+
     } catch (err: unknown) {
         let errorMessage = 'Failed to load post';
 
@@ -100,7 +101,7 @@ const loadPostPageById = async (
             errorMessage = err;
         }
 
-        setError(errorMessage);
+        showError(errorMessage);
         setPost(null);
         setComments([]);
     } finally {
@@ -114,21 +115,17 @@ const loadUpdatePostFE = async (
     setPost: (post: Post | null) => void,
     setCategories: (categories: SummaryCategory[]) => void,
     setThreads: (threads: ThreadDropdown[]) => void,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess?: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
-
         const response = await InteractPost.getPostById(id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(data?.message ?? "Lỗi không xác định từ máy chủ.");
-            setSuccess("");
+            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
         }
 
         const post = data.post;
@@ -152,7 +149,7 @@ const loadUpdatePostFE = async (
             },
         ]);
 
-        setSuccess("Post loaded successfully");
+        showSuccess("Post loaded successfully");
 
         if (onSuccess) {
             setTimeout(onSuccess, 2000);
@@ -162,7 +159,7 @@ const loadUpdatePostFE = async (
         if (err instanceof Error) errorMessage = err.message;
         else if (typeof err === "string") errorMessage = err;
 
-        setError(errorMessage);
+        showError(errorMessage);
     } finally {
         setLoading(false);
     }
@@ -171,26 +168,23 @@ const loadUpdatePostFE = async (
 const createPostFE = async (
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     postNew: NewPost,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess?: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         const response = await InteractPost.createPost(postNew);
 
         const { status, data } = response;
 
         if (status !== 201 || !data?.success) {
-            setError(data?.message || 'Failed to create post: Server error');
-            setSuccess('');
+            showError(data?.message || 'Failed to create post: Server error');
             return;
         }
 
-        setSuccess('Post created successfully');
+        showSuccess('Post created successfully');
 
         if (onSuccess) {
             setTimeout(onSuccess, 2000);
@@ -204,7 +198,7 @@ const createPostFE = async (
             errorMessage = err;
         }
 
-        setError(errorMessage);
+        showError(errorMessage);
     } finally {
         setLoading(false);
     }
@@ -214,26 +208,23 @@ const updatePostFE = async (
     id: string,
     postData: any,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess?: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         const response = await InteractPost.updatePost(id || '', postData);
 
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            setError(response.data?.message || 'Failed to delete post: Server error');
-            setSuccess('');
+            showError(response.data?.message || 'Failed to delete post: Server error');
             return;
         }
 
-        setSuccess('Post updated successfully');
+        showSuccess('Post updated successfully');
 
         if (onSuccess) {
             setTimeout(onSuccess, 2000); // Delay redirect to show success message
@@ -247,7 +238,7 @@ const updatePostFE = async (
             errorMessage = err;
         }
 
-        setError(errorMessage);
+        showError(errorMessage);
     } finally {
         setLoading(false);
     }
@@ -256,22 +247,23 @@ const updatePostFE = async (
 const deletePostFE = async (
     id: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setError: React.Dispatch<React.SetStateAction<string>>,
-    setSuccess: React.Dispatch<React.SetStateAction<string>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess?: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         const response = await InteractPost.deletePost(id);
 
-        if (response.status !== 200 || !response.data?.success) {
-            throw new Error(response.data?.message || 'Failed to delete post: Server error');
+        const { status, data } = response;
+
+        if (status !== 200 || !data?.success) {
+            showError(data?.message || 'Failed to delete post: Server error');
+            return;
         }
 
-        setSuccess('Post deleted successfully');
+        showSuccess('Post deleted successfully');
 
         if (onSuccess) {
             setTimeout(onSuccess, 2000); // Delay redirect to show success message
@@ -285,7 +277,7 @@ const deletePostFE = async (
             errorMessage = err;
         }
 
-        setError(errorMessage);
+        showError(errorMessage);
     } finally {
         setLoading(false);
     }

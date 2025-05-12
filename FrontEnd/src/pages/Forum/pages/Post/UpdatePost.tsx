@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
 import requestPost from "../../../../utils/service/Forum/post";
 import requestTag from "../../../../utils/service/Forum/tag";
 import requestImage from "../../../../utils/service/Forum/image";
 import { SummaryCategory } from "../../../../types/Forum/category";
 import { ThreadDropdown } from "../../../../types/Forum/thread";
-import { Tag } from "../../../../types/Forum/tag";
+import { SummaryTag, Tag } from "../../../../types/Forum/tag";
 import { Post, NewPost } from "../../../../types/Forum/post";
 
 const UpdatePost: React.FC = () => {
@@ -19,25 +20,33 @@ const UpdatePost: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [categories, setCategories] = useState<SummaryCategory[]>([]);
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [tags, setTags] = useState<SummaryTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<SummaryTag[]>([]);
+  const [formLoading, setFormLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [tagsLoading, setTagsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        await requestPost.loadUpdatePostFE(id || "", setLoading, setPost, setCategories, setThreads, setError, () => {});
-        // await requestTag.loadTagsPostSummary(setTagsLoading, setTags, setError, () => {});
+        await requestPost.loadUpdatePostFE(
+          id || "",
+          setInitialLoad,
+          setPost,
+          setCategories,
+          setThreads,
+          (error) => toast.error(error),
+          () => toast.success("Post loaded successfully")
+        );
+        requestTag.loadTagsPostSummary(
+          setTagsLoading, 
+          setTags, 
+          (error) => toast.error(error), 
+          () => { });
       } catch {
-        setError("Failed to load post details.");
-      } finally {
-        setLoading(false);
+        toast.error("Failed to load post details");
       }
     };
     fetchData();
@@ -45,55 +54,45 @@ const UpdatePost: React.FC = () => {
 
   useEffect(() => {
     if (!post) return;
-    const filtered = tags.filter(tag => !post.tags.some(t => t.tag_name === tag.tag_name));
-    setAvailableTags(filtered);
+    setAvailableTags(tags.filter(tag => !post.tags.some(t => t.tag_name === tag.tag_name)));
   }, [tags, post?.tags]);
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(""), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
 
   const handleInputChange = (field: keyof Post, value: any) => {
     if (!post) return;
-    setError("");
-    setSuccess("");
     setPost({ ...post, [field]: value });
   };
 
   const handleAddTag = (tagName: string) => {
     if (!post || !tagName || post.tags.some(t => t.tag_name === tagName)) return;
     const tag = tags.find(t => t.tag_name === tagName);
-    // if (tag) setPost(prev => ({ ...prev!, tags: [...prev!.tags, tag] }));
+    if (tag) {
+      setPost({ ...post, tags: [...post.tags, tag] });
+    }
   };
 
   const removeTag = (tagName: string) => {
     if (!post) return;
-    setPost(prev => ({ ...prev!, tags: prev!.tags.filter(t => t.tag_name !== tagName) }));
+    setPost({ ...post, tags: post.tags.filter(t => t.tag_name !== tagName) });
   };
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (const item of Array.from(items)) {
       if (item.kind === 'file' && item.type.startsWith('image/')) {
         e.preventDefault();
         const file = item.getAsFile();
-        if (!file) return toast.error("Không thể đọc ảnh từ clipboard.");
+        if (!file) {
+          toast.error("Cannot read image from clipboard");
+          return;
+        }
         const maxSizeMB = 5;
-        if (file.size > maxSizeMB * 1024 * 1024) return toast.error(`Kích thước file quá lớn. Giới hạn ${maxSizeMB}MB.`);
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          toast.error(`File size exceeds ${maxSizeMB}MB limit`);
+          return;
+        }
 
         try {
-          toast.info("Đang tải hình ảnh lên...");
+          toast.info("Uploading image...");
           const formData = new FormData();
           formData.append("forumImage", file);
           formData.append("folder", "forum-images");
@@ -111,9 +110,9 @@ const UpdatePost: React.FC = () => {
               markdownImage +
               prev!.content.slice(cursorPos),
           }));
-          toast.success("Hình ảnh đã được chèn vào bài viết!");
+          toast.success("Image inserted successfully!");
         } catch (err: any) {
-          toast.error(err?.response?.data?.message || "Không thể tải lên hình ảnh");
+          toast.error(err?.response?.data?.message || "Failed to upload image");
         }
       }
     }
@@ -121,33 +120,48 @@ const UpdatePost: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!post) return setError("Invalid post data.");
+    if (!post || !post.thread_id) {
+      toast.error("Invalid post data");
+      return;
+    }
+
+    const updatePayload: NewPost = {
+      thread_id: post.thread_id,
+      title: post.title.trim(),
+      content: post.content.trim(),
+      tags: post.tags.map(tag => tag.tag_name),
+    };
 
     try {
-      const updatePayload: NewPost = {
-        thread_id: post.thread_id,
-        title: post.title,
-        content: post.content,
-        tag_name: post.tags.map(tag => tag.tag_name),
-      };
-
-      await requestPost.updatePostFE(id || "", updatePayload, setLoading, setError, setSuccess, () => {
-        navigate(`/forum/posts/${id}`);
-      });
+      setFormLoading(true);
+      await requestPost.updatePostFE(
+        id || "",
+        updatePayload,
+        setFormLoading,
+        (error) => toast.error(error),
+        (success) => toast.success(success),
+        () => {
+          toast.success("Post updated successfully!");
+          navigate(`/forum/posts/${id}`);
+        }
+      );
     } catch {
-      setError("Failed to update post.");
+      toast.error("Failed to update post. Please try again.");
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
-  if (!post) {
+  if (initialLoad) {
     return (
       <div className={styles.forumContainer}>
-        <div className={styles.main_navbar}><Navbar /></div>
+        <ToastContainer position="top-right" autoClose={5000} />
+        <div className={styles.main_navbar}>
+          <Navbar />
+        </div>
         <div className={styles.loadingState}>
           <div className={styles.spinner}></div>
-          <p>Loading post data...</p>
+          <p>Loading post information...</p>
         </div>
       </div>
     );
@@ -155,155 +169,163 @@ const UpdatePost: React.FC = () => {
 
   return (
     <div className={styles.forumContainer}>
-      <div className={styles.main_navbar}><Navbar /></div>
+      <ToastContainer position="top-right" autoClose={5000} />
+      <div className={styles.main_navbar}>
+        <Navbar />
+      </div>
 
       <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Update Post</h1>
-          <p className={styles.pageSubtitle}>Modify your post content below</p>
+          <p className={styles.pageSubtitle}>Edit your post content below</p>
         </div>
 
-        {error && <div className={styles.errorAlert}><span className={styles.errorIcon}>⚠️</span> {error}</div>}
-        {success && <div className={styles.alertSuccess}><span className={styles.successIcon}>✅</span> {success}</div>}
-
-        <div className={styles.forumCard}>
-          <form onSubmit={handleSubmit}>
-            {/* Read-only Category & Thread */}
-            <div className={styles.formGroup}>
-              <div className={styles.readOnlyField}>
-                <span className={styles.metaLabel}>Category:</span>
-                <span className={styles.readOnlyValue}>
+        {post ? (
+          <div className={styles.forumCard}>
+            <form onSubmit={handleSubmit}>
+              <div className={styles.formGroup}>
+                <label className={styles.readOnlyField}>Category *</label>
+                <p className={styles.readOnlyValue}>
                   {categories.find(c => c.category_id === post.category_id)?.category_name || "Unknown"}
-                </span>
-              </div>
+                </p>
 
-              <div className={styles.readOnlyField}>
-                <span className={styles.metaLabel}>Thread:</span>
-                <span className={styles.readOnlyValue}>
+                <label className={styles.readOnlyField}>Thread *</label>
+                <p className={styles.readOnlyValue}>
                   {threads.find(t => t.thread_id === post.thread_id)?.thread_name || "Unknown"}
-                </span>
-              </div>
-            </div>
+                </p>
 
-            {/* Title */}
-            <div className={styles.formGroup}>
-              <label htmlFor="title" className={styles.metaLabel}>Title *</label>
-              <input
-                id="title"
-                type="text"
-                className={styles.formInput}
-                value={post.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {/* Content */}
-            <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.metaLabel}>Content *</label>
-              <div className={styles.tabButtons}>
-                <button
-                  type="button"
-                  className={`${styles.tabButton} ${activeTab === "write" ? styles.activeTab : ""}`}
-                  onClick={() => setActiveTab("write")}
-                >
-                  ✏️ Write
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.tabButton} ${activeTab === "preview" ? styles.activeTab : ""}`}
-                  onClick={() => setActiveTab("preview")}
-                >
-                  👁️ Preview
-                </button>
-              </div>
-
-              {activeTab === "write" ? (
-                <textarea
-                  id="content"
-                  ref={textareaRef}
-                  className={styles.formTextarea}
-                  value={post.content}
-                  onChange={(e) => handleInputChange("content", e.target.value)}
-                  onPaste={handlePaste}
+                <label htmlFor="title" className={styles.metaLabel}>Title *</label>
+                <input
+                  id="title"
+                  className={styles.formInput}
+                  value={post.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
                   required
-                  rows={8}
-                  maxLength={5000}
-                  disabled={loading}
-                  placeholder="Chỉnh sửa nội dung bài viết (có thể dán ảnh)..."
+                  maxLength={100}
+                  placeholder="Enter post title (required)"
+                  disabled={formLoading}
                 />
-              ) : (
-                <div className={styles.markdownPreview}>
-                  <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
+                <small className={styles.characterCount}>
+                  {post.title.length}/100 characters
+                </small>
+
+                <label htmlFor="content" className={styles.metaLabel}>Content *</label>
+                <div className={styles.tabButtons}>
+                  <button
+                    type="button"
+                    className={`${styles.tabButton} ${activeTab === "write" ? styles.activeTab : ""}`}
+                    onClick={() => setActiveTab("write")}
+                    disabled={formLoading}
+                  >
+                    ✏️ Write
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.tabButton} ${activeTab === "preview" ? styles.activeTab : ""}`}
+                    onClick={() => setActiveTab("preview")}
+                    disabled={formLoading}
+                  >
+                    👁️ Preview
+                  </button>
                 </div>
-              )}
-              <small className={styles.characterCount}>{post.content.length}/5000 characters</small>
-            </div>
 
-            {/* Tags */}
-            <div className={styles.formGroup}>
-              <label htmlFor="tags" className={styles.metaLabel}>Tags</label>
-              <select
-                id="tags"
-                className={styles.formInput}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleAddTag(e.target.value);
-                    e.target.value = "";
-                  }
-                }}
-                disabled={loading || tagsLoading}
-              >
-                <option value="">Select tag to add</option>
-                {availableTags.map(tag => (
-                  <option key={tag.tag_id} value={tag.tag_name}>#{tag.tag_name}</option>
-                ))}
-              </select>
-
-              <div className={styles.tagContainer}>
-                {post.tags.map(tag => (
-                  <span key={tag.tag_id} className={styles.tag}>
-                    #{tag.tag_name}
-                    <button
-                      type="button"
-                      className={styles.tagRemove}
-                      onClick={() => removeTag(tag.tag_name)}
-                      disabled={loading}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className={styles.buttonGroup}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => navigate(-1)}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className={styles.primaryButton}
-                disabled={loading || !post.title.trim() || !post.content.trim()}
-              >
-                {loading ? (
-                  <>
-                    <span className={styles.spinnerSmall}></span> Updating...
-                  </>
+                {activeTab === "write" ? (
+                  <textarea
+                    id="content"
+                    ref={textareaRef}
+                    className={styles.formTextarea}
+                    value={post.content}
+                    onChange={(e) => handleInputChange("content", e.target.value)}
+                    onPaste={handlePaste}
+                    required
+                    maxLength={5000}
+                    placeholder="Enter post content (you can paste images)..."
+                    rows={8}
+                    disabled={formLoading}
+                  />
                 ) : (
-                  "Update Post"
+                  <div className={styles.markdownPreview}>
+                    <ReactMarkdown>{post.content || "*No content to display*"}</ReactMarkdown>
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
-        </div>
+                <small className={styles.characterCount}>
+                  {post.content.length}/5000 characters
+                </small>
+
+                <label htmlFor="tags" className={styles.metaLabel}>Tags</label>
+                <select
+                  id="tags"
+                  className={styles.formInput}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleAddTag(e.target.value);
+                      e.target.value = "";
+                    }
+                  }}
+                  disabled={formLoading}
+                >
+                  <option value="">Select tag to add</option>
+                  {availableTags.map(tag => (
+                    <option key={tag.tag_id} value={tag.tag_name}>
+                      #{tag.tag_name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className={styles.tagContainer}>
+                  {post.tags.map(tag => (
+                    <span key={tag.tag_id} className={styles.tag}>
+                      #{tag.tag_name}
+                      <button
+                        type="button"
+                        className={styles.tagRemove}
+                        onClick={() => removeTag(tag.tag_name)}
+                        disabled={formLoading}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.buttonGroup}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => navigate(-1)}
+                  disabled={formLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.primaryButton}
+                  disabled={formLoading || !post.title.trim() || !post.content.trim()}
+                >
+                  {formLoading ? (
+                    <>
+                      <span className={styles.spinnerSmall}></span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Post"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyMessage}>Post not found</p>
+            <button
+              className={styles.primaryButton}
+              onClick={() => navigate("/forum")}
+            >
+              Back to Forum
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

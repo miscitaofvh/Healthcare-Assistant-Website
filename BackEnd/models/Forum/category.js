@@ -211,11 +211,10 @@ const getSummaryCategoriesDB = async () => {
                 (SELECT COUNT(*) FROM forum_threads WHERE category_id = fc.category_id) as thread_count
             FROM forum_categories fc
             ORDER BY created_at DESC
-            LIMIT 1000
         `;
         
         const [categories] = await conn.execute(sql);
-        
+            
         return categories;
         
     } catch (error) {

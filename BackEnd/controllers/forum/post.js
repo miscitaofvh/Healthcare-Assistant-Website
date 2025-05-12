@@ -157,8 +157,7 @@ const getPostById = async (req, res) => {
       includeComments: req.query.includeComments === 'true',
       includeAuthor: req.query.includeAuthor !== 'false',
       includeStats: req.query.includeStats === 'true',
-      includeReplies: req.query.includeReplies === 'true',
-      includeHistory: req.query.includeHistory === 'true'
+      includeReplies: req.query.includeCommentReplies === 'true',
     };
 
     const post = await PostDB.getPostByIdDB(postId, options, author_id);
@@ -212,17 +211,7 @@ const createPost = async (req, res) => {
     const userId = req.user.user_id;
     const { thread_id, title, content, tags = [] } = req.body;
 
-    if (!title || !content) {
-      throw new Error("Title and content are required");
-    }
-
-    const result = await PostDB.createPostDB({
-      userId,
-      threadId: thread_id,
-      title: title.trim(),
-      content: content.trim(),
-      tags: Array.isArray(tags) ? tags : [tags]
-    });
+    const result = await PostDB.createPostDB(userId, thread_id, title.trim(), content.trim(), tags);
 
     res.status(StatusCodes.CREATED).json({
       success: true,
@@ -251,18 +240,8 @@ const updatePost = async (req, res) => {
     const { postId } = req.params;
     const { title, content, edit_reason, tags } = req.body;
 
-    if (!title && !content && !tags) {
-      throw new Error("No fields to update provided");
-    }
 
-    const result = await PostDB.updatePostDB({
-      postId,
-      userId,
-      title: title?.trim(),
-      content: content?.trim(),
-      editReason: edit_reason?.trim(),
-      tags
-    });
+    const result = await PostDB.updatePostDB(postId, userId, title?.trim(), content?.trim(), tags);
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -288,12 +267,12 @@ const deletePost = async (req, res) => {
     const { postId } = req.params;
     const { delete_reason } = req.body;
 
-    const result = await PostDB.deletePostDB({
+    const result = await PostDB.deletePostDB(
       postId,
       userId,
       isModerator,
-      deleteReason: delete_reason?.trim()
-    });
+      delete_reason?.trim()
+    );
 
     res.status(StatusCodes.OK).json({
       success: true,

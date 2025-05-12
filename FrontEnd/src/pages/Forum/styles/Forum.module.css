@@ -4,6 +4,7 @@
 /* Navbar */
 .main_navbar {
     position: relative;
+    padding-top: 60px;
     width: 100%;
     z-index: 1000;
     background: #ffffff;
@@ -77,10 +78,8 @@
     background-color: #e0e0e0;
 }
 
-
 /* ==================================================================================================================== */
 /* Header section */
-
 .headerContainer {
     max-width: 1200px;
     margin: 0 auto;
@@ -134,17 +133,22 @@
     margin-bottom: 0.5rem;
 }
 
-.forumDescription,
-.postContent {
+.forumDescription {
     color: #4b5563;
     margin-bottom: 1rem;
     line-height: 1.6;
 }
 
+/* ==================================================================================================================== */
 /* Meta Information */
-.forumMeta,
 .postHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 1rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e1e4e8;
     font-size: 0.875rem;
 }
 
@@ -164,15 +168,6 @@
     color: #6b7280;
 }
 
-.postHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e1e4e8;
-}
-
 .postAuthor {
     font-weight: 600;
     color: #24292e;
@@ -188,9 +183,11 @@
 
 /* Image Handling */
 .postImage {
-    margin: 1rem 0;
-    border-radius: 4px;
+    margin: 1.5rem 0;
+    border-radius: 8px;
     overflow: hidden;
+    max-width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .responsiveImage {
@@ -256,6 +253,7 @@
     margin-right: 0.75rem;
 }
 
+/* ==================================================================================================================== */
 /* Form Elements */
 .formGroup {
     margin-bottom: 1.5rem;
@@ -292,8 +290,17 @@
     margin-top: 0.25rem;
 }
 
+/* ==================================================================================================================== */
 /* States */
-.loadingState,
+/* Loading States */
+.loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
 .emptyState {
     display: flex;
     flex-direction: column;
@@ -308,18 +315,14 @@
 }
 
 /* Spinners */
-.spinner,
-.spinnerSmall {
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
-    border-top: 4px solid #2563eb;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
     width: 40px;
     height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
 }
 
 .spinnerSmall {
@@ -330,13 +333,13 @@
     height: 16px;
     margin-right: 8px;
     vertical-align: middle;
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }
@@ -345,11 +348,13 @@
 /* Post Actions */
 .postActions {
     display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    margin-top: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid #e1e4e8;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 /* Responsive */
@@ -390,20 +395,26 @@
     flex-grow: 1;
 }
 
+/* ==================================================================================================================== */
 /* Like Button Styles */
 .likeButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--text-color);
-    transition: all 0.2s;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .likeButton:hover {
     color: var(--primary-color);
+    background: var(--hover-bg);
+    transform: translateY(-1px);
 }
 
 .likeButton.liked {
@@ -429,16 +440,15 @@
     0% {
         transform: scale(1);
     }
-
     50% {
         transform: scale(1.2);
     }
-
     100% {
         transform: scale(1);
     }
 }
 
+/* ==================================================================================================================== */
 /* Comment Actions */
 .commentActions {
     display: flex;
@@ -500,20 +510,28 @@
 }
 
 /* ============================================================================================ */
-
-/* Post Header Container */
-.postHeader {
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+/* Post Content Styling */
+.postContent {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 1.1rem;
 }
 
+.postContent p {
+    margin-bottom: 1.5rem;
+    white-space: pre-line;
+}
+
+/* ============================================================================================ */
 /* Title Row Layout */
 .postTitleRow {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
 }
 
 /* Post Title Styling */
@@ -526,52 +544,7 @@
     word-break: break-word;
 }
 
-/* Edit Button Styling */
-.editButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--edit-bg);
-    color: var(--edit-color);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    margin-left: auto;
-}
-
-.editButton:hover {
-    background: var(--edit-hover-bg);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Post Content Styling */
-.postContent {
-    margin-top: 1rem;
-    color: var(--text);
-    line-height: 1.7;
-    font-size: 1.1rem;
-}
-
-.postContent p {
-    margin-bottom: 1.5rem;
-    white-space: pre-line;
-}
-
-/* Image Container */
-.postImage {
-    margin: 1.5rem 0;
-    border-radius: 8px;
-    overflow: hidden;
-    max-width: 100%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
+/* ============================================================================================ */
 .responsiveImage {
     width: 100%;
     height: auto;
@@ -583,6 +556,7 @@
     transform: scale(1.02);
 }
 
+/* ============================================================================================ */
 /* Meta Information Section */
 .postMeta {
     display: flex;
@@ -617,39 +591,8 @@
     margin-left: 0.3rem;
 }
 
+/* ============================================================================================ */
 /* Action Buttons */
-.postActions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.likeButton {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.6rem 1rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.likeButton:hover {
-    background: var(--hover-bg);
-    transform: translateY(-1px);
-}
-
-.likeButton.liked {
-    color: var(--like-color);
-}
-
 .likeCount {
     min-width: 1.8rem;
     text-align: center;
@@ -703,6 +646,7 @@
     }
 }
 
+/* ============================================================================================ */
 /* Comment Replies Section */
 .commentReplies {
     margin-top: 1rem;
@@ -784,35 +728,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Loading States */
-.loadingState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-}
-
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-top: 4px solid var(--primary);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
+/* Markdown Preview */
 .markdownPreview {
     margin-top: 1rem;
     padding: 1rem;
@@ -855,15 +771,6 @@
     border-radius: 6px;
     min-height: 160px;
     overflow-x: auto;
-}
-
-
-.postTitleRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    position: relative;
 }
 
 .dropdown {

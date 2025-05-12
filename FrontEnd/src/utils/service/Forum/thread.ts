@@ -280,27 +280,22 @@ const handleDeleteThread = async (
 const loadThreadsByCategory = async (
     category_id: number,
     setThreads: Dispatch<SetStateAction<ThreadDropdown[] | []>>,
-    setError: Dispatch<SetStateAction<string>>,
+    showError: (message: string) => void = toast.error
 ): Promise<void> => {
     try {
-        setError("");
-
         const response = await InteractiveCategory.getThreadsSummaryByCategory(category_id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
             const errorMsg = data?.message || "Unknown error occurred while update thread.";
-            setError(`Không thể cập nhật thread: ${errorMsg}`);
+            showError(`Không thể cập nhật thread: ${errorMsg}`);
             return;
         }
 
         setThreads(data?.threads || []);
 
     } catch (err: any) {
-        setError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
-        console.error("Thread creation error:", err);
-    } finally {
-        setError("");
+        showError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
     }
 };
 

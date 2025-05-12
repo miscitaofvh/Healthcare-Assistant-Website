@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ReactMarkdown from "react-markdown";
+
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { toast } from "react-toastify";
-import ReactMarkdown from "react-markdown";
 import requestCategory from "../../../../utils/service/Forum/category";
 import requestThread from "../../../../utils/service/Forum/thread";
 import requestTag from "../../../../utils/service/Forum/tag";
@@ -14,91 +16,125 @@ import { SummaryCategory } from "../../../../types/Forum/category";
 import { ThreadDropdown } from "../../../../types/Forum/thread";
 import { NewPost } from "../../../../types/Forum/post";
 import { SummaryTag } from "../../../../types/Forum/tag";
+import tag from "../../../../utils/api/Forum/tag";
 
 const CreatePost: React.FC = () => {
-  const [categoryId, setCategoryId] = useState<number>(0);
+  const [searchParams] = useSearchParams();
+  const categoryIdFromUrl = searchParams.get("category");
+  const threadIdFromUrl = searchParams.get("thread");
+
   const [post, setPost] = useState<NewPost>({
-    thread_id: 0,
+    category_id: categoryIdFromUrl ? parseInt(categoryIdFromUrl) : 0,
+    thread_id: threadIdFromUrl ? parseInt(threadIdFromUrl) : 0,
     title: "",
     content: "",
-    tag_name: [],
+    tags: [],
   });
+
   const [categories, setCategories] = useState<SummaryCategory[]>([]);
+  const [categoryId, setCategoryId] = useState<number>(
+    categoryIdFromUrl ? parseInt(categoryIdFromUrl) : 0
+  );
   const [threads, setThreads] = useState<ThreadDropdown[]>([]);
   const [tags, setTags] = useState<SummaryTag[]>([]);
   const [availableTags, setAvailableTags] = useState<SummaryTag[]>([]);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [tagsLoading, setTagsLoading] = useState<boolean>(false);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
+  const [tagsLoading, setTagsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
+
   const navigate = useNavigate();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    try {
-      requestCategory.loadCategoriesSummary(
-        (categories) => setCategories(categories),
-        (error) => toast.error(error)
-      );
-      // requestTag.loadTagsSummary(setTagsLoading, setTags, setError, () => { });
-    } catch (err) {
-      setError("Failed to load categories or tags. Please try again.");
-    }
+    const fetchData = async () => {
+      try {
+        setCategoriesLoading(true);
+        setTagsLoading(true);
+
+        await requestCategory.loadCategoriesSummary(
+          (categories) => setCategories(categories),
+          (error) => toast.error(error)
+        );
+
+        await requestTag.loadTagsSummary(
+          setTagsLoading,
+          setTags,
+          (error) => toast.error(error),
+          () => {}
+        );
+      } catch (err) {
+        toast.error("Failed to load initial data");
+      } finally {
+        setCategoriesLoading(false);
+        setTagsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
-    if (categoryId > 0) {
-      requestThread.loadThreadsByCategory(categoryId, setThreads, setError);
-    } else {
-      setThreads([]);
-    }
+    const loadThreads = async () => {
+      if (categoryId > 0) {
+        try {
+          await requestThread.loadThreadsByCategory(
+            categoryId,
+            (threads) => setThreads(threads),
+            (error) => toast.error(error)
+          );
+        } catch (err) {
+          toast.error("Failed to load threads");
+        }
+      } else {
+        setThreads([]);
+      }
+    };
+
+    loadThreads();
   }, [categoryId]);
 
   useEffect(() => {
-    const filtered = tags.filter(tag => !post.tag_name.includes(tag.tag_name));
+    const filtered = tags.filter(
+      (tag) => !post.tags.includes(tag.tag_name)
+    );
     setAvailableTags(filtered);
-  }, [tags, post.tag_name]);
+  }, [tags, post.tags]);
 
   const handleAddTag = (tagName: string) => {
-    if (tagName && !post.tag_name.includes(tagName)) {
-      setPost(prev => ({
+    if (tagName && !post.tags.includes(tagName)) {
+      setPost((prev) => ({
         ...prev,
-        tag_name: [...prev.tag_name, tagName]
+        tags: [...prev.tags, tagName],
       }));
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setPost(prev => ({
+    setPost((prev) => ({
       ...prev,
-      tag_name: prev.tag_name.filter(tag => tag !== tagToRemove),
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(""), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await requestPost.createPostFE(setLoading, post, setError, setSuccess, () => {
-        navigate("/forum/posts");
-      }
+      setLoading(true);
+      await requestPost.createPostFE(
+        setLoading,
+        post,
+        (error) => toast.error(error),
+        (success) => toast.success(success),
+        () => {
+          toast.success("Post created successfully!");
+          navigate("/forum/posts");
+        }
       );
     } catch (err) {
-      setError("Failed to create post. Please try again.");
+      toast.error("Failed to create post. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,60 +143,60 @@ const CreatePost: React.FC = () => {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
 
-      if (item.kind === 'file' && item.type.startsWith('image/')) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
         e.preventDefault();
 
         const file = item.getAsFile();
         if (!file) {
-          toast.error("Không thể đọc ảnh từ clipboard.");
-          console.warn("Clipboard item exists but file is null.");
+          toast.error("Cannot read image from clipboard.");
           return;
         }
+
         const maxSizeMB = 5;
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
         if (file.size > maxSizeBytes) {
-          toast.error(`Kích thước file quá lớn. Giới hạn ${maxSizeMB}MB.`);
+          toast.error(`File size too large. Limit is ${maxSizeMB}MB.`);
           return;
         }
 
         try {
-          toast.info('Đang tải hình ảnh lên...');
+          toast.info("Uploading image...");
 
           const formData = new FormData();
-          formData.append('forumImage', file);
-          formData.append('folder', 'forum-images');
-          formData.append('subfolder', 'forum-posts');
-          formData.append('fileName', file.name || 'image.png' + Math.random().toString(36).substring(2, 15));
+          formData.append("forumImage", file);
+          formData.append("folder", "forum-images");
+          formData.append("subfolder", "forum-posts");
+          formData.append("fileName", file.name || `image-${Date.now()}.png`);
 
           const markdownImage = await requestImage.uploadPostImageFE(formData);
 
           if (markdownImage) {
             const cursorPos = textareaRef.current?.selectionStart || 0;
-
-            setPost(prev => ({
+            setPost((prev) => ({
               ...prev,
               content:
                 prev.content.substring(0, cursorPos) +
                 markdownImage +
                 prev.content.substring(cursorPos),
             }));
-
-            toast.success('Hình ảnh đã được chèn vào bài viết!');
+            toast.success("Image inserted into the post!");
           } else {
-            throw new Error('Lỗi khi tải ảnh lên');
+            throw new Error("Failed to upload image");
           }
         } catch (error: any) {
-          console.error('Error uploading image:', error);
-          toast.error(error.response?.data?.message || 'Không thể tải lên hình ảnh');
+          console.error("Error uploading image:", error);
+          toast.error(
+            error.response?.data?.message || "Failed to upload image"
+          );
         }
       }
     }
   };
 
-
   return (
     <div className={styles.forumContainer}>
+      <ToastContainer position="top-right" autoClose={5000} />
       <div className={styles.main_navbar}>
         <Navbar />
       </div>
@@ -168,20 +204,10 @@ const CreatePost: React.FC = () => {
       <div className={styles.headerContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Create New Post</h1>
-          <p className={styles.pageSubtitle}>Share your thoughts with the community</p>
+          <p className={styles.pageSubtitle}>
+            Share your thoughts with the community
+          </p>
         </div>
-
-        {error && (
-          <div className={styles.errorAlert}>
-            <span className={styles.errorIcon}>⚠️</span> {error}
-          </div>
-        )}
-
-        {success && (
-          <div className={styles.alertSuccess}>
-            <span className={styles.successIcon}>✅</span> {success}
-          </div>
-        )}
 
         <div className={styles.forumCard}>
           <form onSubmit={handleSubmit}>
@@ -197,10 +223,10 @@ const CreatePost: React.FC = () => {
                 onChange={(e) => {
                   const selected = parseInt(e.target.value);
                   setCategoryId(selected);
-                  setPost({ ...post, thread_id: 0 }); // Reset thread
+                  setPost((prev) => ({ ...prev, thread_id: 0 }));
                 }}
                 required
-                disabled={loading}
+                disabled={loading || categoriesLoading}
               >
                 <option value={0}>Select category</option>
                 {categories.map((cat) => (
@@ -221,10 +247,13 @@ const CreatePost: React.FC = () => {
                 className={styles.formInput}
                 value={post.thread_id}
                 onChange={(e) =>
-                  setPost({ ...post, thread_id: parseInt(e.target.value) })
+                  setPost((prev) => ({
+                    ...prev,
+                    thread_id: parseInt(e.target.value),
+                  }))
                 }
                 required
-                disabled={!categoryId || loading}
+                disabled={!categoryId || loading || categoriesLoading}
               >
                 <option value={0}>Select thread</option>
                 {threads.map((th) => (
@@ -244,9 +273,9 @@ const CreatePost: React.FC = () => {
                 id="title"
                 type="text"
                 className={styles.formInput}
-                value={post.title || ""}
+                value={post.title}
                 onChange={(e) =>
-                  setPost({ ...post, title: e.target.value })
+                  setPost((prev) => ({ ...prev, title: e.target.value }))
                 }
                 required
                 maxLength={150}
@@ -259,44 +288,52 @@ const CreatePost: React.FC = () => {
 
             {/* Content */}
             <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.metaLabel}>Content *</label>
+              <label htmlFor="content" className={styles.metaLabel}>
+                Content *
+              </label>
 
-              {/* Tab Buttons */}
               <div className={styles.tabButtons}>
                 <button
                   type="button"
-                  className={`${styles.tabButton} ${activeTab === "write" ? styles.activeTab : ""}`}
+                  className={`${styles.tabButton} ${
+                    activeTab === "write" ? styles.activeTab : ""
+                  }`}
                   onClick={() => setActiveTab("write")}
                 >
                   ✏️ Write
                 </button>
                 <button
                   type="button"
-                  className={`${styles.tabButton} ${activeTab === "preview" ? styles.activeTab : ""}`}
+                  className={`${styles.tabButton} ${
+                    activeTab === "preview" ? styles.activeTab : ""
+                  }`}
                   onClick={() => setActiveTab("preview")}
                 >
                   👁️ Preview
                 </button>
               </div>
 
-              {/* Content Area */}
               {activeTab === "write" ? (
                 <textarea
                   id="content"
                   ref={textareaRef}
                   className={styles.formTextarea}
                   value={post.content}
-                  onChange={(e) => setPost({ ...post, content: e.target.value })}
+                  onChange={(e) =>
+                    setPost((prev) => ({ ...prev, content: e.target.value }))
+                  }
                   onPaste={handlePaste}
                   required
                   rows={8}
                   maxLength={5000}
                   disabled={loading}
-                  placeholder="Viết nội dung bài đăng của bạn (có thể dán ảnh trực tiếp vào đây)..."
+                  placeholder="Write your post content (you can paste images directly here)..."
                 />
               ) : (
                 <div className={styles.markdownPreview}>
-                  <ReactMarkdown>{post.content || "*Không có nội dung để hiển thị*"}</ReactMarkdown>
+                  <ReactMarkdown>
+                    {post.content || "*No content to display*"}
+                  </ReactMarkdown>
                 </div>
               )}
 
@@ -304,7 +341,6 @@ const CreatePost: React.FC = () => {
                 {post.content.length}/5000 characters
               </small>
             </div>
-
 
             {/* Tags */}
             <div className={styles.formGroup}>
@@ -331,7 +367,7 @@ const CreatePost: React.FC = () => {
               </select>
 
               <div className={styles.tagContainer}>
-                {post.tag_name.map((tag) => (
+                {post.tags.map((tag) => (
                   <span key={tag} className={styles.tag}>
                     #{tag}
                     <button
