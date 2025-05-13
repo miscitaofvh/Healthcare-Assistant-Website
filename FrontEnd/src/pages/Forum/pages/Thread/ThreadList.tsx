@@ -2,24 +2,26 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FaRegCalendar } from "react-icons/fa";
 
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "../../../../utils/service/Forum/thread";
 import { Thread } from "../../../../types/Forum/thread";
 import { PaginationData } from "../../../../types/Forum/pagination";
+import { formatDate } from "../../../../utils/helpers/dateFormatter";
 
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";
-  
+
   let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
-  
+
   const words = truncated.split(/\s+/);
   if (words.length > wordLimit) {
     truncated = words.slice(0, wordLimit).join(' ') + '...';
   }
-  
+
   return truncated;
 };
 
@@ -124,10 +126,10 @@ const ThreadListPage: React.FC = () => {
         className={styles.limitSelector}
         disabled={loading}
       >
-        <option value="5">5 per page</option>
-        <option value="10">10 per page</option>
-        <option value="20">20 per page</option>
-        <option value="50">50 per page</option>
+        <option value="6">6 per page</option>
+        <option value="12">12 per page</option>
+        <option value="18">18 per page</option>
+        <option value="24">24 per page</option>
       </select>
     </div>
   );
@@ -195,9 +197,16 @@ const ThreadListPage: React.FC = () => {
                       <span className={styles.metaLabel}>Last Post:</span>
                       <span className={styles.metaValue}>
                         {thread.last_post_date
-                          ? new Date(thread.last_post_date).toLocaleDateString()
+                          ? formatDate(thread.last_post_date)
                           : 'No posts yet'}
                       </span>
+                    </div>
+                    <div className={styles.dateContainer}>
+                      <div className={styles.dateItemWithIcon}>
+                        <FaRegCalendar className={styles.dateIcon} />
+                        <span className={styles.metaLabel}>Created:</span>
+                        <span className={styles.dateValue}>{formatDate(thread.created_at)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

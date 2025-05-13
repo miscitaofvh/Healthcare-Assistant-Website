@@ -193,7 +193,7 @@ const CategoryList: React.FC = () => {
                   onClick={() => handleCategoryClick(category.category_id)}
                 >
                   <h3 className={styles.forumName}>
-                    {truncateText(category.description || "", 10, 40)}
+                    {truncateText(category.category_name || "", 10, 40)}
                   </h3>
                   <p className={styles.tagDescription}>
                     {truncateText(category.description || "", 10, 50)}

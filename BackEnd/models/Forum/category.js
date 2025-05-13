@@ -1,7 +1,6 @@
 import connection from '../../config/connection.js';
-import post from './post.js';
 
-const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => {
+const getAllCategoriesDB = async (page = 1, limit = 10, orderByField = 'created_at', orderDirection = 'ASC',) => {
     let conn;
     const offset = (page - 1) * limit;
     try {
@@ -13,7 +12,7 @@ const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => 
         ];
 
         if (!validCategoryColumns.includes(orderByField)) {
-            throw new Error("Invalid sort parameter");
+            orderByField = 'fc.created_at';
         }
 
         const categoriesSql = `
@@ -41,15 +40,21 @@ const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => 
             LIMIT ? OFFSET ?
         `;
 
-        const categoriesResult = await conn.execute(categoriesSql, [limit.toString(), offset.toString()]);
+        const countSql = `
+            SELECT COUNT(*) AS totalCount 
+            FROM forum_categories
+        `;
 
-        const categories = categoriesResult[0];
+        const [[categoriesResult], [countResult]] = await Promise.all([
+            conn.execute(categoriesSql, [limit.toString(), offset.toString()]),
+            conn.execute(countSql)
+        ]);
+
+        const categories = categoriesResult;
 
         if (!categories) {
             throw new Error("No categories found");
         }
-
-        const count = categoriesResult[0].length;
 
         await conn.commit();
 
@@ -60,9 +65,9 @@ const getAllCategoriesDB = async (page, limit, orderByField, orderDirection) => 
                 post_count: Number(category.post_count)
             })),
             pagination: {
-                totalItems: Number(count.totalCount),
+                totalItems: Number(countResult[0].totalCount),
                 currentPage: page,
-                totalPages: Math.ceil(Number(count.totalCount) / limit),
+                totalPages: Math.ceil(Number(countResult[0].totalCount) / limit),
                 itemsPerPage: limit,
                 limit: limit,
                 sortBy: orderByField,
@@ -116,7 +121,7 @@ const getThreadsByCategoryDB = async (categoryId, page = 1, limit = 10, orderByF
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
-            throw new Error("Invalid sort parameter");
+            orderByField = 'ft.created_at';
         }
 
         const threadsSql = `
@@ -343,7 +348,7 @@ const getThreadsSummaryByCategoryDB = async (categoryId, limit = null) => {
     }
 };
 
-const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'newest') => {
+const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'p.created_at DESC') => {
     let conn;
     const offset = (page - 1) * limit;
 
@@ -356,22 +361,20 @@ const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'ne
                 fc.category_name
             FROM forum_categories fc
             WHERE fc.category_id = ?`;
-        const [categoryResult] = await conn.execute(sqlCategory, [categoryId]);
+        const countSql = `
+            SELECT COUNT(*) AS totalCount
+            FROM forum_posts p
+            INNER JOIN forum_threads t ON p.thread_id = t.thread_id
+            WHERE t.category_id = ?
+        `;
 
-        const category = categoryResult[0];
-
-        if (!category) {
-            throw new Error("Category not found");
-        }
-
-
-        const validCategoryColumns = [
+        const validPostColumns = [
             'p.created_at DESC', 'p.created_at ASC',
             'p.comment_count DESC', 'p.like_count DESC'
         ];
 
-        if (!validCategoryColumns.includes(sort)) {
-            throw new Error("Invalid sort parameter");
+        if (!validPostColumns.includes(sort)) {
+            sort = 'p.created_at DESC';
         }
 
         const sqlPosts = `
@@ -387,12 +390,31 @@ const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'ne
             LIMIT ? OFFSET ?
         `;
 
-        const [posts] = await conn.execute(sqlPosts, [offset.toString(), limit.toString(), offset.toString()]);
+        const [[categoryResult], [countResult], [posts]] = await Promise.all([
+            conn.execute(sqlCategory, [categoryId]),
+            conn.execute(countSql, [categoryId]),
+            conn.execute(sqlPosts, [categoryId, limit.toString(), offset.toString()])
+        ]);
+
+        const category = categoryResult[0];
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
+
+        const validCategoryColumns = [
+            'p.created_at DESC', 'p.created_at ASC',
+            'p.comment_count DESC', 'p.like_count DESC'
+        ];
+
+        if (!validCategoryColumns.includes(sort)) {
+            throw new Error("Invalid sort parameter");
+        }
 
         return {
             category: category,
-            posts: posts[0],
-            totalCount: posts[0].length
+            posts: posts,
+            totalCount: Number(countResult[0].totalCount)
         }
     } catch (error) {
         console.error("Error getting posts by category:", error);
@@ -404,7 +426,6 @@ const getPostsByCategoryDB = async (categoryId, page = 1, limit = 20, sort = 'ne
 
 const getCategoriesByUserDB = async (username, includeStats = false) => {
     let conn;
-    console.log(includeStats);
     try {
         conn = await connection.getConnection();
 
@@ -481,7 +502,7 @@ const createCategoryDB = async (author_id, category_name, description = null) =>
     }
 };
 
-const updateCategoryDB = async (categoryId, category_name, description) => {
+const updateCategoryDB = async (userId, categoryId, category_name, description) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -504,6 +525,12 @@ const updateCategoryDB = async (categoryId, category_name, description) => {
             throw new Error("Category not found");
         }
 
+        await conn.execute(
+            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
+                     VALUES (?, 'category', 'update', ?)`,
+            [userId, categoryId]
+        );
+
         await conn.commit();
         return 'Category updated successfully';
 
@@ -525,7 +552,7 @@ const updateCategoryDB = async (categoryId, category_name, description) => {
     }
 };
 
-const deleteCategoryDB = async (categoryId) => {
+const deleteCategoryDB = async (userId, categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -542,6 +569,12 @@ const deleteCategoryDB = async (categoryId) => {
         if (deleteResult.affectedRows === 0) {
             throw new Error("Category not found");
         }
+
+        await conn.execute(
+            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
+                     VALUES (?, 'category', 'delete', ?)`,
+            [userId, categoryId]
+        );
 
         return `Category with ID ${categoryId} deleted successfully`;
 

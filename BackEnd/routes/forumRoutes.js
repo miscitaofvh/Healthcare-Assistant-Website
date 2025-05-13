@@ -122,15 +122,15 @@ router.get(
 );
 
 router.get(
-  "/threads/:threadId",
-  forumValidatorsThread.validateThreadExists,
-  asyncHandler(threadController.getThreadById)
-);
-
-router.get(
   "/threads/name/:threadName",
   forumValidatorsThread.validateThreadExists,
   asyncHandler(threadController.getThreadByName)
+);
+
+router.get(
+  "/threads/:threadId",
+  forumValidatorsThread.validateThreadExists,
+  asyncHandler(threadController.getThreadById)
 );
 
 router.get(

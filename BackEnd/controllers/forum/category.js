@@ -32,7 +32,7 @@ const handleError = (error, req, res, action = 'process') => {
         "Category not found": StatusCodes.NOT_FOUND,
         "No categories found": StatusCodes.NOT_FOUND,
         "No threads found for this category": StatusCodes.NOT_FOUND,
-        "No posts found for this category": StatusCodes.NOT_FOUND,
+        "No posts found for this category": StatusCodes-NOT_FOUND,
         "No categories found for this user": StatusCodes.NOT_FOUND,
         "User not found": StatusCodes.NOT_FOUND
     };
@@ -132,7 +132,7 @@ const getAllCategories = async (req, res) => {
             pagination: pagination,
             metadata: {
                 message: categories.length ? "Categories retrieved successfully." : "No categories found.",
-                retrievedAt: new Date().toISOString()
+                retrievedAt: new Date().toISOString(),
             }
         });
     } catch (error) {
@@ -148,7 +148,7 @@ const getThreadsByCategory = async (req, res) => {
         const { orderByField, orderDirection } = validateSortingThread(sortBy, sortOrder);
         let author_id = null;
         try {
-            if ((req.cookies.auth_token)) {
+            if (req.cookies.auth_token) {
                 const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
                 author_id = decoded.user_id;
             }
@@ -168,10 +168,9 @@ const getThreadsByCategory = async (req, res) => {
             pagination: pagination,
             metadata: {
                 categoryId,
-                retrievedAt: new Date().toISOString()
+                retrievedAt: new Date().toISOString(),
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch threads by category');
     }
@@ -179,7 +178,7 @@ const getThreadsByCategory = async (req, res) => {
 
 const getSummaryCategories = async (req, res) => {
     try {
-        let limit = req.query;
+        let { limit } = req.query;
         if (isNaN(limit)) {
             limit = null;
         } else if (limit < 1) {
@@ -191,8 +190,6 @@ const getSummaryCategories = async (req, res) => {
             throw new Error("No categories found");
         }
 
-        res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
-
         res.status(StatusCodes.OK).json({
             success: true,
             count: categories.length,
@@ -200,10 +197,9 @@ const getSummaryCategories = async (req, res) => {
             message: categories.length ? "Category summaries retrieved successfully" : "No categories available",
             metadata: {
                 source: "database",
-                generatedAt: new Date().toISOString()
+                generatedAt: new Date().toISOString(),
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch category summaries');
     }
@@ -211,7 +207,7 @@ const getSummaryCategories = async (req, res) => {
 
 const getCategoryByName = async (req, res) => {
     try {
-        const categoryName = req.params;
+        const { categoryName } = req.params;
 
         if (!categoryName || typeof categoryName !== 'string') {
             throw new Error("Invalid category name");
@@ -227,10 +223,9 @@ const getCategoryByName = async (req, res) => {
             success: true,
             category: category,
             metadata: {
-                retrievedAt: new Date().toISOString()
+                retrievedAt: new Date().toISOString(),
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch category by name');
     }
@@ -255,13 +250,8 @@ const getCategoryById = async (req, res) => {
             category: category,
             metadata: {
                 retrievedAt: new Date().toISOString(),
-                cache: {
-                    recommended: true,
-                    duration: "1h"
-                }
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch category by ID');
     }
@@ -275,7 +265,7 @@ const getThreadsSummaryByCategory = async (req, res) => {
             throw new Error("Invalid category ID");
         }
 
-        let limit = req.query;
+        let { limit } = req.query;
         if (isNaN(limit)) {
             limit = null;
         } else if (limit < 1) {
@@ -296,10 +286,9 @@ const getThreadsSummaryByCategory = async (req, res) => {
             },
             metadata: {
                 categoryId,
-                retrievedAt: new Date().toISOString()
+                retrievedAt: new Date().toISOString(),
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch thread summaries by category');
     }
@@ -341,13 +330,8 @@ const getPostsByCategory = async (req, res) => {
             metadata: {
                 categoryId,
                 retrievedAt: new Date().toISOString(),
-                cacheHint: {
-                    recommended: true,
-                    duration: "5m"
-                }
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch posts by category');
     }
@@ -361,7 +345,7 @@ const getCategoriesByUser = async (req, res) => {
             throw new Error("Invalid username format");
         }
 
-        const includeStats = req.query;
+        const includeStats = req.query.includeStats === 'true';
 
         const categories = await CategoryDB.getCategoriesByUserDB(username, includeStats);
 
@@ -377,13 +361,8 @@ const getCategoriesByUser = async (req, res) => {
                 count: categories.length,
                 retrievedAt: new Date().toISOString(),
                 includeStats,
-                cacheHint: {
-                    recommended: false,
-                    reason: "User-specific data changes frequently"
-                }
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'fetch categories by user');
     }
@@ -412,7 +391,6 @@ const createCategory = async (req, res) => {
                 createdAt: new Date().toISOString()
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'create category');
     }
@@ -420,11 +398,8 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { categoryId } = req.params;
-
-        if (isNaN(categoryId) || categoryId < 1) {
-            throw new Error("Invalid category ID");
-        }
 
         const { category_name, description } = req.body;
 
@@ -432,17 +407,16 @@ const updateCategory = async (req, res) => {
             throw new Error("No fields to update provided");
         }
 
-        const result = await CategoryDB.updateCategoryDB(categoryId, category_name, description);
+        const result = await CategoryDB.updateCategoryDB(userId, categoryId, category_name, description);
 
         res.status(StatusCodes.OK).json({
             success: true,
             message: result,
             metadata: {
                 updatedAt: new Date().toISOString(),
-                updatedFields: Object.keys({ category_name, description })
+                updatedFields: Object.keys({ category_name, description }).filter(key => req.body[key] !== undefined)
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'update category');
     }
@@ -450,13 +424,14 @@ const updateCategory = async (req, res) => {
 
 const deleteCategory = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { categoryId } = req.params;
 
         if (isNaN(categoryId) || categoryId < 1) {
             throw new Error("Invalid category ID");
         }
 
-        const result = await CategoryDB.deleteCategoryDB(categoryId);
+        const result = await CategoryDB.deleteCategoryDB(userId, categoryId);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -465,7 +440,6 @@ const deleteCategory = async (req, res) => {
                 deletedAt: new Date().toISOString()
             }
         });
-
     } catch (error) {
         handleError(error, req, res, 'delete category');
     }
@@ -483,4 +457,4 @@ export default {
     createCategory,
     updateCategory,
     deleteCategory
-}
+};

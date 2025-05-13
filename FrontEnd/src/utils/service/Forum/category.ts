@@ -270,7 +270,7 @@ const loadThreadsandCategoryByCategory = async (
             sortBy,
             sortOrder
         );
-
+        
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

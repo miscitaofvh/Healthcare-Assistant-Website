@@ -1074,3 +1074,55 @@
         flex-direction: column;
     }
 }
+/* ==================================================================================================================== */
+/* Thread Meta Information - Date Styling */
+.threadDate {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.threadDateLabel {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.threadDateLabel::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    margin-right: 0.5rem;
+}
+
+.threadDateValue {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Alternative version without icon if you prefer */
+/*
+.threadDate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.threadDateLabel {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.threadDateValue {
+  color: #6b7280;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+*/
