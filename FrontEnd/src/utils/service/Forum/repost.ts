@@ -6,22 +6,23 @@ const reportPostFE = async (
     reportReason: string,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    refetchPost: () => void
+    onSuccess: () => void
 ): Promise<void> => {
     try {
         const response = await InteractReport.reportPost(postId, reportReason);
 
         const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            throw new Error(response.data?.message || 'Failed to like post');
+        if (status !== 201 || !data?.success) {
+            showError(data?.errors[0]?.message || data?.message || 'Failed to report comment');
+            return;
         }
 
-        showSuccess(response.data.message || 'Post like updated');
-        await refetchPost();
+        showSuccess(response.data.message || 'Post reported successfully');
+        onSuccess();
 
     } catch (err: unknown) {
-        let errorMessage = 'Failed to like post';
+        let errorMessage = 'Failed to report post';
 
         if (err instanceof Error) {
             errorMessage = err.message;
@@ -47,11 +48,11 @@ const reportCommentFE = async (
         };
 
         const response = await InteractReport.reportComment(commentId, reportData);
-
+        
         const { status, data } = response;
 
-        if (status !== 200 || data?.success) {
-            showError(response.data?.message || 'Failed to report comment');
+        if (status !== 200 || !data?.success) {
+            showError(data?.errors[0]?.message || data?.message || 'Failed to report comment');
             return;
         }
 
@@ -65,7 +66,7 @@ const reportCommentFE = async (
                 ? err
                 : 'Failed to report comment';
 
-        showError(errorMessage);
+                showError(errorMessage);
     }
 };
 

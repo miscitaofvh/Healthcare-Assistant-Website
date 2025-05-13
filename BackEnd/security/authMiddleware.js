@@ -196,7 +196,7 @@ export const auth = {
 
                     case 'report':
                         const [report] = await connection.execute(
-                            `SELECT user_id FROM forum_reports WHERE report_id = ?`,
+                            `SELECT user_id FROM forum_post_reports WHERE report_id = ?`,
                             [resourceId]
                         );
                         isOwner = report[0]?.user_id === req.user.user_id;

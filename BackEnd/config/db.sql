@@ -253,7 +253,7 @@ CREATE INDEX idx_post_user ON forum_posts(user_id);
 
 -- ========== FORUM POST DELETIONS ==========
 CREATE TABLE forum_post_deletions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    delete_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     post_id INT UNSIGNED NOT NULL,
     deleted_by CHAR(36) NOT NULL,
     reason TEXT DEFAULT NULL,
@@ -344,7 +344,7 @@ CREATE INDEX idx_like_post ON forum_likes(post_id);
 CREATE INDEX idx_like_user ON forum_likes(user_id);
 
 -- ========== FORUM REPORTS ==========
-CREATE TABLE forum_reports (
+CREATE TABLE forum_post_reports (
     report_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     post_id INT UNSIGNED NOT NULL,
     reported_by CHAR(36) NOT NULL,
@@ -357,13 +357,12 @@ CREATE TABLE forum_reports (
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_report_post ON forum_reports(post_id);
-CREATE INDEX idx_report_user ON forum_reports(reported_by);
+CREATE INDEX idx_report_post ON forum_post_reports(post_id);
+CREATE INDEX idx_report_user ON forum_post_reports(reported_by);
 
 -- ========== FORUM ==========
 CREATE TABLE forum (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
     category_id INT UNSIGNED NOT NULL,
     thread_id INT UNSIGNED NOT NULL,
     post_id INT UNSIGNED NOT NULL,

@@ -247,36 +247,6 @@ const handleDeleteCategory = async (
     }
 };
 
-const handleInputChange = (
-    field: string,
-    value: string,
-    setNewCategory: Dispatch<SetStateAction<any>>
-) => {
-    setNewCategory((prev: any) => ({ ...prev, [field]: value }));
-};
-
-const loadSingleCategory = async (
-    id: string,
-    setLoading: Dispatch<SetStateAction<boolean>>,
-    setCategory: Dispatch<SetStateAction<Category | null>>,
-    setError: Dispatch<SetStateAction<string>>
-) => {
-    try {
-        setLoading(true);
-        const response = await InteractiveCategory.getCategoryById(Number(id));
-        if (response?.data) {
-            setCategory(response.data.data);
-        } else {
-            setError("Failed to load category.");
-        }
-    } catch (error) {
-        setError("Failed to load category. Please try again later.");
-        console.error("Error loading category:", error);
-    } finally {
-        setLoading(false);
-    }
-};
-
 const loadThreadsandCategoryByCategory = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
@@ -331,7 +301,5 @@ export default {
     handleCreateCategory,
     handleUpdateCategory,
     handleDeleteCategory,
-    handleInputChange,
-    loadSingleCategory,
     loadThreadsandCategoryByCategory
 }

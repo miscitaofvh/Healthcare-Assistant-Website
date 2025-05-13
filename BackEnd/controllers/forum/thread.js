@@ -60,10 +60,11 @@ const validatePagination = (page, limit, maxLimit = 100) => {
 
 const validateSorting = (sortBy, sortOrder) => {
     const allowedFields = {
-        thread_name: 'ft.thread_name',
-        created: 'ft.created_at',
-        updated: 'ft.last_updated',
+        thread_name: 'thread_name',
+        created: 'created_at',
+        updated: 'last_updated',
         posts: 'post_count',
+        last_post_date: 'last_post_date'
     };
 
     const orderByField = allowedFields[sortBy] || allowedFields.thread_name;

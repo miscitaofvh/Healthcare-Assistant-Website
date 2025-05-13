@@ -42,10 +42,10 @@ const validateUserExists = [
         .custom(validateEntityExists('users', 'username', 'Người dùng'))
         .custom(async (username) => {
             const [user] = await connection.execute(
-                'SELECT status FROM users WHERE username = ?',
+                'SELECT 1 FROM users WHERE username = ?',
                 [username]
             );
-            if (user[0].status !== 'active') {
+            if (!user) {
                 throw new Error('Người dùng này hiện không hoạt động');
             }
             return true;

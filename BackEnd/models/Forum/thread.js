@@ -23,7 +23,7 @@ const getAllThreadsDB = async (page = 1, limit = 10, orderByField = 'created_at'
         const validThreadColumns = [
             'thread_id', 'thread_name', 'description',
             'created_at', 'last_updated', 'created_by',
-            'category_name', 'post_count'
+            'category_name', 'post_count', 'last_post_date'
         ];
 
         if (!validThreadColumns.includes(orderByField)) {
@@ -40,7 +40,8 @@ const getAllThreadsDB = async (page = 1, limit = 10, orderByField = 'created_at'
                 u.username AS created_by,
                 fc.category_name, 
                 fc.category_id,
-                COUNT(DISTINCT p.post_id) AS post_count
+                COUNT(DISTINCT p.post_id) AS post_count,
+                MAX(p.created_at) AS last_post_date
             FROM forum_threads ft
             JOIN users u ON ft.user_id = u.user_id
             JOIN forum_categories fc ON ft.category_id = fc.category_id
@@ -261,7 +262,7 @@ const getPostsByThreadDB = async (threadId, page = 1, limit = 10, orderByField =
                 p.created_at,
                 p.last_updated,
                 p.like_count,
-                u.username AS author,
+                u.username AS created_by,
                 COUNT(DISTINCT c.comment_id) AS comment_count
             FROM forum_posts p
             JOIN users u ON p.user_id = u.user_id

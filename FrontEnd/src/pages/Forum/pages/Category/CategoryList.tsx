@@ -2,24 +2,26 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FaRegCalendar } from "react-icons/fa";
+import { CiCalendar } from "react-icons/ci";
 
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "../../../../utils/service/Forum/category";
 import { Category } from "../../../../types/Forum/category";
 import { PaginationData } from "../../../../types/Forum/pagination";
-
+import { formatDate } from "../../../../utils/helpers/dateFormatter";
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";
-  
+
   let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
-  
+
   const words = truncated.split(/\s+/);
   if (words.length > wordLimit) {
     truncated = words.slice(0, wordLimit).join(' ') + '...';
   }
-  
+
   return truncated;
 };
 
@@ -44,7 +46,7 @@ const CategoryList: React.FC = () => {
     { value: 'posts', label: 'Post Count' }
   ];
 
-  const loadData = useCallback((page: number = 1, limit: number = pagination.limit, 
+  const loadData = useCallback((page: number = 1, limit: number = pagination.limit,
     sortBy = pagination.sortBy, sortOrder = pagination.sortOrder) => {
     requestCategory.loadCategories(
       setLoading,
@@ -134,10 +136,10 @@ const CategoryList: React.FC = () => {
         className={styles.limitSelector}
         disabled={loading}
       >
-        <option value="5">5 per page</option>
-        <option value="10">10 per page</option>
-        <option value="20">20 per page</option>
-        <option value="50">50 per page</option>
+        <option value="6">6 per page</option>
+        <option value="12">12 per page</option>
+        <option value="18">18 per page</option>
+        <option value="24">24 per page</option>
       </select>
     </div>
   );
@@ -191,7 +193,7 @@ const CategoryList: React.FC = () => {
                   onClick={() => handleCategoryClick(category.category_id)}
                 >
                   <h3 className={styles.forumName}>
-                    {category.category_name}
+                    {truncateText(category.description || "", 10, 40)}
                   </h3>
                   <p className={styles.tagDescription}>
                     {truncateText(category.description || "", 10, 50)}
@@ -204,6 +206,18 @@ const CategoryList: React.FC = () => {
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>Posts:</span>
                       <span className={styles.metaValue}>{category.post_count || 0}</span>
+                    </div>
+                    <div className={styles.dateContainer}>
+                      <div className={styles.dateItemWithIcon}>
+                        <FaRegCalendar className={styles.dateIcon} />
+                        <span className={styles.dateLabel}>Created:</span>
+                        <span className={styles.dateValue}>{formatDate(category.created_at)}</span>
+                      </div>
+                      <div className={styles.dateItemWithIcon}>
+                        <CiCalendar className={styles.dateIcon} />
+                        <span className={styles.dateLabel}>Updated:</span>
+                        <span className={styles.dateValue}>{formatDate(category.last_updated)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

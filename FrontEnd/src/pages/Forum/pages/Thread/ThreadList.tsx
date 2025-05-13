@@ -8,6 +8,21 @@ import styles from "../../styles/Forum.module.css";
 import requestThread from "../../../../utils/service/Forum/thread";
 import { Thread } from "../../../../types/Forum/thread";
 import { PaginationData } from "../../../../types/Forum/pagination";
+
+// Helper function to truncate text
+const truncateText = (text: string, wordLimit: number, charLimit: number) => {
+  if (!text) return "No description available";
+  
+  let truncated = text.length > charLimit ? text.substring(0, charLimit) + '...' : text;
+  
+  const words = truncated.split(/\s+/);
+  if (words.length > wordLimit) {
+    truncated = words.slice(0, wordLimit).join(' ') + '...';
+  }
+  
+  return truncated;
+};
+
 const ThreadListPage: React.FC = () => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,7 +38,7 @@ const ThreadListPage: React.FC = () => {
 
   const sortOptions = [
     { value: 'thread_name', label: 'Thread Name' },
-    { value: 'created_at', label: 'Created Date' },
+    { value: 'created', label: 'Created Date' },
     { value: 'last_post_date', label: 'Last Post' },
     { value: 'posts', label: 'Post Count' }
   ];
@@ -166,18 +181,10 @@ const ThreadListPage: React.FC = () => {
                   onClick={() => handleThreadClick(thread.thread_id)}
                 >
                   <h3 className={styles.forumName}>
-                    {thread.thread_name
-                      ? thread.thread_name.slice(0, 25) +
-                      (thread.thread_name.length > 25 ? '...' : '')
-                      : "No description available"
-                    }
+                    {truncateText(thread.thread_name || "", 10, 40)}
                   </h3>
                   <p className={styles.forumDescription}>
-                    {thread.description
-                      ? thread.description.slice(0, 30) +
-                      (thread.description.length > 30 ? '...' : '')
-                      : "No description available"
-                    }
+                    {truncateText(thread.description || "", 10, 50)}
                   </p>
                   <div className={styles.forumMeta}>
                     <div className={styles.metaItem}>

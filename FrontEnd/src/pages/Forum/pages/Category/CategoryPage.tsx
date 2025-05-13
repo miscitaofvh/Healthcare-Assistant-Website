@@ -10,6 +10,7 @@ import { Category } from "../../../../types/Forum/category";
 import { Thread } from "../../../../types/Forum/thread";
 import { PaginationData } from "../../../../types/Forum/pagination";
 import requestCategory from "../../../../utils/service/Forum/category";
+import { formatDate } from "../../../../utils/helpers/dateFormatter";
 
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";
@@ -45,7 +46,8 @@ const CategoryPage: React.FC = () => {
     { value: "thread_name", label: "Thread Name" },
     { value: "created", label: "Created Date" },
     { value: "updated", label: "Last Post" },
-    { value: "post", label: "Post Count" },
+    { value: "posts", label: "Post Count" },
+    { value: "last_post_date", label: "Last Post Date" },
   ];
 
   const loadData = useCallback(async (
@@ -214,57 +216,90 @@ const CategoryPage: React.FC = () => {
           </div>
         ) : category ? (
           <div>
-            <div className={styles.headerSection}>
-              <h1 className={styles.pageTitle}>{category.category_name}</h1>
-              <p className={styles.pageSubtitle}>
-                {category.thread_count} threads, {category.post_count} posts
-              </p>
-              <p className={styles.pageSubtitle}>
-                {truncateText(category.description || "", 10, 100)}
-              </p>
+            <div className={styles.categoryHeader}>
+              <div className={styles.categoryTitleContainer}>
+                <h1 className={styles.pageTitle}>{category.category_name}</h1>
+                <div className={styles.categoryStats}>
+                  <span className={styles.statItem}>
+                    <i className={`${styles.statIcon} fas fa-comments`} />
+                    {category.thread_count} threads
+                  </span>
+                  <span className={styles.statItem}>
+                    <i className={`${styles.statIcon} fas fa-comment-dots`} />
+                    {category.post_count} posts
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.categoryDescription}>
+                <p>{category.description || "No description available"}</p>
+              </div>
+
+              <div className={styles.categoryMeta}>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Created:</span>
+                  <span className={styles.metaValue}>
+                    {formatDate(category.created_at)} by {category.created_by}
+                  </span>
+                </div>
+                {category.last_updated && (
+                  <div className={styles.metaItem}>
+                    <span className={styles.metaLabel}>Updated:</span>
+                    <span className={styles.metaValue}>
+                      {formatDate(category.last_updated)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {category?.is_owner && (
-                <div className={styles.buttonGroup}>
+                <div className={styles.categoryActions}>
                   <button
-                    className={`${styles.primaryButton} ${styles.createButton}`}
+                    className={`${styles.secondaryButton} ${styles.updateButton}`}
                     onClick={() => navigate(`/forum/categories/${category.category_id}/update`)}
                   >
-                    Update Category
+                    <i className="fas fa-edit" /> Update Category
                   </button>
                   <button
-                    className={`${styles.primaryButton} ${styles.deleteButton}`}
+                    className={`${styles.secondaryButton} ${styles.deleteButton}`}
                     onClick={() => handleDeleteClick(category.category_id)}
                   >
-                    Delete Category
+                    <i className="fas fa-trash-alt" /> Delete Category
                   </button>
                 </div>
               )}
+
               <button
-                className={styles.secondaryButton}
+                className={styles.primaryButton}
                 onClick={() => navigate(`/forum/threads/create?category=${category.category_id}`)}
                 disabled={loading}
               >
-                Add New Thread
+                <i className="fas fa-plus" /> Create New Thread
               </button>
             </div>
 
             {/* Threads List */}
             <div className={styles.headerSection}>
               <h2 className={styles.pageTitle}>Threads in this Category</h2>
-              <div className={styles.sortControls}>
-                <select
-                  value={pagination.sortBy}
-                  onChange={handleSortChange}
-                  className={styles.sortSelector}
-                  disabled={loading}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      Sort by {option.label}
-                    </option>
-                  ))}
-                </select>
-                {renderSortIndicator()}
-              </div>
+              {threads.length > 0 ? (
+                <>
+                  <div className={styles.sortControls}>
+                    <select
+                      value={pagination.sortBy}
+                      onChange={handleSortChange}
+                      className={styles.sortSelector}
+                      disabled={loading}
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          Sort by {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {renderSortIndicator()}
+                  </div>
+                </>
+              ) : null}
             </div>
 
             {threads.length > 0 ? (

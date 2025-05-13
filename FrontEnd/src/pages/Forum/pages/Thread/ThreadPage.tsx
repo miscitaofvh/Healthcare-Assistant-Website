@@ -10,6 +10,7 @@ import { Thread } from "../../../../types/Forum/thread";
 import { Post } from "../../../../types/Forum/post";
 import { PaginationData } from "../../../../types/Forum/pagination";
 import requestThread from "../../../../utils/service/Forum/thread";
+import { formatDate, stripMarkdown } from "../../../../utils/helpers/dateFormatter";
 
 const ThreadPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,7 +86,7 @@ const ThreadPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!thread) return;
-    
+
     setIsDeleting(true);
     try {
       await requestThread.handleDeleteThread(
@@ -242,32 +243,42 @@ const ThreadPage: React.FC = () => {
                   </button>
                 </>
               )}
-              <button
-                className={styles.secondaryButton}
-                onClick={() => navigate(`/forum/posts/create?category=${thread.category_id}&thread=${thread.thread_id}`)}
-                disabled={loading}
-              >
-                Add New Post
-              </button>
+              {posts.length > 0 ? (
+                <>
+                  <button
+                    className={styles.secondaryButton}
+                    onClick={() => navigate(`/forum/posts/create?category=${thread.category_id}&thread=${thread.thread_id}`)}
+                    disabled={loading}
+                  >
+                    Add New Post
+                  </button>
+                </>
+              ) : null}
+
             </div>
 
             {/* Posts List */}
             <div className={styles.headerSection}>
               <h2 className={styles.pageTitle}>Posts</h2>
               <div className={styles.sortControls}>
-                <select
-                  value={pagination.sortBy}
-                  onChange={handleSortChange}
-                  className={styles.sortSelector}
-                  disabled={loading}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      Sort by {option.label}
-                    </option>
-                  ))}
-                </select>
-                {renderSortIndicator()}
+                {posts.length > 0 ? (
+                  <>
+                    <select
+                      value={pagination.sortBy}
+                      onChange={handleSortChange}
+                      className={styles.sortSelector}
+                      disabled={loading}
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          Sort by {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {renderSortIndicator()}
+                  </>
+                ) : null}
+
               </div>
             </div>
 
@@ -279,16 +290,20 @@ const ThreadPage: React.FC = () => {
                       <div className={styles.postHeader}>
                         <span className={styles.postAuthor}>By {post.created_by || "Anonymous"}</span>
                         <span className={styles.postDate}>
-                          {new Date(post.created_at).toLocaleString()}
+                          {formatDate(post.created_at)}
                         </span>
                         {post.last_updated && (
                           <span className={styles.postUpdateDate}>
-                            (updated: {new Date(post.last_updated).toLocaleString()})
+                            (updated: {formatDate(post.last_updated)})
                           </span>
                         )}
                       </div>
                       <div className={styles.postContent}>
-                        <p>{post.content}</p>
+                        <p>
+                          {stripMarkdown(post.content).length > 200
+                            ? `${stripMarkdown(post.content).substring(0, 200)}...`
+                            : stripMarkdown(post.content)}
+                        </p>
                       </div>
                       <div className={styles.postMeta}>
                         <span className={styles.metaItem}>
@@ -329,7 +344,7 @@ const ThreadPage: React.FC = () => {
                 <p className={styles.emptyMessage}>No posts available in this thread.</p>
                 <button
                   className={styles.primaryButton}
-                  onClick={() => navigate(`/forum/posts/create?thread=${thread.thread_id}`)}
+                  onClick={() => navigate(`/forum/posts/create?category=${thread.category_id}&thread=${thread.thread_id}`)}
                   disabled={loading}
                 >
                   Create First Post

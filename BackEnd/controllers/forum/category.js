@@ -20,22 +20,28 @@ const handleError = (error, req, res, action = 'process') => {
         "Invalid pagination": StatusCodes.BAD_REQUEST,
         "Invalid sort parameter": StatusCodes.BAD_REQUEST,
         "No fields to update provided": StatusCodes.BAD_REQUEST,
+        "Category name is required": StatusCodes.BAD_REQUEST,
+        "Invalid limit parameter": StatusCodes.BAD_REQUEST,
+        "Invalid category name": StatusCodes.BAD_REQUEST,
 
         // Conflict errors
         "Category name already exists": StatusCodes.CONFLICT,
         "Cannot delete category with existing threads": StatusCodes.CONFLICT,
 
         // Not found errors
-        "Category not found or unauthorized": StatusCodes.NOT_FOUND,
+        "Category not found": StatusCodes.NOT_FOUND,
         "No categories found": StatusCodes.NOT_FOUND,
         "No threads found for this category": StatusCodes.NOT_FOUND,
         "No posts found for this category": StatusCodes.NOT_FOUND,
-        "No categories found for this user": StatusCodes.NOT_FOUND
+        "No categories found for this user": StatusCodes.NOT_FOUND,
+        "User not found": StatusCodes.NOT_FOUND
     };
 
     const statusCode = errorMap[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
     const response = {
         success: false,
+        errorCode: error.message.includes("Invalid") ? "VALIDATION_ERROR" : 
+                   errorMap[error.message] ? error.message.toUpperCase().replace(/\s+/g, '_') : "INTERNAL_SERVER_ERROR",
         message: error.message || `Failed to ${action} category`,
         timestamp: new Date().toISOString()
     };
@@ -45,10 +51,6 @@ const handleError = (error, req, res, action = 'process') => {
             message: error.message,
             stack: error.stack?.split("\n")[0]
         };
-    }
-
-    if (error.message.includes("Invalid")) {
-        response.errorCode = "VALIDATION_ERROR";
     }
 
     return res.status(statusCode).json(response);
@@ -77,7 +79,41 @@ const validateSorting = (sortBy, sortOrder) => {
     return { orderByField, orderDirection };
 };
 
-// Controller methods
+const validateSortingThread = (sortBy, sortOrder) => {
+    const allowedFields = {
+        thread_name: 'ft.thread_name',
+        created: 'ft.created_at',
+        updated: 'ft.last_updated',
+        posts: 'post_count',
+        last_post_date: 'last_post_date'
+    };
+    const orderByField = allowedFields[sortBy] || allowedFields.thread_name;
+    const orderDirection = sortOrder && sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    return { orderByField, orderDirection };
+};
+
+function getSortDescription(sort) {
+    const descriptions = {
+        newest: "Most recently created posts first",
+        oldest: "Oldest posts first",
+        most_comments: "Posts with most comments first",
+        most_likes: "Posts with most likes first"
+    };
+    return descriptions[sort] || "Default sorting";
+}
+
+const validateSortingPost = (sortBy) => {
+    const allowedFields = {
+        newest: 'p.created_at DESC',
+        oldest: 'p.created_at ASC',
+        most_comments: 'p.comment_count DESC',
+        most_likes: 'p.like_count DESC'
+    };
+    const orderByField = allowedFields[sortBy] || allowedFields.newest;
+    return orderByField;
+};
+
 const getAllCategories = async (req, res) => {
     try {
         const { page = 1, limit = 10, sortBy = 'category_name', sortOrder = 'ASC' } = req.query;
@@ -87,11 +123,7 @@ const getAllCategories = async (req, res) => {
         const { categories, pagination } = await CategoryDB.getAllCategoriesDB(p, l, orderByField, orderDirection);
 
         if (!categories) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: "No data returned from database",
-                timestamp: new Date().toISOString()
-            });
+            throw new Error("No categories found");
         }
 
         res.status(StatusCodes.OK).json({
@@ -111,10 +143,9 @@ const getAllCategories = async (req, res) => {
 const getThreadsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
-        const { page = 1, limit = 10, sortBy = 'category_name', sortOrder = 'ASC' } = req.query;
+        const { page = 1, limit = 10, sortBy = 'thread_name', sortOrder = 'ASC' } = req.query;
         const { page: p, limit: l } = validatePagination(page, limit);
-        const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
-
+        const { orderByField, orderDirection } = validateSortingThread(sortBy, sortOrder);
         let author_id = null;
         try {
             if ((req.cookies.auth_token)) {
@@ -122,8 +153,13 @@ const getThreadsByCategory = async (req, res) => {
                 author_id = decoded.user_id;
             }
         } catch (error) {
+            // Silently continue if token is invalid
         }
         const { category, threads, pagination } = await CategoryDB.getThreadsByCategoryDB(categoryId, p, l, orderByField, orderDirection, author_id);
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -143,7 +179,17 @@ const getThreadsByCategory = async (req, res) => {
 
 const getSummaryCategories = async (req, res) => {
     try {
-        const categories = await CategoryDB.getSummaryCategoriesDB();
+        let limit = req.query;
+        if (isNaN(limit)) {
+            limit = null;
+        } else if (limit < 1) {
+            throw new Error("Invalid limit parameter");
+        }
+        const categories = await CategoryDB.getSummaryCategoriesDB(limit);
+        
+        if (!categories) {
+            throw new Error("No categories found");
+        }
 
         res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
 
@@ -167,7 +213,15 @@ const getCategoryByName = async (req, res) => {
     try {
         const categoryName = req.params;
 
+        if (!categoryName || typeof categoryName !== 'string') {
+            throw new Error("Invalid category name");
+        }
+
         const category = await CategoryDB.getCategoryByNameDB(categoryName);
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -186,7 +240,15 @@ const getCategoryById = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
+        if (isNaN(categoryId) || categoryId < 1) {
+            throw new Error("Invalid category ID");
+        }
+
         const category = await CategoryDB.getCategoryByIdDB(categoryId);
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -209,7 +271,21 @@ const getThreadsSummaryByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
-        const { category, threads, totalCount } = await CategoryDB.getThreadsSummaryByCategoryDB(categoryId);
+        if (isNaN(categoryId) || categoryId < 1) {
+            throw new Error("Invalid category ID");
+        }
+
+        let limit = req.query;
+        if (isNaN(limit)) {
+            limit = null;
+        } else if (limit < 1) {
+            throw new Error("Invalid limit parameter");
+        }
+        const { category, threads, totalCount } = await CategoryDB.getThreadsSummaryByCategoryDB(categoryId, limit);
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -233,18 +309,24 @@ const getPostsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
-        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
-
-        const sort = req.query.sort || 'newest';
-        const validSortOptions = ['newest', 'oldest', 'most_comments', 'most_likes'];
-        if (!validSortOptions.includes(sort)) {
-            throw new Error("Invalid sort parameter");
+        if (isNaN(categoryId) || categoryId < 1) {
+            throw new Error("Invalid category ID");
         }
 
-        const { posts, totalCount } = await CategoryDB.getPostsByCategoryDB(categoryId, page, limit, sort);
+        const { page = 1, limit = 10, sortBy = 'newest' } = req.query;
+
+        const { page: p, limit: l } = validatePagination(page, limit);
+        const sort = validateSortingPost(sortBy);
+
+        const { category, posts, totalCount } = await CategoryDB.getPostsByCategoryDB(categoryId, p, l, sort);
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
+            category: category,
             posts: posts,
             pagination: {
                 currentPage: page,
@@ -254,7 +336,7 @@ const getPostsByCategory = async (req, res) => {
             },
             sort: {
                 by: sort,
-                description: getSortDescription(sort)
+                description: getSortDescription(sortBy)
             },
             metadata: {
                 categoryId,
@@ -274,16 +356,24 @@ const getPostsByCategory = async (req, res) => {
 const getCategoriesByUser = async (req, res) => {
     try {
         const { username } = req.params;
-        const validatedUsername = validateStringInput(username, "Username");
-        const includeStats = req.query.stats === 'true';
 
-        const categories = await CategoryDB.getCategoriesByUserDB(validatedUsername, includeStats);
+        if (!username || typeof username !== 'string') {
+            throw new Error("Invalid username format");
+        }
+
+        const includeStats = req.query;
+
+        const categories = await CategoryDB.getCategoriesByUserDB(username, includeStats);
+
+        if (!categories) {
+            throw new Error("No categories found for this user");
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
             categories: categories,
             metadata: {
-                username: validatedUsername,
+                username: username,
                 count: categories.length,
                 retrievedAt: new Date().toISOString(),
                 includeStats,
@@ -299,20 +389,26 @@ const getCategoriesByUser = async (req, res) => {
     }
 };
 
-// Controller: createCategory
 const createCategory = async (req, res) => {
     try {
         const userId = req.user.user_id;
         const { category_name, description } = req.body;
 
-        const { categoryId, username } = await CategoryDB.createCategoryDB(userId, category_name, description);
+        if (!category_name) {
+            throw new Error("Category name is required");
+        }
+
+        const { categoryId } = await CategoryDB.createCategoryDB(userId, category_name, description);
+
+        if (!categoryId) {
+            throw new Error("Failed to create category");
+        }
 
         res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Category created successfully",
             data: { categoryId },
             metadata: {
-                createdBy: username,
                 createdAt: new Date().toISOString()
             }
         });
@@ -322,16 +418,21 @@ const createCategory = async (req, res) => {
     }
 };
 
-
 const updateCategory = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-
         const { categoryId } = req.params;
+
+        if (isNaN(categoryId) || categoryId < 1) {
+            throw new Error("Invalid category ID");
+        }
 
         const { category_name, description } = req.body;
 
-        const result = await CategoryDB.updateCategoryDB(userId, categoryId, category_name, description);
+        if (!category_name && description === undefined) {
+            throw new Error("No fields to update provided");
+        }
+
+        const result = await CategoryDB.updateCategoryDB(categoryId, category_name, description);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -349,11 +450,13 @@ const updateCategory = async (req, res) => {
 
 const deleteCategory = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-
         const { categoryId } = req.params;
 
-        const result = await CategoryDB.deleteCategoryDB(userId, categoryId);
+        if (isNaN(categoryId) || categoryId < 1) {
+            throw new Error("Invalid category ID");
+        }
+
+        const result = await CategoryDB.deleteCategoryDB(categoryId);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -367,17 +470,6 @@ const deleteCategory = async (req, res) => {
         handleError(error, req, res, 'delete category');
     }
 };
-
-// Utility function
-function getSortDescription(sort) {
-    const descriptions = {
-        newest: "Most recently created posts first",
-        oldest: "Oldest posts first",
-        most_comments: "Posts with most comments first",
-        most_likes: "Posts with most likes first"
-    };
-    return descriptions[sort] || "Default sorting";
-}
 
 export default {
     getAllCategories,
