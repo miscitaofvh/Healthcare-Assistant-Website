@@ -72,7 +72,7 @@ const loadTagByID = async (
     try {
         setLoading(true);
         
-        const response = await InteractTag.getTagById(id);
+        const response = await InteractTag.getSummaryTagById(id);
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {

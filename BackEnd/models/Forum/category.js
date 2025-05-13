@@ -488,6 +488,7 @@ const createCategoryDB = async (author_id, category_name, description = null) =>
         if (!categoryId) {
             throw new Error("Failed to create category");
         }
+
         return { categoryId };
     } catch (error) {
         console.error("Error creating category:", error);
@@ -502,7 +503,7 @@ const createCategoryDB = async (author_id, category_name, description = null) =>
     }
 };
 
-const updateCategoryDB = async (userId, categoryId, category_name, description) => {
+const updateCategoryDB = async (categoryId, category_name, description) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -525,12 +526,6 @@ const updateCategoryDB = async (userId, categoryId, category_name, description) 
             throw new Error("Category not found");
         }
 
-        await conn.execute(
-            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
-                     VALUES (?, 'category', 'update', ?)`,
-            [userId, categoryId]
-        );
-
         await conn.commit();
         return 'Category updated successfully';
 
@@ -552,7 +547,7 @@ const updateCategoryDB = async (userId, categoryId, category_name, description) 
     }
 };
 
-const deleteCategoryDB = async (userId, categoryId) => {
+const deleteCategoryDB = async (categoryId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -569,12 +564,6 @@ const deleteCategoryDB = async (userId, categoryId) => {
         if (deleteResult.affectedRows === 0) {
             throw new Error("Category not found");
         }
-
-        await conn.execute(
-            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
-                     VALUES (?, 'category', 'delete', ?)`,
-            [userId, categoryId]
-        );
 
         return `Category with ID ${categoryId} deleted successfully`;
 

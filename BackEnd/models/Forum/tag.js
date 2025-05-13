@@ -6,7 +6,16 @@ const getAllTagsDB = async (page = 1, limit = 20, search = '', sortBy = 'usage_c
 
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+
+        const validTagsColumn = [
+            't.tag_name', 'usage_count',
+            't.last_used_at', 't.created_at',
+            'post_count'
+        ];
+
+        if(!validTagsColumn.includes(sortBy)){
+            sortBy = 'usage_count';
+        }
 
         const tagsSql = `
             SELECT 
@@ -77,7 +86,6 @@ const getSummaryTagsDB = async () => {
 
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
 
         const tagsSql = `
             SELECT 
@@ -87,11 +95,14 @@ const getSummaryTagsDB = async () => {
             FROM forum_tags t
         `;
 
-        const tags  = await conn.execute(tagsSql);
+        const [tags]  = await conn.execute(tagsSql);
 
+        if (!tags.length) {
+            throw new Error("No threads found");
+        }
         await conn.commit();
 
-        return tags[0] || {};
+        return tags;
 
     } catch (error) {
         if (conn) await conn.rollback();
@@ -102,11 +113,10 @@ const getSummaryTagsDB = async () => {
     }
 };
 
-const getSummaryLittleTagsDB = async () => {
+const getSummaryLittleTagsDB = async (limit = null) => {
     let conn;
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
 
         const tagsSql = `
             SELECT 
@@ -117,10 +127,10 @@ const getSummaryLittleTagsDB = async () => {
             LEFT JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
             GROUP BY t.tag_id
             ORDER BY post_count DESC
-            LIMIT 100
+            ${limit ? `LIMIT ?` : ''}
         `;
 
-        const [tags] = await conn.execute(tagsSql);
+        const [tags] = await conn.execute(tagsSql, limit ? [limit.toString()] : []);
         await conn.commit();
 
         return {
@@ -297,7 +307,6 @@ const getPostsByTagDB = async (tagId, page = 1, limit = 10, author_id = null) =>
 
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
 
         const sqlTag = `
             SELECT 
@@ -439,59 +448,10 @@ const getPopularTagsDB = async (limit = 10) => {
     }
 };
 
-const getTagsForPostDB = async (postId) => {
-    let conn;
-    try {
-        if (!postId || !Number.isInteger(Number(postId))) {
-            throw new Error("Valid numeric post ID is required");
-        }
-
-        conn = await connection.getConnection();
-
-        const sql = `
-            SELECT 
-                t.tag_id, 
-                t.tag_name, 
-                t.description,
-                t.created_at, 
-                t.last_updated,
-                t.usage_count,
-                u.username AS created_by,
-                (
-                    SELECT COUNT(*) 
-                    FROM forum_tags_mapping 
-                    WHERE tag_id = t.tag_id
-                ) AS total_usage
-            FROM forum_tags t
-            JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
-            LEFT JOIN users u ON t.user_id = u.user_id
-            WHERE tm.post_id = ?
-            ORDER BY t.tag_name ASC
-        `;
-
-        const [tags] = await conn.execute(sql, [postId]);
-        return tags.map(tag => ({
-            ...tag,
-            usage_count: Number(tag.usage_count),
-            total_usage: Number(tag.total_usage)
-        }));
-    } catch (error) {
-        console.error(`Database error in getTagsForPostDB for post ${postId}:`, error);
-
-        if (error.message.includes("Valid numeric post ID")) {
-            throw error;
-        }
-        throw new Error("Failed to retrieve tags for post");
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
 const getTagsByUserDB = async (username) => {
     let conn;
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
 
         const sql = `
             SELECT DISTINCT
@@ -501,7 +461,8 @@ const getTagsByUserDB = async (username) => {
             FROM forum_tags t
             JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
             JOIN forum_posts p ON tm.post_id = p.post_id
-            WHERE p.username = ?
+            JOIN users u on p.user_id = t.user_id
+            WHERE u.username = ?
             GROUP BY t.tag_id
             ORDER BY post_count DESC
         `;
@@ -527,10 +488,6 @@ const getTagsByUserDB = async (username) => {
 const createTagDB = async (tagName, description = null, userId) => {
     let conn;
     try {
-        if (!tagName || !userId) {
-            throw new Error("Tag name and user ID are required");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
@@ -546,16 +503,10 @@ const createTagDB = async (tagName, description = null, userId) => {
 
         const tagId = result.insertId;
 
-        const [userResult] = await conn.execute(
-            "SELECT username FROM users WHERE user_id = ?",
-            [userId]
-        );
-
         await conn.commit();
 
         return {
             tagId,
-            username: userResult[0]?.username || null,
             message: "Tag created successfully"
         };
     } catch (error) {
@@ -572,12 +523,9 @@ const createTagDB = async (tagName, description = null, userId) => {
     }
 };
 
-const updateTagDB = async (tagId, tagName, description = null, userId) => {
+const updateTagDB = async (tagId, tagName, description = null) => {
     let conn;
     try {
-        if (!tagId || !userId) {
-            throw new Error("Tag ID and user ID are required");
-        }
 
         conn = await connection.getConnection();
         await conn.beginTransaction();
@@ -617,13 +565,9 @@ const updateTagDB = async (tagId, tagName, description = null, userId) => {
     }
 };
 
-const deleteTagDB = async (tagId, userId) => {
+const deleteTagDB = async (tagId) => {
     let conn;
     try {
-        if (!tagId || !userId) {
-            throw new Error("Tag ID and user ID are required");
-        }
-
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
@@ -651,172 +595,6 @@ const deleteTagDB = async (tagId, userId) => {
     }
 };
 
-const getTagsOfPostDB = async (postId) => {
-    let conn;
-    try {
-        if (!postId) {
-            throw new Error("Post ID is required");
-        }
-
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = `
-            SELECT 
-                t.tag_id,
-                t.tag_name,
-                t.description,
-                t.created_at,
-                t.last_updated,
-                COUNT(DISTINCT tm.post_id) as usage_count
-            FROM forum_tags t
-            JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
-            WHERE tm.post_id = ?
-            GROUP BY t.tag_id
-            ORDER BY t.tag_name ASC
-        `;
-        const [tags] = await conn.execute(sql, [postId]);
-        await conn.commit();
-        return tags.map(tag => ({
-            ...tag,
-            usage_count: Number(tag.usage_count)
-        }));
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting tags of post:", error);
-
-        if (error.message.includes("Post ID is required")) {
-            throw error;
-        }
-        throw new Error("Failed to retrieve tags for post");
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-const getTagOfPostByIdDB = async (postId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const sql = `
-            SELECT 
-                t.tag_id,
-                t.tag_name,
-                t.description,
-                t.created_at,
-                t.last_updated,
-                COUNT(DISTINCT tm.post_id) as usage_count
-            FROM forum_tags t
-            JOIN forum_tags_mapping tm ON t.tag_id = tm.tag_id
-            WHERE tm.post_id = ?
-            GROUP BY t.tag_id
-            LIMIT 1
-        `;
-        const [tags] = await conn.execute(sql, [postId]);
-        await conn.commit();
-        return tags[0] ? {
-            ...tags[0],
-            usage_count: Number(tags[0].usage_count)
-        } : null;
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error getting tag of post by ID:", error);
-
-        if (error.message.includes("Post ID and Tag ID")) {
-            throw error;
-        }
-        throw new Error("Failed to retrieve tag for post");
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-const addTagsToPostDB = async (postId, tagIds, userId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        const values = tagIds.map(tagId => [postId, tagId]);
-        await conn.execute(
-            "INSERT IGNORE INTO forum_tags_mapping (post_id, tag_id) VALUES ?",
-            [values]
-        );
-
-        await conn.execute(
-            `UPDATE forum_tags 
-             SET usage_count = usage_count + 1, 
-                 last_used_at = CURRENT_TIMESTAMP 
-             WHERE tag_id IN (?)`,
-            [tagIds]
-        );
-
-        await conn.commit();
-        return {
-            success: true,
-            message: "Tags added to post successfully",
-            postId,
-            addedTags: tagIds
-        };
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error adding tags to post:", error);
-
-        if (error.message.includes("Unauthorized") ||
-            error.message.includes("Post not found") ||
-            error.message.includes("One or more tags not found") ||
-            error.message.includes("Post ID, tag IDs, and user ID")) {
-            throw error;
-        }
-        throw new Error("Failed to add tags to post");
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
-const removeTagFromPostDB = async (postId, tagId, userId) => {
-    let conn;
-    try {
-        conn = await connection.getConnection();
-        await conn.beginTransaction();
-
-        await conn.execute(
-            "DELETE FROM forum_tags_mapping WHERE post_id = ? AND tag_id = ?",
-            [postId, tagId]
-        );
-
-        await conn.execute(
-            `UPDATE forum_tags 
-             SET usage_count = GREATEST(0, usage_count - 1)
-             WHERE tag_id = ?`,
-            [tagId]
-        );
-
-        await conn.commit();
-        return {
-            success: true,
-            message: "Tag removed from post successfully",
-            postId,
-            removedTagId: tagId
-        };
-    } catch (error) {
-        if (conn) await conn.rollback();
-        console.error("Error removing tag from post:", error);
-
-        if (error.message.includes("Unauthorized") ||
-            error.message.includes("Post not found") ||
-            error.message.includes("Tag not found on post") ||
-            error.message.includes("Post ID, tag ID, and user ID")) {
-            throw error;
-        }
-        throw new Error("Failed to remove tag from post");
-    } finally {
-        if (conn) conn.release();
-    }
-};
-
 export default {
     getAllTagsDB,
     getSummaryTagsDB,
@@ -826,13 +604,8 @@ export default {
     getTagByNameDB,
     getPostsByTagDB,
     getPopularTagsDB,
-    getTagsForPostDB,
     getTagsByUserDB,
     createTagDB,
     updateTagDB,
-    deleteTagDB,
-    getTagsOfPostDB,
-    getTagOfPostByIdDB,
-    addTagsToPostDB,
-    removeTagFromPostDB
+    deleteTagDB
 };

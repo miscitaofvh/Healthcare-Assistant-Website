@@ -156,10 +156,6 @@ const getThreadById = async (req, res) => {
     try {
         const { threadId } = req.params;
 
-        if (isNaN(threadId) || threadId < 1) {
-            throw new Error("Invalid thread ID");
-        }
-
         const thread = await ThreadDB.getThreadByIdDB(threadId);
 
         if (!thread) {
@@ -224,10 +220,6 @@ const getThreadByName = async (req, res) => {
     try {
         const { threadName } = req.params;
 
-        if (!threadName || typeof threadName !== 'string') {
-            throw new Error("Invalid thread name");
-        }
-
         const thread = await ThreadDB.getThreadByNameDB(threadName);
 
         if (!thread) {
@@ -252,10 +244,6 @@ const getThreadsByUser = async (req, res) => {
         const { page = 1, limit = 10, sortBy = 'thread_name', sortOrder = 'ASC' } = req.query;
         const { page: p, limit: l } = validatePagination(page, limit);
         const { orderByField, orderDirection } = validateSorting(sortBy, sortOrder);
-
-        if (!username || typeof username !== 'string') {
-            throw new Error("Invalid username format");
-        }
 
         const { threads, pagination } = await ThreadDB.getThreadsByUserDB(username, p, l, orderByField, orderDirection);
 
@@ -283,13 +271,6 @@ const createThread = async (req, res) => {
         const userId = req.user.user_id;
         const { category_id, thread_name, description } = req.body;
 
-        if (!thread_name) {
-            throw new Error("Thread name is required");
-        }
-        if (!category_id || isNaN(category_id) || category_id < 1) {
-            throw new Error("Invalid category ID");
-        }
-
         const { threadId } = await ThreadDB.createThreadDB(userId, category_id, thread_name, description);
 
         res.status(StatusCodes.CREATED).json({
@@ -308,18 +289,10 @@ const createThread = async (req, res) => {
 
 const updateThread = async (req, res) => {
     try {
-        const userId = req.user.user_id;
         const { threadId } = req.params;
         const { thread_name, description } = req.body;
 
-        if (isNaN(threadId) || threadId < 1) {
-            throw new Error("Invalid thread ID");
-        }
-        if (!thread_name && description === undefined) {
-            throw new Error("No fields to update provided");
-        }
-
-        const result = await ThreadDB.updateThreadDB(userId, threadId, thread_name, description);
+        const result = await ThreadDB.updateThreadDB(threadId, thread_name, description);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -336,14 +309,9 @@ const updateThread = async (req, res) => {
 
 const deleteThread = async (req, res) => {
     try {
-        const userId = req.user.user_id;
         const { threadId } = req.params;
 
-        if (isNaN(threadId) || threadId < 1) {
-            throw new Error("Invalid thread ID");
-        }
-
-        const result = await ThreadDB.deleteThreadDB(userId, threadId);
+        const result = await ThreadDB.deleteThreadDB(threadId);
 
         res.status(StatusCodes.OK).json({
             success: true,

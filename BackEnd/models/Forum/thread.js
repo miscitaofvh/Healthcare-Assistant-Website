@@ -398,12 +398,6 @@ const createThreadDB = async (userId, categoryId, threadName, description = null
             throw new Error("Failed to create thread");
         }
 
-        await conn.execute(
-            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
-             VALUES (?, 'thread', 'create', ?)`,
-            [userId, threadId]
-        );
-
         await conn.commit();
         return { threadId };
     } catch (error) {
@@ -415,7 +409,7 @@ const createThreadDB = async (userId, categoryId, threadName, description = null
     }
 };
 
-const updateThreadDB = async (userId, threadId, threadName, description) => {
+const updateThreadDB = async (threadId, threadName, description) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -438,12 +432,6 @@ const updateThreadDB = async (userId, threadId, threadName, description) => {
             throw new Error("Thread not found or no changes made");
         }
 
-        await conn.execute(
-            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
-             VALUES (?, 'thread', 'update', ?)`,
-            [userId, threadId]
-        );
-
         await conn.commit();
         return "Thread updated successfully";
     } catch (error) {
@@ -455,7 +443,7 @@ const updateThreadDB = async (userId, threadId, threadName, description) => {
     }
 };
 
-const deleteThreadDB = async (userId, threadId) => {
+const deleteThreadDB = async (threadId) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -470,12 +458,6 @@ const deleteThreadDB = async (userId, threadId) => {
         if (deleteResult.affectedRows === 0) {
             throw new Error("Thread not found");
         }
-
-        await conn.execute(
-            `INSERT INTO forum_activities (user_id, activity_type, target_type, target_id)
-             VALUES (?, 'thread', 'delete', ?)`,
-            [userId, threadId]
-        );
 
         await conn.commit();
         return `Thread with ID ${threadId} deleted successfully`;

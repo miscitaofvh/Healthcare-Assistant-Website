@@ -200,7 +200,7 @@ const TagList: React.FC = () => {
                       <span className={styles.metaValue}>{tag.created_by}</span>
                     </div>
                     <div className={styles.metaItem}>
-                      <span className={styles.metaLabel}>Usage count:</span>
+                      <span className={styles.metaLabel}>Post count:</span>
                       <span className={styles.metaValue}>{tag.post_count || 0}</span>
                     </div>
                     <div className={styles.metaItem}>

@@ -209,10 +209,6 @@ const getCategoryByName = async (req, res) => {
     try {
         const { categoryName } = req.params;
 
-        if (!categoryName || typeof categoryName !== 'string') {
-            throw new Error("Invalid category name");
-        }
-
         const category = await CategoryDB.getCategoryByNameDB(categoryName);
 
         if (!category) {
@@ -235,10 +231,6 @@ const getCategoryById = async (req, res) => {
     try {
         const { categoryId } = req.params;
 
-        if (isNaN(categoryId) || categoryId < 1) {
-            throw new Error("Invalid category ID");
-        }
-
         const category = await CategoryDB.getCategoryByIdDB(categoryId);
 
         if (!category) {
@@ -260,10 +252,6 @@ const getCategoryById = async (req, res) => {
 const getThreadsSummaryByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
-
-        if (isNaN(categoryId) || categoryId < 1) {
-            throw new Error("Invalid category ID");
-        }
 
         let { limit } = req.query;
         if (isNaN(limit)) {
@@ -297,10 +285,6 @@ const getThreadsSummaryByCategory = async (req, res) => {
 const getPostsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
-
-        if (isNaN(categoryId) || categoryId < 1) {
-            throw new Error("Invalid category ID");
-        }
 
         const { page = 1, limit = 10, sortBy = 'newest' } = req.query;
 
@@ -341,10 +325,6 @@ const getCategoriesByUser = async (req, res) => {
     try {
         const { username } = req.params;
 
-        if (!username || typeof username !== 'string') {
-            throw new Error("Invalid username format");
-        }
-
         const includeStats = req.query.includeStats === 'true';
 
         const categories = await CategoryDB.getCategoriesByUserDB(username, includeStats);
@@ -370,14 +350,9 @@ const getCategoriesByUser = async (req, res) => {
 
 const createCategory = async (req, res) => {
     try {
-        const userId = req.user.user_id;
         const { category_name, description } = req.body;
 
-        if (!category_name) {
-            throw new Error("Category name is required");
-        }
-
-        const { categoryId } = await CategoryDB.createCategoryDB(userId, category_name, description);
+        const { categoryId } = await CategoryDB.createCategoryDB(category_name, description);
 
         if (!categoryId) {
             throw new Error("Failed to create category");
@@ -398,16 +373,11 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
     try {
-        const userId = req.user.user_id;
         const { categoryId } = req.params;
 
         const { category_name, description } = req.body;
 
-        if (!category_name && description === undefined) {
-            throw new Error("No fields to update provided");
-        }
-
-        const result = await CategoryDB.updateCategoryDB(userId, categoryId, category_name, description);
+        const result = await CategoryDB.updateCategoryDB(categoryId, category_name, description);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -424,14 +394,9 @@ const updateCategory = async (req, res) => {
 
 const deleteCategory = async (req, res) => {
     try {
-        const userId = req.user.user_id;
         const { categoryId } = req.params;
 
-        if (isNaN(categoryId) || categoryId < 1) {
-            throw new Error("Invalid category ID");
-        }
-
-        const result = await CategoryDB.deleteCategoryDB(userId, categoryId);
+        const result = await CategoryDB.deleteCategoryDB(categoryId);
 
         res.status(StatusCodes.OK).json({
             success: true,

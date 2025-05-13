@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import TagDB from "../../models/Forum/tag.js";
+import tag from "../../models/Forum/tag.js";
 
 dotenv.config();
 
@@ -82,7 +83,6 @@ const getUserIdFromToken = (req) => {
     return decoded.user_id;
 };
 
-// Controller methods
 const getAllTags = async (req, res) => {
     try {
         const { page = 1, limit = 20, search = '', sortBy = 'usage_count', sortOrder = 'DESC' } = req.query;
@@ -106,10 +106,6 @@ const getAllTags = async (req, res) => {
             pagination: pagination,
             metadata: {
                 retrievedAt: new Date().toISOString(),
-                cacheHint: {
-                    recommended: true,
-                    duration: "5m"
-                }
             }
 
         });
@@ -137,9 +133,14 @@ const getSummaryTags = async (req, res) => {
 
 const getSummaryLittleTags = async (req, res) => {
     try {
-        const { tags } = await TagDB.getSummaryLittleTagsDB();
+        let { limit } = req.query;
+        if (isNaN(limit)) {
+            limit = null;
+        } else if (limit < 1) {
+            throw new Error("Invalid limit parameter");
+        }
 
-        res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
+        const { tags } = await TagDB.getSummaryLittleTagsDB(limit);
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -222,7 +223,7 @@ const getPostsByTag = async (req, res) => {
                 const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
                 author_id = decoded.user_id;
             }
-        } catch(error) {
+        } catch (error) {
         }
 
         const { posts, tag, pagination } = await TagDB.getPostsByTagDB(tagId, p, l, author_id);
@@ -262,26 +263,6 @@ const getPopularTags = async (req, res) => {
     }
 };
 
-const getTagsForPost = async (req, res) => {
-    try {
-        const { postId } = req.params;
-
-        const tags = await TagDB.getTagsForPostDB(postId);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            tags: tags,
-            meta: {
-                count: tags.length,
-                postId: id,
-                retrievedAt: new Date().toISOString()
-            }
-        });
-    } catch (error) {
-        handleError(error, req, res, 'fetch tags for post');
-    }
-};
-
 const getTagsByUser = async (req, res) => {
     try {
         const { username } = req.params;
@@ -292,7 +273,7 @@ const getTagsByUser = async (req, res) => {
             success: true,
             data: tags,
             metadata: {
-                userId,
+                username: username,
                 count: tags.length,
                 retrievedAt: new Date().toISOString()
             }
@@ -308,13 +289,13 @@ const createTag = async (req, res) => {
 
         const author_id = getUserIdFromToken(req);
 
-        const result = await TagDB.createTagDB(tag_name, description, author_id);
+        const {tagId, message} = await TagDB.createTagDB(tag_name, description, author_id);
 
         res.status(StatusCodes.CREATED).json({
             success: true,
-            data: result,
+            tagId: tagId,
+            message: message,
             metadata: {
-                createdBy: author_id,
                 createdAt: new Date().toISOString()
             }
         });
@@ -328,13 +309,10 @@ const updateTagById = async (req, res) => {
         const { tagId } = req.params;
         const { tag_name, description } = req.body;
 
-        const author_id = getUserIdFromToken(req);
-
         const result = await TagDB.updateTagDB(
             Number(tagId),
             tag_name?.trim(),
-            description?.trim(),
-            author_id
+            description?.trim()
         );
 
         res.status(StatusCodes.OK).json({
@@ -343,7 +321,6 @@ const updateTagById = async (req, res) => {
             message: "Tag updated successfully",
             metadata: {
                 updatedAt: new Date().toISOString(),
-                updatedBy: author_id
             }
         });
     } catch (error) {
@@ -355,9 +332,7 @@ const deleteTagById = async (req, res) => {
     try {
         const { tagId } = req.params;
 
-        const author_id = getUserIdFromToken(req);
-
-        const result = await TagDB.deleteTagDB(Number(tagId), author_id);
+        const result = await TagDB.deleteTagDB(Number(tagId));
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -365,96 +340,10 @@ const deleteTagById = async (req, res) => {
             message: "Tag deleted successfully",
             metadata: {
                 deletedAt: new Date().toISOString(),
-                deletedBy: author_id
             }
         });
     } catch (error) {
         handleError(error, req, res, 'delete tag');
-    }
-};
-
-const getTagsOfPost = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const tags = await TagDB.getTagsOfPostDB(id);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            tags: tags,
-            metadata: {
-                postId: id,
-                count: tags.length,
-                retrievedAt: new Date().toISOString()
-            }
-        });
-    } catch (error) {
-        handleError(error, req, res, 'fetch tags of post');
-    }
-};
-
-const getTagOfPostById = async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const tags = await TagDB.getTagOfPostByIdDB(postId);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            tags: tags,
-            metadata: {
-                postId: postId,
-                retrievedAt: new Date().toISOString()
-            }
-        });
-    } catch (error) {
-        handleError(error, req, res, 'fetch tag of post by ID');
-    }
-};
-
-const addTagsToPost = async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const { ids } = req.body;
-
-        const author_id = getUserIdFromToken(req);
-
-        const result = await TagDB.addTagsToPostDB(postId, ids, author_id);
-
-        res.status(StatusCodes.CREATED).json({
-            success: true,
-            data: result,
-            metadata: {
-                postId,
-                addedTagsCount: ids.length,
-                addedAt: new Date().toISOString(),
-                addedBy: author_id
-            }
-        });
-    } catch (error) {
-        handleError(error, req, res, 'add tags to post');
-    }
-};
-
-const removeTagFromPost = async (req, res) => {
-    try {
-        const { postId, tagId } = req.params;
-
-        const author_id = getUserIdFromToken(req);
-
-        const result = await TagDB.removeTagFromPostDB(postId, tagId, author_id);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            data: result,
-            message: "Tag removed from post successfully",
-            metadata: {
-                postId,
-                tagId: id,
-                removedAt: new Date().toISOString(),
-                removedBy: author_id
-            }
-        });
-    } catch (error) {
-        handleError(error, req, res, 'remove tag from post');
     }
 };
 
@@ -467,13 +356,8 @@ export default {
     getTagByName,
     getPostsByTag,
     getPopularTags,
-    getTagsForPost,
     getTagsByUser,
     createTag,
     updateTagById,
-    deleteTagById,
-    getTagsOfPost,
-    getTagOfPostById,
-    addTagsToPost,
-    removeTagFromPost
+    deleteTagById
 };

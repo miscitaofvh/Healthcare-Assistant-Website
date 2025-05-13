@@ -30,6 +30,11 @@ async function getTagById(id: number) {
     return response;
 }
 
+async function getSummaryTagById(id: number) {
+    const response = await requestAPI(BASE_URL, `/tags/${id}/summary`, "GET");
+    return response;
+}
+
 // Get tags by name (search)
 async function getTagByName(name: string) {
     const response = await requestAPI(BASE_URL, `/tags/search?name=${encodeURIComponent(name)}`, "GET");
@@ -81,36 +86,12 @@ async function deleteTag(id: number) {
     return response;
 }
 
-// Get all tags of a post
-async function getTagsOfPost(postId: number) {
-    const response = await requestAPI(BASE_URL, `/posts/${postId}/tags`, "GET");
-    return response;
-}
-
-// Get a specific tag of a post by tag ID
-async function getTagOfPostById(postId: number, tagId: number) {
-    const response = await requestAPI(BASE_URL, `/posts/${postId}/tags/${tagId}`, "GET");
-    return response;
-}
-
-// Add tags to a post
-async function addTagsToPost(postId: number, tags: number[]) {
-    const response = await requestAPI(BASE_URL, `/posts/${postId}/tags`, "POST", { tags });
-    return response;
-}
-
-// Remove a tag from a post
-async function removeTagFromPost(postId: number, tagId: number) {
-    const response = await requestAPI(BASE_URL, `/posts/${postId}/tags/${tagId}`, "DELETE");
-    return response;
-}
-
-
 export default {
     getAllTags,
     getAllTagsSummary,
     getAllTagsLittleSummary,
     getTagById,
+    getSummaryTagById,
     getTagByForumPost,
     getTagByName,
     getPostsByTag,
@@ -118,9 +99,5 @@ export default {
     getTagsByUser,
     createTag,
     updateTag,
-    deleteTag,
-    getTagsOfPost,
-    getTagOfPostById,
-    addTagsToPost,
-    removeTagFromPost
+    deleteTag
 };

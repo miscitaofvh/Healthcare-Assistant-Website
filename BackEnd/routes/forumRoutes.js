@@ -331,7 +331,7 @@ router.get(
 router.post(
   "/posts/:postId/reports",
   auth.required,
-//   reportLimiter,
+  //   reportLimiter,
   forumValidatorsPost.validatePostExists,
   forumValidatorsReport.validateReportPost,
   asyncHandler(reportController.reportPost)
@@ -433,6 +433,13 @@ router.get(
   asyncHandler(tagController.getTagByName)
 );
 
+router.get(
+  "/users/:username/tags/",
+  forumValidatorsUser.validateUserExists,
+  paginate(),
+  asyncHandler(tagController.getTagsByUser)
+);
+
 router.post(
   "/tags",
   auth.required,
@@ -458,46 +465,6 @@ router.delete(
   auth.requireOwnerOrAdmin("tag"),
   asyncHandler(tagController.deleteTagById)
 );
-
-router.get(
-  "/tags/users/:username",
-  forumValidatorsUser.validateUserExists,
-  paginate(),
-  asyncHandler(tagController.getTagsByUser)
-);
-
-router.get(
-  "/tags/posts/:postId",
-  forumValidatorsPost.validatePostExists,
-  paginate(),
-  asyncHandler(tagController.getTagsForPost)
-);
-
-router.get(
-  "/tags/posts/:postId",
-  forumValidatorsPost.validatePostExists,
-  asyncHandler(tagController.getTagOfPostById)
-);
-
-router.post(
-  "/tags/posts/:postId",
-  auth.required,
-  forumValidatorsPost.validatePostExists,
-  forumValidatorsTag.validatePostTagsAdd,
-  auth.requireOwnerOrAdmin("post"),
-  asyncHandler(tagController.addTagsToPost)
-);
-
-router.delete(
-  "/tags/posts/:postId/:tagId",
-  auth.required,
-  forumValidatorsPost.validatePostExists,
-  forumValidatorsTag.validateTagExists,
-  forumValidatorsTag.validatePostTagRemove,
-  auth.requireOwnerOrAdmin("post"),
-  asyncHandler(tagController.removeTagFromPost)
-);
-
 // ====================================================================================
 // Forum Activities Routes (Future Development)
 // ====================================================================================
