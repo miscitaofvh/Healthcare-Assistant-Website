@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import Navbar from '../../components/Navbar';
 import { FaChartLine, FaCalendarAlt, FaPlus } from 'react-icons/fa';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Types
 import { HealthRecord, FormData, SelectedMetricsType } from '../../types/healthTracking';
@@ -84,7 +86,6 @@ const HealthTracking = () => {
     setError('');
     setSuccess('');
   }, [setError, setSuccess]);
-
   const handleSubmit = useCallback(async (e: React.FormEvent, newFormData: FormData) => {
     e.preventDefault();
     setError('');
@@ -93,7 +94,8 @@ const HealthTracking = () => {
     // Validate form
     const validationError = validateHealthForm(newFormData);
     if (validationError) {
-      setError(validationError);
+      toast.error(validationError);
+      setError(validationError); // Keep for internal state
       return;
     }
 
@@ -106,32 +108,55 @@ const HealthTracking = () => {
       if (isEditMode && currentRecord?.tracking_id) {
         // Update record
         success = await updateHealthRecord(currentRecord.tracking_id, healthData);
+        if (success) {
+          toast.success('Cập nhật thông số sức khỏe thành công');
+          setSuccess('Cập nhật thông số sức khỏe thành công'); // Keep for internal state
+        }
       } else {
         // Create new record
         success = await addHealthRecord(healthData);
-      }
-      
-      if (success) {
-        // Close modal after a delay
-        setTimeout(() => {
-          closeModal();
-        }, 1500);
-      }
+        if (success) {
+          toast.success('Thêm mới thông số sức khỏe thành công');
+          setSuccess('Thêm mới thông số sức khỏe thành công'); // Keep for internal state
+        }
+      }        if (success) {
+          // Close modal immediately - no need to wait
+          if (isModalOpen) {
+            closeModal();
+          }
+          // Form reset is now handled by the HealthMetricForm component
+        }
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi khi lưu dữ liệu');
+      const errorMessage = err.message || 'Đã xảy ra lỗi khi lưu dữ liệu';
+      toast.error(errorMessage);
+      setError(errorMessage); // Keep for internal state
     }
-  }, [isEditMode, currentRecord, addHealthRecord, updateHealthRecord, closeModal, setError, setSuccess]);
-
-  const handleDelete = useCallback(async (record: HealthRecord) => {
+  }, [isEditMode, currentRecord, addHealthRecord, updateHealthRecord, closeModal, isModalOpen]);  const handleDelete = useCallback(async (record: HealthRecord) => {
     if (!record.tracking_id || !window.confirm('Bạn có chắc chắn muốn xóa thông số sức khỏe này?')) {
       return;
     }
-    await removeHealthRecord(record);
+    
+    try {
+      // Call the removeHealthRecord function
+      const success = await removeHealthRecord(record);
+      
+      if (success) {
+        toast.success('Xóa thông số sức khỏe thành công');
+        
+        // Update UI state manually after successful deletion
+        // Note: We'll also modify the removeHealthRecord function in useHealthTracking
+        // to update state without reloading the page
+      } else {
+        toast.error('Không thể xóa thông số sức khỏe');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Đã xảy ra lỗi khi xóa dữ liệu');
+    }
   }, [removeHealthRecord]);
-
   return (
     <>
       <Navbar />
+      <ToastContainer position="top-right" autoClose={5000} />
       <div className={styles['health-tracking-container']}>
         <div className={styles['health-tracking-header']}>
           <h1 className={styles['health-tracking-title']}>Theo dõi sức khỏe</h1>
@@ -203,13 +228,13 @@ const HealthTracking = () => {
             {/* Tab: Nhập thông số mới */}
             <div className={`${styles['tab-content']} ${activeTab === 'add' ? styles.active : ''}`}>
               <div className={styles['tab-content-inner']}>
-                <h2>Nhập thông số mới</h2>
-                <HealthMetricForm 
+                <h2>Nhập thông số mới</h2>                <HealthMetricForm 
                   initialData={formData}
                   isEditMode={false}
                   onSubmit={handleSubmit}
                   error={error}
                   success={success}
+                  resetAfterSubmit={true}
                 />
               </div>
             </div>
@@ -223,14 +248,14 @@ const HealthTracking = () => {
               <div className={styles['modal-header']}>
                 <h2 className={styles['modal-title']}>Cập nhật thông số sức khỏe</h2>
                 <button className={styles['close-btn']} onClick={closeModal}>&times;</button>
-              </div>
-              <HealthMetricForm 
+              </div>              <HealthMetricForm 
                 initialData={formData}
                 isEditMode={true}
                 onSubmit={handleSubmit}
                 onCancel={closeModal}
                 error={error}
                 success={success}
+                resetAfterSubmit={true}
               />
             </div>
           </div>

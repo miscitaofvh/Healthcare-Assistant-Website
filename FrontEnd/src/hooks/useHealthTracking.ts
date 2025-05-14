@@ -64,14 +64,23 @@ export const useHealthTracking = (): UseHealthTrackingReturn => {
 
   useEffect(() => {
     refreshData();
-  }, [page]);
-
-  const addHealthRecord = async (data: HealthRecord): Promise<boolean> => {
+  }, [page]);  const addHealthRecord = async (data: HealthRecord): Promise<boolean> => {
     try {
       const response = await createHealthRecord(data);
       if (response.success) {
+        const newRecord: HealthRecord = response.record || {
+          ...data,
+          tracking_id: `temp-${Date.now()}`,
+          recorded_at: new Date().toISOString()
+        };
+        
+        // Update local state
+        setRecords(prevRecords => [newRecord, ...prevRecords]);
+        
+        // Update latest record
+        setLatestRecord(newRecord);
+        
         setSuccess('Thêm thông số sức khỏe thành công!');
-        await refreshData();
         return true;
       } else {
         setError(response.message || 'Không thể thêm thông số sức khỏe');
@@ -82,13 +91,24 @@ export const useHealthTracking = (): UseHealthTrackingReturn => {
       return false;
     }
   };
-
   const updateRecord = async (id: string, data: HealthRecord): Promise<boolean> => {
     try {
       const response = await updateHealthRecord(id, data);
       if (response.success) {
+        setRecords(prevRecords => 
+          prevRecords.map(record => 
+            record.tracking_id === id 
+              ? { ...record, ...data, tracking_id: id } 
+              : record
+          )
+        );
+        
+        // Also update latest record if it matches
+        if (latestRecord && latestRecord.tracking_id === id) {
+          setLatestRecord({ ...latestRecord, ...data });
+        }
+        
         setSuccess('Cập nhật thông số sức khỏe thành công!');
-        await refreshData();
         return true;
       } else {
         setError(response.message || 'Không thể cập nhật thông số sức khỏe');
@@ -99,7 +119,6 @@ export const useHealthTracking = (): UseHealthTrackingReturn => {
       return false;
     }
   };
-
   const removeHealthRecord = async (record: HealthRecord): Promise<boolean> => {
     if (!record.tracking_id) {
       setError('Invalid record ID');
@@ -109,7 +128,17 @@ export const useHealthTracking = (): UseHealthTrackingReturn => {
     try {
       const response = await deleteHealthRecord(record.tracking_id);
       if (response.success) {
-        await refreshData();
+        setRecords(prevRecords => 
+          prevRecords.filter(r => r.tracking_id !== record.tracking_id)
+        );
+        
+        // If this was the latest record, update the latest record too
+        if (latestRecord && latestRecord.tracking_id === record.tracking_id) {
+          const nextLatest = records.find(r => r.tracking_id !== record.tracking_id);
+          setLatestRecord(nextLatest || null);
+        }
+        
+        setSuccess('Xóa thông số sức khỏe thành công!');
         return true;
       } else {
         setError(response.message || 'Không thể xóa thông số sức khỏe');

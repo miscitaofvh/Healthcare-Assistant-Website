@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaWeight, FaRuler, FaHeartbeat, FaThermometerHalf, FaBed, FaFire, FaTint, FaCalendarAlt, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
+import { FaWeight, FaRuler, FaHeartbeat, FaThermometerHalf, FaBed, FaFire, FaTint, FaCalendarAlt } from 'react-icons/fa';
 import { FormData } from '../../../types/healthTracking';
 import styles from '../HealthTracking.module.css';
 
@@ -8,17 +8,17 @@ interface HealthMetricFormProps {
   isEditMode: boolean;
   onSubmit: (e: React.FormEvent, formData: FormData) => Promise<void> | void;
   onCancel?: () => void;
-  error: string;
-  success: string;
+  error?: string;
+  success?: string;
+  resetAfterSubmit?: boolean; // New prop to control form reset behavior
 }
 
 const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ 
   initialData, 
   isEditMode, 
   onSubmit, 
-  onCancel, 
-  error, 
-  success 
+  onCancel,
+  resetAfterSubmit = false // Default to false for backward compatibility
 }) => {
   const [formData, setFormData] = useState<FormData>(initialData);
 
@@ -30,11 +30,27 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  };  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(e, formData);
+    
+    // If resetAfterSubmit is true and not in edit mode, reset form to empty values
+    if (resetAfterSubmit && !isEditMode) {
+      // Use setTimeout to ensure the form is reset after the submission completes
+      setTimeout(() => {
+        setFormData({
+          weight: '',
+          height: '',
+          blood_pressure: '',
+          heart_rate: '',
+          blood_sugar: '',
+          temperature: '',
+          sleep_duration: '',
+          calories_burned: '',
+          exercise_data: '',
+        });
+      }, 100);
+    }
   };
 
   return (
@@ -193,19 +209,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({
             onChange={handleInputChange}
           ></textarea>
         </div>
-      </div>
-
-      {error && (
-        <div className={styles['error-message']}>
-          <FaExclamationCircle /> {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className={styles['success-message']}>
-          <FaCheckCircle /> {success}
-        </div>
-      )}
+      </div>     
 
       <div className={styles['form-actions']}>
         {onCancel && (
