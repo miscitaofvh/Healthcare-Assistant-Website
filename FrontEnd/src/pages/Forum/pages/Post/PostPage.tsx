@@ -141,7 +141,6 @@ const ForumPage: React.FC = () => {
           }
         },
         (errorMessage) => toast.error(errorMessage),
-        (successMessage) => toast.success(successMessage),
         async () => {
           setReplyingTo(null);
           await loadInitialData();
@@ -163,7 +162,6 @@ const ForumPage: React.FC = () => {
         commentId.toString(),
         editCommentContent,
         setLoading,
-        () => toast.success("Comment updated successfully"),
         (errorMessage) => toast.error(errorMessage),
         () => {
           setEditingComment(null);
@@ -210,14 +208,12 @@ const ForumPage: React.FC = () => {
         await requestLike.unlikePostFE(
           post.post_id.toString(),
           (errorMessage) => toast.error(errorMessage),
-          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likePostFE(
           post.post_id.toString(),
           (errorMessage) => toast.error(errorMessage),
-          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
@@ -237,14 +233,12 @@ const ForumPage: React.FC = () => {
           comment.comment_id.toString(),
           post?.post_id.toString() || "",
           (errorMessage) => toast.error(errorMessage),
-          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likeCommentFE(
           comment.comment_id.toString(),
           (errorMessage) => toast.error(errorMessage),
-          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
@@ -282,7 +276,6 @@ const ForumPage: React.FC = () => {
         commentToDelete.toString(),
         setLoading,
         (errorMessage) => toast.error(errorMessage),
-        (successMessage) => toast.success(successMessage),
         () => {
           loadInitialData();
           setCommentToDelete(null);

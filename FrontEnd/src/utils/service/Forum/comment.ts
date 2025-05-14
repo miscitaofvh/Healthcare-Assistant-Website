@@ -25,7 +25,6 @@ const addCommenttoPost = async (
     depth: number | undefined,
     setCommentText: (text: string) => void,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => Promise<void>
 ): Promise<void> => {
     try {
@@ -46,7 +45,6 @@ const addCommenttoPost = async (
         }
 
         setCommentText('');
-        showSuccess(parentCommentId ? 'Reply posted successfully' : 'Comment posted successfully');
 
         await onSuccess();
 
@@ -56,8 +54,7 @@ const addCommenttoPost = async (
             : typeof err === 'string'
                 ? err
                 : 'Failed to post comment';
-
-        showSuccess(errorMessage);
+        showError(errorMessage);
     }
 };
 
@@ -65,7 +62,6 @@ const updateComment = async (
     commentId: string,
     updatedText: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    showSuccess: (message: string) => void = toast.success,
     showError: (message: string) => void = toast.error,
     refetchComments: () => void
 ): Promise<void> => {
@@ -80,7 +76,6 @@ const updateComment = async (
             return;
         }
 
-        showSuccess('Comment updated successfully');
         await refetchComments();
 
     } catch (err: unknown) {
@@ -102,7 +97,6 @@ const deleteCommentFromPost = async (
     commentId: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     refetchComments: () => void
 ): Promise<void> => {
     try {
@@ -117,7 +111,6 @@ const deleteCommentFromPost = async (
             return; 
         }
 
-        showSuccess(data.message || 'Comment deleted successfully');
         await refetchComments();
 
     } catch (err: unknown) {

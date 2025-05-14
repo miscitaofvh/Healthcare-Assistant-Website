@@ -91,21 +91,6 @@ const getAllCommentsByUserDB = async (userId, page = 1, limit = 20) => {
     }
 };
 
-const generateThreadPath = async (conn, parent_comment_id) => {
-    if (!parent_comment_id) return null;
-
-    const [parent] = await conn.execute(
-        "SELECT thread_path FROM forum_comments WHERE comment_id = ?",
-        [parent_comment_id]
-    );
-
-    if (!parent[0]) throw new Error("Parent comment not found");
-
-    return parent[0].thread_path
-        ? `${parent[0].thread_path}-${parent_comment_id}`
-        : `${parent_comment_id}`;
-};
-
 const addCommentToPostDB = async (userId, postId, content, parent_comment_id = null) => {
     let conn;
     try {
@@ -168,7 +153,6 @@ const addCommentToPostDB = async (userId, postId, content, parent_comment_id = n
         if (conn) conn.release();
     }
 };
-
 const updateCommentDB = async (commentId, content) => {
     let conn;
     try {
@@ -178,13 +162,17 @@ const updateCommentDB = async (commentId, content) => {
         const [updated] = await conn.execute(`
             UPDATE forum_comments
             SET 
-                content = ? 
-                last_updated = NOW() 
+                content = ?,
+                last_updated = NOW()
             WHERE comment_id = ?
         `, [content, commentId]);
+        
+        if(updated.affectedRows === 0){
+            return false;
+        }
 
         await conn.commit();
-        return updated[0];
+        return true;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in updateCommentDB:", error);
@@ -200,12 +188,18 @@ const deleteCommentDB = async (commentId) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
 
-        await conn.execute(`
+        const [deleted] = await conn.execute(`
             DELETE FROM forum_comments 
             WHERE comment_id = ?
         `, [commentId]);
 
+        if(deleted.affectedRows === 0){
+            return false;
+        }
+
         await conn.commit();
+
+        return true;
     } catch (error) {
         if (conn) await conn.rollback();
         console.error("Database error in deleteCommentDB:", error);
@@ -218,7 +212,6 @@ const deleteCommentDB = async (commentId) => {
 export default {
     getCommentsByPostIdDB,
     getAllCommentsByUserDB,
-    generateThreadPath,
     addCommentToPostDB,
     updateCommentDB,
     deleteCommentDB

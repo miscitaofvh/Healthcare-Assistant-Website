@@ -129,27 +129,12 @@ const validateUpdatePost = [
     handleValidationErrors
 ];
 
-const validateDeletePost = [
-    validatePostId('param'),
-    body().custom(async (_, { req }) => {
-        const [comments] = await connection.execute(
-            'SELECT COUNT(*) as count FROM forum_comments WHERE post_id = ?',
-            [req.params.postId]
-        );
-        if (comments[0].count > 0) {
-            throw new Error('Không thể xóa bài viết đã có bình luận');
-        }
-        return true;
-    }),
-    handleValidationErrors
-];
 
 // Export
 export default {
     validatePostExists,
     validateCreatePost,
     validateUpdatePost,
-    validateDeletePost,
     
     // Utility validators for reuse
     validateThreadId,

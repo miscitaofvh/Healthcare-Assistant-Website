@@ -7,7 +7,7 @@ import tagController from "../controllers/forum/tag.js";
 import likeController from "../controllers/forum/like.js";
 import reportController from "../controllers/forum/report.js";
 import activityController from "../controllers/forum/activity.js";
-import { uploadImage } from "../controllers/forum/uploadImage.js";
+import uploadImage from "../controllers/forum/uploadImage.js";
 import forumValidatorsUser from "../middleware/validation/user.js";
 import forumValidatorsCategory from "../middleware/validation/Forum/category.js";
 import forumValidatorsThread from "../middleware/validation/Forum/thread.js";
@@ -35,7 +35,7 @@ router.post(
   "/upload-image",
   auth.required,
   upload.single("forumImage"),
-  uploadImage
+  uploadImage.uploadImage
 );
 
 // ====================================================================================
@@ -218,7 +218,6 @@ router.delete(
   "/posts/:postId",
   auth.required,
   forumValidatorsPost.validatePostExists,
-  forumValidatorsPost.validateDeletePost,
   auth.requireOwnerOrAdmin("post"),
   asyncHandler(postController.deletePost)
 );

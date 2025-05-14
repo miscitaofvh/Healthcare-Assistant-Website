@@ -48,10 +48,10 @@ const reportCommentFE = async (
         };
 
         const response = await InteractReport.reportComment(commentId, reportData);
-        
+
         const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
+        if (status !== 201 || !data?.success) {
             showError(data?.errors[0]?.message || data?.message || 'Failed to report comment');
             return;
         }

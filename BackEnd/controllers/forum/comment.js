@@ -1,212 +1,330 @@
-import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
-import { StatusCodes } from "http-status-codes";
-
-import CommentDB from "../../models/Forum/comment.js";
+import express from 'express';
+import pino from 'pino';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import { StatusCodes } from 'http-status-codes';
+import CommentDB from '../../models/Forum/comment.js';
+import crypto from 'crypto';
 
 dotenv.config();
 
-const handleError = (error, req, res, action = 'process') => {
-    console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
+const app = express();
 
-    const errorMap = {
-        // Authentication errors
-        "No authentication token provided": StatusCodes.UNAUTHORIZED,
-        "Invalid or expired token": StatusCodes.UNAUTHORIZED,
-        "Invalid token payload": StatusCodes.UNAUTHORIZED,
-        "Authentication required": StatusCodes.UNAUTHORIZED,
+// Structured Logger Setup
+const logger = pino({
+    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+});
 
-        // Validation errors
-        "Invalid Post ID": StatusCodes.BAD_REQUEST,
-        "Invalid Comment ID": StatusCodes.BAD_REQUEST,
-        "Invalid User ID": StatusCodes.BAD_REQUEST,
-        "Invalid Parent comment ID": StatusCodes.BAD_REQUEST,
-        "Content is required and must be a non-empty string": StatusCodes.BAD_REQUEST,
-        "Content must be less than 2000 characters": StatusCodes.BAD_REQUEST,
-        "Invalid pagination": StatusCodes.BAD_REQUEST,
+// Request ID Middleware
+const requestIdMiddleware = (req, res, next) => {
+    req.requestId = crypto.randomUUID();
+    res.setHeader('X-Request-ID', req.requestId);
+    next();
+};
+app.use(requestIdMiddleware);
 
-        // Authorization errors
-        "Forbidden: You don't have permission": StatusCodes.FORBIDDEN,
-        "Cannot update this comment": StatusCodes.FORBIDDEN,
-        "Cannot delete this comment": StatusCodes.FORBIDDEN,
+// Custom Error Classes
+class AppError extends Error {
+    constructor(message, statusCode, errorCode, details = {}) {
+        super(message);
+        this.statusCode = statusCode;
+        this.errorCode = errorCode;
+        this.details = details;
+        this.isAppError = true;
+    }
+}
 
-        // Not found errors
-        "Post not found": StatusCodes.NOT_FOUND,
-        "Comment not found": StatusCodes.NOT_FOUND,
-        "Parent comment not found": StatusCodes.NOT_FOUND,
-        "No comments found for this post": StatusCodes.NOT_FOUND,
-        "No replies found for this comment": StatusCodes.NOT_FOUND,
-        "No comments found for this user": StatusCodes.NOT_FOUND
-    };
+class ValidationError extends AppError {
+    constructor(message, details = {}) {
+        super(message, StatusCodes.BAD_REQUEST, 'VALIDATION_ERROR', details);
+    }
+}
 
-    const statusCode = errorMap[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
-    const response = {
-        success: false,
-        message: error.message || `Failed to ${action} comment`,
-        timestamp: new Date().toISOString()
-    };
+class NotFoundError extends AppError {
+    constructor(message, details = {}) {
+        super(message, StatusCodes.NOT_FOUND, 'NOT_FOUND', details);
+    }
+}
 
-    if (process.env.NODE_ENV === 'development') {
-        response.debug = {
-            message: error.message,
-            stack: error.stack?.split("\n")[0]
-        };
+class UnauthorizedError extends AppError {
+    constructor(message, details = {}) {
+        super(message, StatusCodes.UNAUTHORIZED, 'UNAUTHORIZED', details);
+    }
+}
+
+class ForbiddenError extends AppError {
+    constructor(message, details = {}) {
+        super(message, StatusCodes.FORBIDDEN, 'FORBIDDEN', details);
+    }
+}
+
+// Error Handler
+const errorHandler = (error, req, res, action = 'process') => {
+    const requestId = req.requestId || crypto.randomUUID();
+
+    // Default values for unexpected errors
+    let statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
+    let errorCode = 'INTERNAL_SERVER_ERROR';
+    let message = `Failed to ${action}`;
+    const details = {};
+
+    // Handle AppError instances
+    if (error.isAppError) {
+        statusCode = error.statusCode;
+        errorCode = error.errorCode;
+        message = error.message;
+        Object.assign(details, error.details);
     }
 
-    return res.status(statusCode).json(response);
+    // Log the error
+    logger.error({
+        requestId,
+        action,
+        method: req.method,
+        url: req.originalUrl,
+        error: {
+            message: error.message,
+            code: errorCode,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+    });
+
+    // Send response
+    res.status(statusCode).json({
+        success: false,
+        errorCode,
+        message,
+        details,
+        timestamp: new Date().toISOString(),
+        ...(process.env.NODE_ENV === 'development' && {
+            debug: { message: error.message, stack: error.stack?.split('\n')[0] },
+        }),
+    });
+};
+
+// Helper Functions
+const validateId = (id, type) => {
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId) || parsedId < 1) {
+        throw new ValidationError(`Invalid ${type}`, { id });
+    }
+    return parsedId;
 };
 
 const validatePagination = (page, limit, maxLimit = 50) => {
-    if (page < 1 || limit < 1 || limit > maxLimit) {
-        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
+    const parsedPage = parseInt(page);
+    const parsedLimit = parseInt(limit);
+    if (isNaN(parsedPage) || isNaN(parsedLimit) || parsedPage < 1 || parsedLimit < 1 || parsedLimit > maxLimit) {
+        throw new ValidationError(`Invalid pagination parameters: Page must be ≥1 and limit between 1-${maxLimit}`, {
+            page,
+            limit,
+            maxLimit,
+        });
     }
-    return { page: parseInt(page), limit: parseInt(limit) };
+    return { page: parsedPage, limit: parsedLimit };
 };
 
-// Controller methods
+const validateContent = (content) => {
+    if (!content || typeof content !== 'string' || content.trim() === '') {
+        throw new ValidationError('Content is required and must be a non-empty string', { content });
+    }
+    if (content.length > 2000) {
+        throw new ValidationError('Content must be less than 2000 characters', { contentLength: content.length });
+    }
+    return content.trim();
+};
+
+const getUserIdFromToken = (req) => {
+    if (!req.cookies?.auth_token) {
+        throw new UnauthorizedError('No authentication token provided');
+    }
+
+    try {
+        const decoded = jwt.verify(req.cookies.auth_token, process.env.JWT_SECRET);
+        if (!decoded.user_id) {
+            throw new UnauthorizedError('Invalid token payload');
+        }
+        return decoded.user_id;
+    } catch (jwtError) {
+        throw new UnauthorizedError('Invalid or expired token', { token: req.cookies.auth_token });
+    }
+};
+
+// Controller Functions
 const getCommentsByPostId = async (req, res) => {
     try {
         const { postId } = req.params;
-        const validatedPostId = validateId(postId, "Post ID");
-        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
+        const validatedPostId = validateId(postId, 'Post ID');
+        const { page = 1, limit = 20 } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
 
-        const { comments, totalCount } = await CommentDB.getCommentsByPostIdDB(validatedPostId, page, limit);
+        const { comments, totalCount } = await CommentDB.getCommentsByPostIdDB(validatedPostId, p, l);
+
+        if (!comments || comments.length === 0) {
+            throw new NotFoundError('No comments found for this post', { postId: validatedPostId });
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: comments,
+            comments,
             pagination: {
-                currentPage: page,
-                totalPages: Math.ceil(totalCount / limit),
+                currentPage: p,
+                totalPages: Math.ceil(totalCount / l),
                 totalItems: totalCount,
-                itemsPerPage: limit
+                itemsPerPage: l,
             },
             metadata: {
                 postId: validatedPostId,
                 retrievedAt: new Date().toISOString(),
                 cacheHint: {
                     recommended: true,
-                    duration: "5m"
-                }
-            }
+                    duration: '5m',
+                },
+            },
         });
-
     } catch (error) {
-        handleError(error, req, res, 'fetch comments by post');
+        errorHandler(error, req, res, 'fetch comments by post');
     }
 };
 
 const getAllCommentsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const validatedUserId = validateId(userId, "User ID");
-        const { page, limit } = validatePagination(req.query.page || 1, req.query.limit || 20);
+        const validatedUserId = validateId(userId, 'User ID');
+        const { page = 1, limit = 20 } = req.query;
+        const { page: p, limit: l } = validatePagination(page, limit);
 
-        const { comments, totalCount } = await CommentDB.getAllCommentsByUserDB(validatedUserId, page, limit);
+        const { comments, totalCount } = await CommentDB.getAllCommentsByUserDB(validatedUserId, p, l);
+
+        if (!comments || comments.length === 0) {
+            throw new NotFoundError('No comments found for this user', { userId: validatedUserId });
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
-            data: comments,
+            comments,
             pagination: {
-                currentPage: page,
-                totalPages: Math.ceil(totalCount / limit),
+                currentPage: p,
+                totalPages: Math.ceil(totalCount / l),
                 totalItems: totalCount,
-                itemsPerPage: limit
+                itemsPerPage: l,
             },
             metadata: {
                 userId: validatedUserId,
                 retrievedAt: new Date().toISOString(),
                 cacheHint: {
                     recommended: false,
-                    reason: "User-specific data changes frequently"
-                }
-            }
+                    reason: 'User-specific data changes frequently',
+                },
+            },
         });
-
     } catch (error) {
-        handleError(error, req, res, 'fetch comments by user');
+        errorHandler(error, req, res, 'fetch comments by user');
     }
 };
 
 const addCommentToPost = async (req, res) => {
     try {
-        const userId = req.user.user_id;
+        const userId = getUserIdFromToken(req);
         const { postId } = req.params;
-        const { content, parent_comment_id = null } = req.body;
+        const validatedPostId = validateId(postId, 'Post ID');
+        const { content, parent_comment_id } = req.body;
+
+        const validatedContent = validateContent(content);
+        let validatedParentCommentId = null;
+        if (parent_comment_id) {
+            validatedParentCommentId = validateId(parent_comment_id, 'Parent comment ID');
+        }
 
         const commentId = await CommentDB.addCommentToPostDB(
             userId,
-            postId,
-            content,
-            parent_comment_id
+            validatedPostId,
+            validatedContent,
+            validatedParentCommentId
         );
+
+        if (!commentId) {
+            throw new AppError('Failed to create comment', StatusCodes.INTERNAL_SERVER_ERROR, 'CREATE_FAILED');
+        }
 
         res.status(StatusCodes.CREATED).json({
             success: true,
-            message: "Comment created successfully",
-            data: { commentId },
+            commentId,
+            message: 'Comment created successfully',
             metadata: {
                 createdBy: userId,
                 createdAt: new Date().toISOString(),
-                isReply: parent_comment_id !== null
-            }
+                isReply: !!validatedParentCommentId,
+            },
         });
-
     } catch (error) {
-        handleError(error, req, res, 'create comment');
+        errorHandler(error, req, res, 'create comment');
     }
 };
 
 const updateComment = async (req, res) => {
     try {
+        const userId = getUserIdFromToken(req);
         const { commentId } = req.params;
-
+        const validatedCommentId = validateId(commentId, 'Comment ID');
         const { content } = req.body;
 
-        const result = await CommentDB.updateCommentDB(
-            commentId,
-            content
-        );
+        const validatedContent = validateContent(content);
+
+        const result = await CommentDB.updateCommentDB(validatedCommentId, validatedContent);
+
+        if (!result) {
+            throw new AppError('Failed to update comment', StatusCodes.INTERNAL_SERVER_ERROR, 'UPDATE_FAILED');
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
-            message: "Comment updated successfully",
-            data: result,
+            message: 'Comment updated successfully',
             metadata: {
+                updatedBy: userId,
                 updatedAt: new Date().toISOString(),
-            }
+            },
         });
-
     } catch (error) {
-        handleError(error, req, res, 'update comment');
+        errorHandler(error, req, res, 'update comment');
     }
 };
 
 const deleteComment = async (req, res) => {
     try {
+        const userId = getUserIdFromToken(req);
         const { commentId } = req.params;
+        const validatedCommentId = validateId(commentId, 'Comment ID');
 
-        await CommentDB.deleteCommentDB(
-            commentId,
-        );
+        const result = await CommentDB.deleteCommentDB(validatedCommentId);
+
+        if (!result) {
+            throw new AppError('Failed to delete comment', StatusCodes.INTERNAL_SERVER_ERROR, 'DELETE_FAILED');
+        }
 
         res.status(StatusCodes.OK).json({
             success: true,
-            message: "Comment deleted successfully",
+            message: 'Comment deleted successfully',
             metadata: {
+                deletedBy: userId,
                 deletedAt: new Date().toISOString(),
-            }
+            },
         });
-
     } catch (error) {
-        handleError(error, req, res, 'delete comment');
+        errorHandler(error, req, res, 'delete comment');
     }
 };
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    errorHandler(err, req, res, 'unknown operation');
+});
 
 export default {
     getCommentsByPostId,
     getAllCommentsByUser,
     addCommentToPost,
     updateComment,
-    deleteComment
-}
+    deleteComment,
+};

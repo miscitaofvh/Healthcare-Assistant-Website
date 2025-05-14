@@ -4,7 +4,6 @@ import InteractLike from "../../../utils/api/Forum/like";
 const likePostFE = async (
     postId: string,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     refetchPost: () => Promise<void>
 ): Promise<void> => {
     try {
@@ -14,7 +13,6 @@ const likePostFE = async (
             throw new Error(response.data?.message || 'Failed to like post');
         }
 
-        showSuccess(response.data.message || 'Post like updated');
         await refetchPost();
 
     } catch (err: unknown) {
@@ -33,7 +31,6 @@ const likePostFE = async (
 const unlikePostFE = async (
     postId: string,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     refetchPost: () => Promise<void>
 ): Promise<void> => {
     try {
@@ -45,7 +42,6 @@ const unlikePostFE = async (
             throw new Error(response.data?.message || 'Failed to like post');
         }
 
-        showSuccess(response.data.message || 'Post like updated');
         await refetchPost();
 
     } catch (err: unknown) {
@@ -64,7 +60,6 @@ const unlikePostFE = async (
 const likeCommentFE = async (
     commentId: string,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     refetchComments: () => Promise<void>
 ): Promise<void> => {
     try {
@@ -77,7 +72,6 @@ const likeCommentFE = async (
             return;
         }
 
-        showSuccess(response.data.message || 'Comment like updated');
         await refetchComments();
 
     } catch (err: unknown) {
@@ -97,7 +91,6 @@ const unlikeCommentFE = async (
     commentId: string,
     postId: string,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     refetchComments: () => Promise<void>
 ): Promise<void> => {
     try {
@@ -110,7 +103,6 @@ const unlikeCommentFE = async (
             return;
         }
 
-        showSuccess(response.data.message || 'Comment like updated');
         await refetchComments();
 
     } catch (err: unknown) {

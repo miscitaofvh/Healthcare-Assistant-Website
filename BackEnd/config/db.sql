@@ -630,26 +630,3 @@ BEGIN
 END//
 
 DELIMITER ;
-
--- Purpose: Set thread_path and depth for nested comments to support threaded comment display.
-DELIMITER //
-
-CREATE TRIGGER before_comment_insert
-BEFORE INSERT ON forum_comments
-FOR EACH ROW
-BEGIN
-    IF NEW.parent_comment_id IS NOT NULL THEN
-        SELECT depth, thread_path
-        INTO @parent_depth, @parent_thread_path
-        FROM forum_comments
-        WHERE comment_id = NEW.parent_comment_id;
-        
-        SET NEW.depth = @parent_depth + 1;
-        SET NEW.thread_path = CONCAT(@parent_thread_path, '/', NEW.comment_id);
-    ELSE
-        SET NEW.depth = 0;
-        SET NEW.thread_path = NEW.comment_id;
-    END IF;
-END//
-
-DELIMITER ;
