@@ -10,6 +10,7 @@ import { PostbyTag } from "../../../../types/Forum/post";
 import { Tag } from "../../../../types/Forum/tag";
 import { PaginationData } from "../../../../types/Forum/pagination";
 import requestTag from "../../../../utils/service/Forum/tag";
+import { stripMarkdown } from "../../../../utils/helpers/dateFormatter";
 
 const TagPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -228,7 +229,7 @@ const TagPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Posts List */}
             <div className={styles.headerSection}>
               <h2 className={styles.pageTitle}>Posts with this Tag</h2>
@@ -260,7 +261,9 @@ const TagPage: React.FC = () => {
                     >
                       <h3 className={styles.forumName}>{post.title}</h3>
                       <p className={styles.forumDescription}>
-                        {post.content.slice(0, 100)}...
+                        {stripMarkdown(post.content).length > 200
+                          ? `${stripMarkdown(post.content).substring(0, 200)}...`
+                          : stripMarkdown(post.content)}
                       </p>
                       <div className={styles.forumMeta}>
                         <div className={styles.metaItem}>

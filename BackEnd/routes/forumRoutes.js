@@ -233,11 +233,6 @@ router.get(
 );
 
 router.get(
-  "/comments/:commentId/replies",
-  asyncHandler(commentController.getCommentReplies)
-);
-
-router.get(
   "/users/:userId/comments",
   paginate(),
   asyncHandler(commentController.getAllCommentsByUser)
@@ -246,17 +241,9 @@ router.get(
 router.post(
   "/posts/:postId/comments",
   auth.required,
-  commentLimiter,
+  // commentLimiter,
   forumValidatorsComment.validateCommentPost,
   asyncHandler(commentController.addCommentToPost)
-);
-
-router.post(
-  "/comments/:commentId/replies",
-  auth.required,
-  commentLimiter,
-  forumValidatorsComment.validateReplyComment,
-  asyncHandler(commentController.addReplyToComment)
 );
 
 router.put(

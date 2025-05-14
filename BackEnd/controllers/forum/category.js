@@ -350,9 +350,10 @@ const getCategoriesByUser = async (req, res) => {
 
 const createCategory = async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const { category_name, description } = req.body;
 
-        const { categoryId } = await CategoryDB.createCategoryDB(category_name, description);
+        const { categoryId } = await CategoryDB.createCategoryDB(userId, category_name, description);
 
         if (!categoryId) {
             throw new Error("Failed to create category");

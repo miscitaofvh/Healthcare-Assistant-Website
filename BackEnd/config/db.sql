@@ -562,10 +562,10 @@ BEGIN
 END//
 
 CREATE TRIGGER after_tag_update
-AFTER UPDATE ON forum_tags
+AFTER UPDATE ON forum_tags 
 FOR EACH ROW
 BEGIN
-    INSERT INTO forum_activities (user_id, activity_type, target_type, target_id, application_timestamp)
+    INSERT INTO forum_activities (user_id, activity_type, target_type, target_id, activity_timestamp)
     VALUES (NEW.user_id, 'tag', 'update', NEW.tag_id, CURRENT_TIMESTAMP);
 END//
 

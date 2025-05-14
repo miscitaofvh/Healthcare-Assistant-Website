@@ -6,39 +6,6 @@ import CommentDB from "../../models/Forum/comment.js";
 
 dotenv.config();
 
-// Helper functions
-const validateId = (id, name = 'ID') => {
-    if (!id || isNaN(Number(id))) {
-        throw new Error(`Invalid ${name}: Must be a numeric value`);
-    }
-    return Number(id);
-};
-
-const validateContent = (content, fieldName = 'Content', maxLength = 2000) => {
-    if (!content || typeof content !== 'string' || content.trim() === '') {
-        throw new Error(`${fieldName} is required and must be a non-empty string`);
-    }
-    const trimmed = content.trim();
-    if (trimmed.length > maxLength) {
-        throw new Error(`${fieldName} must be less than ${maxLength} characters`);
-    }
-    return trimmed;
-};
-
-const validatePagination = (page, limit, maxLimit = 50) => {
-    if (page < 1 || limit < 1 || limit > maxLimit) {
-        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
-    }
-    return { page: parseInt(page), limit: parseInt(limit) };
-};
-
-const validateToken = (token) => {
-    if (!token) {
-        throw new Error("No authentication token provided");
-    }
-    return jwt.verify(token, process.env.JWT_SECRET);
-};
-
 const handleError = (error, req, res, action = 'process') => {
     console.error(`[${req.requestId || 'no-request-id'}] Error in ${action}:`, error);
 
@@ -89,6 +56,13 @@ const handleError = (error, req, res, action = 'process') => {
     return res.status(statusCode).json(response);
 };
 
+const validatePagination = (page, limit, maxLimit = 50) => {
+    if (page < 1 || limit < 1 || limit > maxLimit) {
+        throw new Error(`Invalid pagination: Page must be ≥1 and limit between 1-${maxLimit}`);
+    }
+    return { page: parseInt(page), limit: parseInt(limit) };
+};
+
 // Controller methods
 const getCommentsByPostId = async (req, res) => {
     try {
@@ -119,28 +93,6 @@ const getCommentsByPostId = async (req, res) => {
 
     } catch (error) {
         handleError(error, req, res, 'fetch comments by post');
-    }
-};
-
-const getCommentReplies = async (req, res) => {
-    try {
-        const { commentId } = req.params;
-        const validatedCommentId = validateId(commentId, "Comment ID");
-
-        const replies = await CommentDB.getCommentRepliesDB(validatedCommentId);
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            data: replies,
-            metadata: {
-                parentCommentId: validatedCommentId,
-                count: replies.length,
-                retrievedAt: new Date().toISOString()
-            }
-        });
-
-    } catch (error) {
-        handleError(error, req, res, 'fetch comment replies');
     }
 };
 
@@ -178,26 +130,16 @@ const getAllCommentsByUser = async (req, res) => {
 
 const addCommentToPost = async (req, res) => {
     try {
-        const decoded = validateToken(req.cookies?.auth_token);
-        const userId = decoded.user_id;
-        if (!userId) throw new Error("Invalid token payload");
-
+        const userId = req.user.user_id;
         const { postId } = req.params;
-        const validatedPostId = validateId(postId, "Post ID");
-
         const { content, parent_comment_id = null } = req.body;
-        const validatedContent = validateContent(content);
 
-        if (parent_comment_id) {
-            validateId(parent_comment_id, "Parent comment ID");
-        }
-
-        const commentId = await CommentDB.addCommentToPostDB({
+        const commentId = await CommentDB.addCommentToPostDB(
             userId,
-            postId: validatedPostId,
-            content: validatedContent,
+            postId,
+            content,
             parent_comment_id
-        });
+        );
 
         res.status(StatusCodes.CREATED).json({
             success: true,
@@ -215,60 +157,16 @@ const addCommentToPost = async (req, res) => {
     }
 };
 
-const addReplyToComment = async (req, res) => {
-    try {
-        const decoded = validateToken(req.cookies?.auth_token);
-        const userId = decoded.user_id;
-        if (!userId) throw new Error("Invalid token payload");
-
-        const { commentId } = req.params;
-        const validatedCommentId = validateId(commentId, "Comment ID");
-
-        const { content } = req.body;
-        const validatedContent = validateContent(content);
-
-        const result = await CommentDB.addReplyToCommentDB({
-            userId,
-            parentCommentId: validatedCommentId,
-            content: validatedContent
-        });
-
-        res.status(StatusCodes.CREATED).json({
-            success: true,
-            message: "Reply added successfully",
-            data: {
-                commentId: result.commentId,
-                parentCommentId: result.parentCommentId,
-                depth: result.depth
-            },
-            metadata: {
-                createdBy: userId,
-                createdAt: new Date().toISOString()
-            }
-        });
-
-    } catch (error) {
-        handleError(error, req, res, 'add reply');
-    }
-};
-
 const updateComment = async (req, res) => {
     try {
-        const decoded = validateToken(req.cookies?.auth_token);
-        const userId = decoded.user_id;
-        if (!userId) throw new Error("Invalid token payload");
-
         const { commentId } = req.params;
-        const validatedCommentId = validateId(commentId, "Comment ID");
 
         const { content } = req.body;
-        const validatedContent = validateContent(content);
 
-        const result = await CommentDB.updateCommentDB({
-            commentId: validatedCommentId,
-            userId,
-            content: validatedContent
-        });
+        const result = await CommentDB.updateCommentDB(
+            commentId,
+            content
+        );
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -276,7 +174,6 @@ const updateComment = async (req, res) => {
             data: result,
             metadata: {
                 updatedAt: new Date().toISOString(),
-                updatedBy: userId
             }
         });
 
@@ -287,28 +184,17 @@ const updateComment = async (req, res) => {
 
 const deleteComment = async (req, res) => {
     try {
-        const decoded = validateToken(req.cookies?.auth_token);
-        const userId = decoded.user_id;
-        if (!userId) throw new Error("Invalid token payload");
-
         const { commentId } = req.params;
-        const validatedCommentId = validateId(commentId, "Comment ID");
 
-        const isAdmin = decoded.role === 'admin';
-
-        await CommentDB.deleteCommentDB({
-            commentId: validatedCommentId,
-            userId,
-            isAdmin
-        });
+        await CommentDB.deleteCommentDB(
+            commentId,
+        );
 
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Comment deleted successfully",
             metadata: {
                 deletedAt: new Date().toISOString(),
-                deletedBy: userId,
-                deletedAsAdmin: isAdmin
             }
         });
 
@@ -319,10 +205,8 @@ const deleteComment = async (req, res) => {
 
 export default {
     getCommentsByPostId,
-    getCommentReplies,
     getAllCommentsByUser,
     addCommentToPost,
-    addReplyToComment,
     updateComment,
     deleteComment
 }

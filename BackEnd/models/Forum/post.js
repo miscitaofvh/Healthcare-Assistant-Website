@@ -5,7 +5,16 @@ const getAllPostsDB = async (page, limit, orderByField, orderDirection) => {
     const offset = (page - 1) * limit;
     try {
         conn = await connection.getConnection();
-        await conn.beginTransaction();
+
+        const validCategoryColumns = [
+            'created_at', 'last_updated',
+            'view_count', 'like_count',
+            'comment_count', 'title'
+        ];
+
+        if (!validCategoryColumns.includes(orderByField)) {
+            orderByField = 'fc.created_at';
+        }
 
         const sql = `
             SELECT 
@@ -19,8 +28,9 @@ const getAllPostsDB = async (page, limit, orderByField, orderDirection) => {
                 t.category_id,
                 c.category_name,
                 u.username AS created_by,
-                COUNT(DISTINCT l.like_id) AS like_count,
-                COUNT(DISTINCT cm.comment_id) AS comment_count,
+                p.like_count AS like_count,
+                p.comment_count AS comment_count,
+                p.view_count as view_count,
                 (
                     SELECT GROUP_CONCAT(DISTINCT ft2.tag_name)
                     FROM forum_tags_mapping ftm2
@@ -183,6 +193,15 @@ const getPostByIdDB = async (postId, options = {}, author_id) => {
             }
         }
 
+        conn.execute(
+            `
+            UPDATE forum_posts
+            SET 
+                view_count = view_count + 1
+            WHERE post_id = ?
+            `, [postId]
+        );
+
         await conn.commit();
         return post;
     } catch (error) {
@@ -253,30 +272,14 @@ const createPostDB = async (userId, threadId, title, content, tags = []) => {
             }
 
             const tagMappingValues = tags.map(tag => [postId, tagMap.get(tag)]);
+            const placeholders = tagMappingValues.map(() => '(?, ?)').join(', ');
+            const flatValues = tagMappingValues.flat();
+
             await conn.query(`
                 INSERT INTO forum_tags_mapping (post_id, tag_id) 
-                VALUES ?
-            `, [tagMappingValues]);
-
-            if (tagMap.size > 0) {
-                const tagIds = Array.from(tagMap.values());
-                await conn.execute(`
-                    UPDATE forum_tags 
-                    SET usage_count = usage_count + 1, 
-                        last_used_at = NOW() 
-                    WHERE tag_id IN (${tagIds.map(() => '?').join(',')})
-                `, tagIds);
-            }
+                VALUES ${placeholders}
+            `, flatValues);
         }
-
-        await conn.execute(`
-            INSERT INTO forum_activities (
-                user_id, 
-                activity_type, 
-                target_type, 
-                target_id
-            ) VALUES (?, 'post', 'create', ?)
-        `, [userId, postId]);
 
         await conn.commit();
 
@@ -347,7 +350,6 @@ const updatePostDB = async (postId, userId, title, content, tags = []) => {
                 if (tagsToInsert.length > 0) {
                     const tagInsertValues = tagsToInsert.map(tag => [tag, userId]).flat();
                     const placeholders = tagsToInsert.map(() => '(?, ?)').join(', ');
-
                     const [insertResult] = await conn.execute(`
                         INSERT INTO forum_tags (tag_name, user_id) 
                         VALUES ${placeholders}
@@ -362,31 +364,15 @@ const updatePostDB = async (postId, userId, title, content, tags = []) => {
                 }
 
                 const tagMappingValues = tags.map(tag => [postId, tagMap.get(tag)]);
+                const placeholders = tagMappingValues.map(() => '(?, ?)').join(', ');
+                const flatValues = tagMappingValues.flat();
+    
                 await conn.query(`
                     INSERT INTO forum_tags_mapping (post_id, tag_id) 
-                    VALUES ?
-                `, [tagMappingValues]);
-
-                if (tagMap.size > 0) {
-                    const tagIds = Array.from(tagMap.values());
-                    await conn.execute(`
-                        UPDATE forum_tags 
-                        SET usage_count = usage_count + 1, 
-                            last_used_at = NOW() 
-                        WHERE tag_id IN (${tagIds.map(() => '?').join(',')})
-                    `, tagIds);
-                }
+                    VALUES ${placeholders}
+                `, flatValues);
             }
         }
-
-        await conn.execute(`
-            INSERT INTO forum_activities (
-                user_id, 
-                activity_type, 
-                target_type, 
-                target_id
-            ) VALUES (?, 'post', 'update', ?)
-        `, [userId, postId]);
 
         await conn.commit();
 
@@ -404,7 +390,7 @@ const updatePostDB = async (postId, userId, title, content, tags = []) => {
     }
 };
 
-const deletePostDB = async (postId, userId, isAdmin = false, reason = null) => {
+const deletePostDB = async (postId, userId, reason = null) => {
     let conn;
     try {
         conn = await connection.getConnection();
@@ -423,14 +409,6 @@ const deletePostDB = async (postId, userId, isAdmin = false, reason = null) => {
             WHERE post_id = ?
         `, [postId]);
 
-        await conn.execute(`
-            INSERT INTO forum_activities (
-                user_id, 
-                activity_type, 
-                target_type, 
-                target_id
-            ) VALUES (?, 'post', 'delete', ?)
-        `, [userId, postId]);
 
         await conn.commit();
         return { success: true, message: 'Post deleted successfully' };

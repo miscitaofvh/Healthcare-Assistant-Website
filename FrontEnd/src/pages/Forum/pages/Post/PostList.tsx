@@ -202,6 +202,10 @@ const PostList: React.FC = () => {
                       <span className={styles.metaLabel}>Comments:</span>
                       <span className={styles.metaValue}>{post.comment_count}</span>
                     </div>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>Views:</span>
+                      <span className={styles.metaValue}>{post.view_count}</span>
+                    </div>
                     {post.tags.length > 0 && (
                       <div className={styles.metaItem}>
                         <span className={styles.metaLabel}>Tags:</span>

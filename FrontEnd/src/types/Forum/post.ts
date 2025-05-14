@@ -30,6 +30,7 @@ export interface PostListMain {
     last_updated: string;
     like_count: number;
     comment_count: number;
+    view_count: number;
     tags: SummaryTag[];
 }
 

@@ -29,23 +29,11 @@ VALUES
 -- Insert tags (including user_id and description)
 INSERT INTO forum_tags (user_id, tag_name, description) 
 VALUES
-('a89eff07-24d0-11f0-9e94-7c4d8fa36fba', 'AI', 'Artificial Intelligence-related topics'),
+('a89eff07-24d0-11f0-9e94-7c4d8fa36fba', 'AII', 'Artificial Intelligence-related topics'),
 ('a89eff07-24d0-11f0-9e94-7c4d8fa36fba', 'Fitness', 'Discussions about fitness and physical health'),
 ('a89eff07-24d0-11f0-9e94-7c4d8fa36fba', 'Health', 'General health and wellness topics'),
 ('a89eff07-24d0-11f0-9e94-7c4d8fa36fba', 'Technology', 'Technology is the key to future');
--- Map tags to posts
 -- Here we are associating the correct tags to the posts
-INSERT INTO forum_tags_mapping (post_id, tag_id) 
-VALUES
-(1, 1),  -- 'AI' tag for post 1
-(2, 1),  -- 'AI' tag for post 2
-(2, 2),  -- 'Fitness' tag for post 2
-(2, 3),  -- 'Health' tag for post 2
-(3, 4);  -- 'Health' tag for post 2
--- Insert likes
--- INSERT INTO forum_likes (post_id, user_id) 
--- VALUES
--- (1, 'a89eff07-24d0-11f0-9e94-7c4d8fa36fba');
 
 -- Insert comments
 INSERT INTO forum_comments (post_id, user_id, content) 

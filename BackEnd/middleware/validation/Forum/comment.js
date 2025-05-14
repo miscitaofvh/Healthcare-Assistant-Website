@@ -105,12 +105,6 @@ const validateCommentPost = [
     handleValidationErrors
 ];
 
-const validateReplyComment = [
-    validateCommentId('body'),
-    validateContent(),
-    handleValidationErrors
-];
-
 const validateUpdateComment = [
     validateContent(),
     handleValidationErrors
@@ -128,7 +122,6 @@ const validateReportComment = [
 export default {
     validateCommentExists,
     validateCommentPost,
-    validateReplyComment,
     validateUpdateComment,
     validateReportComment,
     

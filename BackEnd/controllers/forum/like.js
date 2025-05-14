@@ -11,10 +11,10 @@ const likePost = async (req, res) => {
         const userId = req.user.user_id;
         const { postId } = req.params;
 
-        const result = await LikeDB.likePostDB(userId, postId);
+        const message = await LikeDB.likePostDB(userId, postId);
         res.status(200).json({
             success: true,
-            data: result
+            message: message
         });
     } catch (error) {
         console.error("Error liking post:", error);
@@ -31,10 +31,10 @@ const unlikePost = async (req, res) => {
         const userId = req.user.user_id;
         const { postId } = req.params;
 
-        const result = await LikeDB.unlikePostDB(userId, postId);
+        const message = await LikeDB.unlikePostDB(userId, postId);
         res.status(200).json({
             success: true,
-            data: result
+            message: message
         });
     } catch (error) {
         console.error("Error unliking post:", error);
