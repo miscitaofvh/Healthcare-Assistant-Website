@@ -8,7 +8,7 @@ const getAllCategoriesDB = async (page = 1, limit = 10, orderByField = 'created_
 
         const validCategoryColumns = [
             'fc.category_name', 'fc.created_at', 'fc.last_updated', 'fc.created_by',
-            'post_count', 'last_post_date', 'last_post_author'
+            'post_count', 'last_post_date', 'last_post_author', 'thread_count'
         ];
 
         if (!validCategoryColumns.includes(orderByField)) {

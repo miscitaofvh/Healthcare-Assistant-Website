@@ -67,7 +67,7 @@ const loadCategoriesSummary = async (
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            onError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+            onError(data?.message ?? "Error occurred while loading categories");
             return;
         }
 
@@ -76,7 +76,7 @@ const loadCategoriesSummary = async (
         const errorMsg =
             err?.response?.data?.message ??
             err?.message ??
-            "Đã xảy ra lỗi khi tải danh sách category";
+            "Error occurred while loading categories";
         onError(errorMsg);
     }
 };
@@ -135,8 +135,8 @@ const handleCreateCategory = async (
         const { status, data } = response;
 
         if (status !== 201 || !data?.success) {
-            const defaultMsg = "Không thể tạo danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
+            const defaultMsg = "Cannot create category.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Error occurred while creating category.";
             const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
                 ? data.errors.map((err: { message: string }) => err.message).join("\n")
                 : "";
@@ -175,8 +175,8 @@ const handleUpdateCategory = async (
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const defaultMsg = "Không thể tạo danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
+            const defaultMsg = "Cannot update category.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred.";
             const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
                 ? data.errors.map((err: { message: string }) => err.message).join("\n")
                 : "";
@@ -220,8 +220,8 @@ const handleDeleteCategory = async (
         const { status, data } = response;
 
         if (status !== 200 || !data?.success) {
-            const defaultMsg = "Không thể xóa danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi xóa danh mục.";
+            const defaultMsg = "Cannot delete category.";
+            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred.";
             const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
                 ? data.errors.map((err: { message: string }) => err.message).join("\n")
                 : "";
