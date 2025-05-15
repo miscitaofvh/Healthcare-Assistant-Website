@@ -63,7 +63,7 @@ const CategoryPage: React.FC = () => {
     }
 
     try {
-      await requestCategory.loadThreadsandCategoryByCategory(
+      await requestCategory.loadThreadsAndCategoryByCategory(
         id,
         setLoading,
         setCategory,

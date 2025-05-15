@@ -1,60 +1,70 @@
 import { toast } from 'react-toastify';
-
 import InteractComment from "../../../utils/api/Forum/comment";
 import { CommentPost } from "../../../types/Forum/comment";
+import { COMMENT_MESSAGES } from "../../constants/forum-messages";
 
-// For comment section
-
-const countTotalComments = (comments: CommentPost[]): number => {
-    let count = 0;
-
-    for (const comment of comments) {
-        count++; // Count the current comment
-        if (comment.replies) {
-            count += countTotalComments(comment.replies); // Count all replies
-        }
-    }
-
-    return count;
+// Utility functions
+const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return COMMENT_MESSAGES.ERROR.GENERIC;
 };
 
-const addCommenttoPost = async (
+const handleApiResponse = (
+    response: any,
+    successStatus: number,
+    errorMessage: string,
+    showError: (message: string) => void
+): boolean => {
+    if (response.status !== successStatus || !response.data?.success) {
+        showError(response.data?.message || errorMessage);
+        return false;
+    }
+    return true;
+};
+
+// Comment functions
+const countTotalComments = (comments: CommentPost[]): number => {
+    return comments.reduce((count, comment) => {
+        return count + 1 + (comment.replies ? countTotalComments(comment.replies) : 0);
+    }, 0);
+};
+
+const addCommentToPost = async (
     postId: string,
     commentText: string,
     parentCommentId: string | undefined,
     depth: number | undefined,
     setCommentText: (text: string) => void,
     showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => Promise<void>
 ): Promise<void> => {
     try {
-
         const commentData = {
             postId,
-            content: commentText,
+            content: commentText.trim(),
             parent_comment_id: parentCommentId,
             depth: depth || 0
         };
 
-        const response = await InteractComment.createComment(postId, commentData);
-        const { status, data } = response;
+        if (!commentData.content) {
+            showError('Comment cannot be empty');
+            return;
+        }
 
-        if (status !== 201 || !data?.success) {
-            showError(data?.message || 'Failed to create comment');
+        const response = await InteractComment.createComment(postId, commentData);
+
+        if (!handleApiResponse(response, 201, COMMENT_MESSAGES.ERROR.CREATE, showError)) {
             return;
         }
 
         setCommentText('');
-
+        showSuccess(COMMENT_MESSAGES.SUCCESS.CREATE);
         await onSuccess();
 
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error
-            ? err.message
-            : typeof err === 'string'
-                ? err
-                : 'Failed to post comment';
-        showError(errorMessage);
+    } catch (err) {
+        showError(getErrorMessage(err));
     }
 };
 
@@ -63,31 +73,30 @@ const updateComment = async (
     updatedText: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     refetchComments: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
 
-        const response = await InteractComment.updateComment(commentId, { content: updatedText });
-        const { data, status } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message || 'Failed to update comment');
+        if (!updatedText.trim()) {
+            showError('Comment cannot be empty');
             return;
         }
 
-        await refetchComments();
+        const response = await InteractComment.updateComment(commentId, {
+            content: updatedText.trim()
+        });
 
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to update comment';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
+        if (!handleApiResponse(response, 200, COMMENT_MESSAGES.ERROR.UPDATE, showError)) {
+            return;
         }
 
-        showError(errorMessage);
+        showSuccess(COMMENT_MESSAGES.SUCCESS.UPDATE);
+        await refetchComments();
+
+    } catch (err) {
+        showError(getErrorMessage(err));
     } finally {
         setLoading(false);
     }
@@ -97,41 +106,29 @@ const deleteCommentFromPost = async (
     commentId: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     refetchComments: () => void
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractComment.deleteComment(commentId);
 
-        const { data, status } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message || 'Failed to delete comment');
-            return; 
+        if (!handleApiResponse(response, 200, COMMENT_MESSAGES.ERROR.DELETE, showError)) {
+            return;
         }
 
+        showSuccess(COMMENT_MESSAGES.SUCCESS.DELETE);
         await refetchComments();
 
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to delete comment';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        showError(errorMessage);
+    } catch (err) {
+        showError(getErrorMessage(err));
     } finally {
         setLoading(false);
     }
 };
 
-
-
 export default {
-    addCommenttoPost,
+    addCommentToPost,  // Fixed typo in function name (was addCommenttoPost)
     deleteCommentFromPost,
     updateComment,
     countTotalComments

@@ -1,26 +1,42 @@
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import InteractiveThread from "../../../utils/api/Forum/thread";
-
+import InteractiveCategory from "../../../utils/api/Forum/category";
+import { Dispatch, SetStateAction } from "react";
 import { Thread, NewThread, ThreadSummary, ThreadDropdown } from "../../../types/Forum/thread";
 import { Post } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";
-import InteractiveCategory from "../../../utils/api/Forum/category";
-import { Dispatch, SetStateAction } from "react";
+import { THREAD_MESSAGES } from "../../constants/forum-messages";
 
-
-const validateInputs = (thread: NewThread): string | null => {
+const validateThreadInputs = (thread: NewThread): string | null => {
     const threadName = thread.thread_name.trim();
     const description = thread.description?.trim() || "";
 
-    if (!threadName) return "Category name is required";
+    if (!threadName) return THREAD_MESSAGES.ERROR.VALIDATION.NAME_REQUIRED;
     if (threadName.length < 3 || threadName.length > 50) {
-        return "Category name must be from 3 to 50 characters";
+        return THREAD_MESSAGES.ERROR.VALIDATION.NAME_LENGTH;
     }
     if (description && (description.length < 10 || description.length > 200)) {
-        return "Description must be from 10 to 200 characters long";
+        return THREAD_MESSAGES.ERROR.VALIDATION.DESC_LENGTH;
     }
     return null;
+};
+
+const handleApiResponse = (
+    response: any,
+    successStatus: number,
+    errorMessage: string,
+    showError: (message: string) => void
+): boolean => {
+    if (response.status !== successStatus || !response.data?.success) {
+        const errorMsg = response.data?.message || errorMessage;
+        const detailedMsg = Array.isArray(response.data?.errors)
+            ? response.data.errors.map((err: { message: string }) => err.message).join("\n")
+            : "";
+        showError(`${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        return false;
+    }
+    return true;
 };
 
 const loadThreads = async (
@@ -37,28 +53,24 @@ const loadThreads = async (
     try {
         setLoading(true);
         const response = await InteractiveThread.getAllThreads(page, limit, sortBy, sortOrder);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            throw new Error(data?.message ?? "Failed to load threads");
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.LOAD, showError)) {
+            return;
         }
 
-        setThreads(data.threads ?? []);
+        setThreads(response.data.threads ?? []);
         setPagination({
-            currentPage: data.page || page,
-            totalPages: Math.ceil(data.totalCount / data.limit) || 1,
-            limit: data.limit || limit,
-            totalItems: data.totalCount || 0,
-            sortBy: data.sortBy || sortBy,
-            sortOrder: data.sortOrder || sortOrder
+            currentPage: response.data.page || page,
+            totalPages: Math.ceil(response.data.totalCount / response.data.limit) || 1,
+            limit: response.data.limit || limit,
+            totalItems: response.data.totalCount || 0,
+            sortBy: response.data.sortBy || sortBy,
+            sortOrder: response.data.sortOrder || sortOrder
         });
 
-        showSuccess("Threads loaded successfully");
-    } catch (err: unknown) {
-        const errorMsg =
-            (err as any)?.response?.data?.message ??
-            (err instanceof Error ? err.message : "Failed to load threads");
-        showError(errorMsg);
+        showSuccess(THREAD_MESSAGES.SUCCESS.LOAD);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.LOAD);
     } finally {
         setLoading(false);
     }
@@ -69,45 +81,40 @@ const loadThreadByID = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThread: Dispatch<SetStateAction<ThreadSummary | null>>,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void,
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
         setLoading(true);
         const response = await InteractiveThread.getThreadById(id);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.LOAD_SINGLE, showError)) {
             return;
         }
 
-        setThread(data.thread || null);
+        setThread(response.data.thread || null);
+        showSuccess(THREAD_MESSAGES.SUCCESS.LOAD_SINGLE);
         onSuccess();
     } catch (err: any) {
-        const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Đã xảy ra lỗi khi tải danh sách category";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.LOAD_SINGLE);
     } finally {
         setLoading(false);
     }
 };
 
-const loadPostsandThreadByCategory = async (
+const loadPostsAndThreadByCategory = async (
     threadId: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setThread: Dispatch<SetStateAction<Thread | null>>,
     setPosts: Dispatch<SetStateAction<Post[]>>,
     setPagination: Dispatch<SetStateAction<PaginationData>>,
-    errorCallback: (message: string) => void,
-    successCallback: (message: string) => void,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success,
     page: number = 1,
     limit: number = 10,
-    sortBy: string = "created_at",
-    sortOrder: string = "DESC"
-) => {
+    sortBy: string = 'created_at',
+    sortOrder: string = 'DESC'
+): Promise<void> => {
     try {
         setLoading(true);
         const response = await InteractiveThread.getPostsByThread(
@@ -117,36 +124,26 @@ const loadPostsandThreadByCategory = async (
             sortBy,
             sortOrder
         );
-        
-        const { status, data } = response;
-        if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while loading thread data.";
-            errorCallback(`Failed to load thread: ${errorMsg}`);
+
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.LOAD_POSTS, showError)) {
             return;
         }
 
-        if (data?.thread) {
-            setThread(data.thread);
-            setPosts(data.posts || []);
+        setThread(response.data.thread || null);
+        setPosts(response.data.posts || []);
+        setPagination(prev => ({
+            ...prev,
+            currentPage: page,
+            totalPages: response.data.totalPages || 1,
+            totalItems: response.data.totalItems || 0,
+            limit: limit,
+            sortBy: sortBy,
+            sortOrder: sortOrder
+        }));
 
-            // Update pagination data from response
-            setPagination(prev => ({
-                ...prev,
-                currentPage: page,
-                totalPages: data.totalPages || 1,
-                totalItems: data.totalItems || 0,
-                limit: limit,
-                sortBy: sortBy,
-                sortOrder: sortOrder
-            }));
-
-            successCallback("Thread loaded successfully");
-        } else {
-            errorCallback("No thread data found in response.");
-        }
-    } catch (error: any) {
-        errorCallback(error.message || "Failed to load thread data. Please try again later.");
-        console.error("Error loading thread:", error);
+        showSuccess(THREAD_MESSAGES.SUCCESS.LOAD_POSTS);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.LOAD_POSTS);
     } finally {
         setLoading(false);
     }
@@ -154,15 +151,14 @@ const loadPostsandThreadByCategory = async (
 
 const handleCreateThread = async (
     newThread: NewThread,
-    showError: (error: string) => void,
+    showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void,
-    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
+    onSuccess: () => void = () => { },
+    setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-
-        const validationError = validateInputs(newThread);
+        const validationError = validateThreadInputs(newThread);
         if (validationError) {
             showError(validationError);
             return;
@@ -170,27 +166,14 @@ const handleCreateThread = async (
 
         const response = await InteractiveThread.createThread(newThread);
 
-        const { status, data } = response;
-
-        if (status !== 201 || !data?.success) {
-            const defaultMsg = "Không thể tạo danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 201, THREAD_MESSAGES.ERROR.CREATE, showError)) {
             return;
         }
 
-        showSuccess("Thread created successfully!");
-        setTimeout(() => {
-            onSuccess?.();
-        }, 2000);
+        showSuccess(THREAD_MESSAGES.SUCCESS.CREATE);
+        setTimeout(onSuccess, 2000);
     } catch (err: any) {
-        const errorMsg = err?.response?.data?.message ?? err.message ?? "Failed to create thread.";
-        showError(errorMsg);
-        console.error("Thread creation error:", err);
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.CREATE);
     } finally {
         setFormLoading?.(false);
     }
@@ -201,13 +184,12 @@ const handleUpdateThread = async (
     newThread: NewThread,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void,
-    setFormLoading?: Dispatch<SetStateAction<boolean>> // Optional for backward compatibility
+    onSuccess: () => void = () => { },
+    setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-        
-        const validationError = validateInputs(newThread);
+        const validationError = validateThreadInputs(newThread);
         if (validationError) {
             showError(validationError);
             return;
@@ -215,26 +197,14 @@ const handleUpdateThread = async (
 
         const response = await InteractiveThread.updateThread(thread_id, newThread);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Không thể tạo danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.UPDATE, showError)) {
             return;
         }
 
-        showSuccess(data?.message || "Category updated successfully!");
-        setTimeout(() => {
-            onSuccess?.();
-        }, 2000);
-
+        showSuccess(THREAD_MESSAGES.SUCCESS.UPDATE);
+        setTimeout(onSuccess, 2000);
     } catch (err: any) {
-        showError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.UPDATE);
     } finally {
         setFormLoading?.(false);
     }
@@ -249,29 +219,16 @@ const handleDeleteThread = async (
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-
         const response = await InteractiveThread.deleteThread(thread_id);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Không thể tạo danh mục.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Lỗi không xác định khi tạo danh mục.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.DELETE, showError)) {
             return;
         }
 
-        showSuccess(data?.message || "Category updated successfully!");
-        setTimeout(() => {
-            onSuccess?.();
-        }, 2000);
-
+        showSuccess(THREAD_MESSAGES.SUCCESS.DELETE);
+        setTimeout(() => onSuccess?.(), 2000);
     } catch (err: any) {
-        showError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.DELETE);
     } finally {
         setFormLoading?.(false);
     }
@@ -279,30 +236,29 @@ const handleDeleteThread = async (
 
 const loadThreadsByCategory = async (
     category_id: number,
-    setThreads: Dispatch<SetStateAction<ThreadDropdown[] | []>>,
-    showError: (message: string) => void = toast.error
+    setThreads: Dispatch<SetStateAction<ThreadDropdown[]>>,
+    showError: (message: string) => void = toast.error,
+    showSuccess: (message: string) => void = toast.success
 ): Promise<void> => {
     try {
         const response = await InteractiveCategory.getThreadsSummaryByCategory(category_id);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            const errorMsg = data?.message || "Unknown error occurred while update thread.";
-            showError(`Không thể cập nhật thread: ${errorMsg}`);
+        if (!handleApiResponse(response, 200, "Failed to load threads by category", showError)) {
             return;
         }
 
-        setThreads(data?.threads || []);
-
+        setThreads(response.data?.threads || []);
+        showSuccess("Threads by category loaded successfully");
     } catch (err: any) {
-        showError(err?.response?.data?.message ?? err.message ?? "Failed to create thread.");
+        showError(err?.response?.data?.message ?? err?.message ?? "Failed to load threads by category");
     }
 };
 
 export default {
+    validateThreadInputs,
     loadThreads,
     loadThreadByID,
-    loadPostsandThreadByCategory,
+    loadPostsAndThreadByCategory,
     handleCreateThread,
     handleUpdateThread,
     handleDeleteThread,

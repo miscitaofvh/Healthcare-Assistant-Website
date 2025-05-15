@@ -1037,8 +1037,7 @@
 }
 
 .updateButton {
-    background-color: #4a6fa5;
-    color: white;
+    color: black;
 }
 
 .updateButton:hover {
@@ -1046,8 +1045,7 @@
 }
 
 .deleteButton {
-    background-color: #e74c3c;
-    color: white;
+    color: black;
 }
 
 .deleteButton:hover {

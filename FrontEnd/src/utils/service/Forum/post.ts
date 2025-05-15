@@ -1,18 +1,52 @@
 import { toast } from 'react-toastify';
-import { Dispatch, SetStateAction } from "react";
+import 'react-toastify/dist/ReactToastify.css';
+import { Dispatch, SetStateAction } from 'react';
+import InteractPost from '../../../utils/api/Forum/post';
+import { PostListMain, Post, NewPost } from '../../../types/Forum/post';
+import { CommentPost } from '../../../types/Forum/comment';
+import { PaginationData } from '../../../types/Forum/pagination';
+import { SummaryTag } from '../../../types/Forum/tag';
+import { SummaryCategory } from '../../../types/Forum/category';
+import { ThreadDropdown } from '../../../types/Forum/thread';
+import { POST_MESSAGES } from '../../constants/forum-messages';
 
-import InteractPost from "../../../utils/api/Forum/post";
-import { PostListMain, Post, NewPost } from "../../../types/Forum/post";
-import { CommentPost } from "../../../types/Forum/comment";
-import { PaginationData } from "../../../types/Forum/pagination";
-import { SummaryTag } from "../../../types/Forum/tag";
-import { SummaryCategory } from "../../../types/Forum/category";
-import { ThreadDropdown } from "../../../types/Forum/thread";
+const validatePostInputs = (post: NewPost): string | null => {
+    const title = post.title?.trim() || '';
+    const content = post.content?.trim() || '';
 
-// Posts list functions
+    if (!title) return POST_MESSAGES.ERROR.VALIDATION.TITLE_REQUIRED;
+    if (title.length < 3 || title.length > 100) {
+        return POST_MESSAGES.ERROR.VALIDATION.TITLE_LENGTH;
+    }
+    if (!content) return POST_MESSAGES.ERROR.VALIDATION.CONTENT_REQUIRED;
+    if (content.length < 10 || content.length > 2000) {
+        return POST_MESSAGES.ERROR.VALIDATION.CONTENT_LENGTH;
+    }
+    if (!post.thread_id) return POST_MESSAGES.ERROR.VALIDATION.THREAD_REQUIRED;
+
+    return null;
+};
+
+const handleApiResponse = (
+    response: any,
+    successStatus: number,
+    errorMessage: string,
+    showError: (message: string) => void
+): boolean => {
+    if (response.status !== successStatus || !response.data?.success) {
+        const errorMsg = response.data?.message || errorMessage;
+        const detailedMsg = Array.isArray(response.data?.errors)
+            ? response.data.errors.map((err: { message: string }) => err.message).join('\n')
+            : '';
+        showError(`${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ''}`);
+        return false;
+    }
+    return true;
+};
+
 const loadPosts = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setPosts: (posts: PostListMain[]) => void,
+    setPosts: Dispatch<SetStateAction<PostListMain[]>>,
     setPagination: Dispatch<SetStateAction<PaginationData>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
@@ -23,32 +57,25 @@ const loadPosts = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractPost.getPosts(page, limit, sortBy, sortOrder);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.LOAD, showError)) {
             return;
         }
-        setPosts(data.posts ?? []);
 
+        setPosts(response.data.posts ?? []);
         setPagination({
-            currentPage: data.page || page,
-            totalPages: Math.ceil(data.totalCount / data.limit) || 1,
-            limit: data.limit || limit,
-            totalItems: data.totalCount || 0,
-            sortBy: data.sortBy || sortBy,
-            sortOrder: data.sortOrder || sortOrder
+            currentPage: response.data.page || page,
+            totalPages: Math.ceil(response.data.totalCount / response.data.limit) || 1,
+            limit: response.data.limit || limit,
+            totalItems: response.data.totalCount || 0,
+            sortBy: response.data.sortBy || sortBy,
+            sortOrder: response.data.sortOrder || sortOrder
         });
 
-        showSuccess("Posts loaded successfully");
+        showSuccess(POST_MESSAGES.SUCCESS.LOAD);
     } catch (err: any) {
-        const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Đã xảy ra lỗi khi tải danh sách category";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD);
     } finally {
         setLoading(false);
     }
@@ -57,51 +84,34 @@ const loadPosts = async (
 const loadPostPageById = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setPost: (post: Post | null) => void,
+    setPost: Dispatch<SetStateAction<Post | null>>,
     setComments: (comments: CommentPost[]) => void,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
-    onSuccess?: () => void
+    onSuccess: () => void = () => {}
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractPost.getPostById(`${id}?includeComments=true&includeStats=true&includeCommentReplies=true`);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.LOAD_SINGLE, showError)) {
+            setPost(null);
+            setComments([]);
             return;
         }
-        const post = data.post;
 
+        const post = response.data.post;
         if (!post) {
-            alert("Post not found");
+            showError('Post not found');
+            setPost(null);
+            setComments([]);
+            return;
         }
 
-        const comments = Array.isArray(post.comments) ? post.comments : [];
         setPost(post);
-        setComments(comments);
-
-        showSuccess("Post loaded successfully");
-
-        setTimeout(() => {
-            if (onSuccess) {
-                onSuccess();
-            }
-        }, 2000);
-
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to load post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        showError(errorMessage);
+        setComments(Array.isArray(post.comments) ? post.comments : []);
+        setTimeout(onSuccess, 2000);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD_SINGLE);
         setPost(null);
         setComments([]);
     } finally {
@@ -111,94 +121,80 @@ const loadPostPageById = async (
 
 const loadUpdatePostFE = async (
     id: string,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    setPost: (post: Post | null) => void,
-    setCategories: (categories: SummaryCategory[]) => void,
-    setThreads: (threads: ThreadDropdown[]) => void,
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setPost: Dispatch<SetStateAction<Post | null>>,
+    setCategories: Dispatch<SetStateAction<SummaryCategory[]>>,
+    setThreads: Dispatch<SetStateAction<ThreadDropdown[]>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess?: () => void
+    onSuccess: () => void = () => {}
 ): Promise<void> => {
     try {
         setLoading(true);
         const response = await InteractPost.getPostById(id);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Lỗi không xác định từ máy chủ.");
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.LOAD_SINGLE, showError)) {
+            setPost(null);
+            return;
         }
 
-        const post = data.post;
+        const post = response.data.post;
+        if (!post) {
+            showError('Post not found');
+            setPost(null);
+            return;
+        }
 
         setPost({
             ...post,
-            tag_name: post.tags.map((tag: SummaryTag) => tag.tag_name),
+            tag_name: post.tags.map((tag: SummaryTag) => tag.tag_name)
         });
 
-        setCategories([
-            {
-                category_id: post.category_id,
-                category_name: post.category_name,
-            },
-        ]);
+        setCategories([{
+            category_id: post.category_id,
+            category_name: post.category_name
+        }]);
 
-        setThreads([
-            {
-                thread_id: post.thread_id,
-                thread_name: post.thread_name,
-            },
-        ]);
+        setThreads([{
+            thread_id: post.thread_id,
+            thread_name: post.thread_name
+        }]);
 
-        showSuccess("Post loaded successfully");
-
-        if (onSuccess) {
-            setTimeout(onSuccess, 2000);
-        }
-    } catch (err: unknown) {
-        let errorMessage = "Failed to load post";
-        if (err instanceof Error) errorMessage = err.message;
-        else if (typeof err === "string") errorMessage = err;
-
-        showError(errorMessage);
+        showSuccess(POST_MESSAGES.SUCCESS.LOAD_SINGLE);
+        setTimeout(onSuccess, 2000);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD_SINGLE);
+        setPost(null);
     } finally {
         setLoading(false);
     }
 };
 
 const createPostFE = async (
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     postNew: NewPost,
+    setLoading: Dispatch<SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess?: () => void
+    onSuccess: () => void = () => {}
 ): Promise<void> => {
     try {
         setLoading(true);
-
-        const response = await InteractPost.createPost(postNew);
-
-        const { status, data } = response;
-
-        if (status !== 201 || !data?.success) {
-            showError(data?.message || 'Failed to create post: Server error');
+        const validationError = validatePostInputs(postNew);
+        if (validationError) {
+            showError(validationError);
             return;
         }
 
-        showSuccess('Post created successfully');
+        const response = await InteractPost.createPost(postNew);
 
-        if (onSuccess) {
-            setTimeout(onSuccess, 2000);
-        }
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to delete post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
+        if (!handleApiResponse(response, 201, POST_MESSAGES.ERROR.CREATE, showError)) {
+            return;
         }
 
-        showError(errorMessage);
+        showSuccess(POST_MESSAGES.SUCCESS.CREATE);
+        setTimeout(onSuccess, 2000);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.CREATE);
     } finally {
         setLoading(false);
     }
@@ -206,39 +202,31 @@ const createPostFE = async (
 
 const updatePostFE = async (
     id: string,
-    postData: any,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    postData: NewPost,
+    setLoading: Dispatch<SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess?: () => void
+    onSuccess: () => void = () => {}
 ): Promise<void> => {
     try {
         setLoading(true);
 
-        const response = await InteractPost.updatePost(id || '', postData);
-
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(response.data?.message || 'Failed to delete post: Server error');
+        const validationError = validatePostInputs(postData);
+        if (validationError) {
+            showError(validationError);
             return;
         }
 
-        showSuccess('Post updated successfully');
+        const response = await InteractPost.updatePost(id, postData);
 
-        if (onSuccess) {
-            setTimeout(onSuccess, 2000); // Delay redirect to show success message
-        }
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to delete post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.UPDATE, showError)) {
+            return;
         }
 
-        showError(errorMessage);
+        showSuccess(POST_MESSAGES.SUCCESS.UPDATE);
+        setTimeout(onSuccess, 2000);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.UPDATE);
     } finally {
         setLoading(false);
     }
@@ -246,38 +234,23 @@ const updatePostFE = async (
 
 const deletePostFE = async (
     id: string,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    setLoading: Dispatch<SetStateAction<boolean>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess?: () => void
+    onSuccess: () => void = () => {}
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractPost.deletePost(id);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message || 'Failed to delete post: Server error');
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.DELETE, showError)) {
             return;
         }
 
-        showSuccess('Post deleted successfully');
-
-        if (onSuccess) {
-            setTimeout(onSuccess, 2000); // Delay redirect to show success message
-        }
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to delete post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
-        }
-
-        showError(errorMessage);
+        showSuccess(POST_MESSAGES.SUCCESS.DELETE);
+        setTimeout(onSuccess, 2000);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.DELETE);
     } finally {
         setLoading(false);
     }

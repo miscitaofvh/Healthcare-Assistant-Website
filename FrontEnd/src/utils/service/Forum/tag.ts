@@ -4,20 +4,37 @@ import InteractTag from "../../../utils/api/Forum/tag";
 import { Tag, NewTag, SummaryTag } from "../../../types/Forum/tag";
 import { PostbyTag } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";
-
+import { TAG_MESSAGES } from "../../constants/forum-messages";
 
 const validateTagInputs = (tag: NewTag): string | null => {
     const tagName = tag.tag_name.trim();
     const description = tag.description?.trim() || "";
 
-    if (!tagName) return "Tag name is required";
+    if (!tagName) return TAG_MESSAGES.ERROR.VALIDATION.NAME_REQUIRED;
     if (tagName.length < 2 || tagName.length > 30) {
-        return "Tag name must be from 2 to 30 characters";
+        return TAG_MESSAGES.ERROR.VALIDATION.NAME_LENGTH;
     }
     if (description && (description.length < 5 || description.length > 150)) {
-        return "Description must be from 5 to 150 characters long";
+        return TAG_MESSAGES.ERROR.VALIDATION.DESC_LENGTH;
     }
     return null;
+};
+
+const handleApiResponse = (
+    response: any,
+    successStatus: number,
+    errorMessage: string,
+    showError: (message: string) => void
+): boolean => {
+    if (response.status !== successStatus || !response.data?.success) {
+        const errorMsg = response.data?.message || errorMessage;
+        const detailedMsg = Array.isArray(response.data?.errors)
+            ? response.data.errors.map((err: { message: string }) => err.message).join("\n")
+            : "";
+        showError(`${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        return false;
+    }
+    return true;
 };
 
 const loadTags = async (
@@ -33,18 +50,14 @@ const loadTags = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractTag.getAllTags(page, limit, sortBy, sortOrder);
-        
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Error occurred while loading tags.");
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD, showError)) {
             return;
         }
 
-        setTags(data.tags ?? []);
-        setPagination(data.pagination ?? {
+        setTags(response.data.tags ?? []);
+        setPagination(response.data.pagination ?? {
             currentPage: page,
             totalPages: 1,
             limit,
@@ -52,11 +65,9 @@ const loadTags = async (
             sortBy,
             sortOrder
         });
-
-        showSuccess(data.message || "Tags loaded successfully!");
+        showSuccess(TAG_MESSAGES.SUCCESS.LOAD);
     } catch (err: any) {
-        const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tags.";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD);
     } finally {
         setLoading(false);
     }
@@ -67,25 +78,22 @@ const loadTagByID = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setTag: Dispatch<SetStateAction<Tag | null>>,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
         setLoading(true);
-        
         const response = await InteractTag.getSummaryTagById(id);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Unknown server error occurred");
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD_SINGLE, showError)) {
             return;
         }
 
-        setTag(data.tag || null);
+        setTag(response.data.tag || null);
+        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_SINGLE);
         onSuccess();
-    } catch (err: unknown) {
-        const errorMsg = (err as any)?.response?.data?.message ?? 
-                        (err instanceof Error ? err.message : "Failed to load tag");
-        showError(errorMsg);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SINGLE);
     } finally {
         setLoading(false);
     }
@@ -95,27 +103,22 @@ const loadTagsSummary = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setTags: (tags: SummaryTag[]) => void,
     showError: (message: string) => void = toast.error,
-    onSuccess?: () => void
-    
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractTag.getAllTagsSummary();
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Unknown server error occurred");
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD_SUMMARY, showError)) {
             return;
         }
 
-        setTags(data.tags ?? []);
-        onSuccess?.();
-
+        setTags(response.data.tags ?? []);
+        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_SUMMARY);
+        onSuccess();
     } catch (err: any) {
-        const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tag summary";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SUMMARY);
     } finally {
         setLoading(false);
     }
@@ -125,23 +128,22 @@ const loadTagsPostSummary = async (
     setTagsLoading: Dispatch<SetStateAction<boolean>>,
     setTags: (tags: SummaryTag[]) => void,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void,
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
         setTagsLoading(true);
         const response = await InteractTag.getAllTagsLittleSummary();
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Unknown server error occurred");
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD_SUMMARY, showError)) {
             return;
         }
 
-        setTags(data.tags ?? []);
-        onSuccess?.();
+        setTags(response.data.tags ?? []);
+        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_SUMMARY);
+        onSuccess();
     } catch (err: any) {
-        const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tag post summary";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SUMMARY);
     } finally {
         setTagsLoading(false);
     }
@@ -162,7 +164,6 @@ const loadPostsandTagByTag = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractTag.getPostsByTag(
             Number(id),
             page,
@@ -171,28 +172,23 @@ const loadPostsandTagByTag = async (
             sortOrder
         );
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Error occurred while loading tag posts.");
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD_POSTS, showError)) {
             return;
         }
 
-        setTag(data.tag ?? null);
-        setPosts(data.posts ?? []);
+        setTag(response.data.tag ?? null);
+        setPosts(response.data.posts ?? []);
         setPagination(prev => ({
             ...prev,
-            ...data.pagination,
+            ...response.data.pagination,
             currentPage: page,
             limit,
             sortBy,
             sortOrder
         }));
-
-        showSuccess(data.message || "Tag posts loaded successfully!");
+        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_POSTS);
     } catch (err: any) {
-        const errorMsg = err?.response?.data?.message ?? err?.message ?? "Error occurred while loading tag posts.";
-        showError(errorMsg);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_POSTS);
     } finally {
         setLoading(false);
     }
@@ -201,12 +197,12 @@ const loadPostsandTagByTag = async (
 const handleCreateTag = async (
     tag: NewTag,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void,
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { },
     setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-        
         const validationError = validateTagInputs(tag);
         if (validationError) {
             showError(validationError);
@@ -214,24 +210,15 @@ const handleCreateTag = async (
         }
 
         const response = await InteractTag.createTag(tag);
-        const { status, data } = response;
 
-        if (status !== 201 || !data?.success) {
-            const defaultMsg = "Failed to create tag.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred when creating tag.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 201, TAG_MESSAGES.ERROR.CREATE, showError)) {
             return;
         }
 
-        toast.success(data?.message || "Tag created successfully!");
+        showSuccess(TAG_MESSAGES.SUCCESS.CREATE);
         setTimeout(onSuccess, 2000);
     } catch (err: any) {
-        const errorMessage = err?.response?.data?.message ?? err.message ?? "Failed to create tag.";
-        showError(errorMessage);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.CREATE);
     } finally {
         setFormLoading?.(false);
     }
@@ -241,12 +228,12 @@ const handleUpdateTag = async (
     id: number,
     tag: NewTag,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void,
+    showSuccess: (message: string) => void = toast.success,
+    onSuccess: () => void = () => { },
     setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-        
         const validationError = validateTagInputs(tag);
         if (validationError) {
             showError(validationError);
@@ -254,24 +241,15 @@ const handleUpdateTag = async (
         }
 
         const response = await InteractTag.updateTag(id, tag);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Failed to update tag.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred when updating tag.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.UPDATE, showError)) {
             return;
         }
 
-        toast.success(data?.message || "Tag updated successfully!");
+        showSuccess(TAG_MESSAGES.SUCCESS.UPDATE);
         setTimeout(onSuccess, 2000);
     } catch (err: any) {
-        const errorMessage = err?.response?.data?.message ?? err.message ?? "Failed to update tag.";
-        showError(errorMessage);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.UPDATE);
     } finally {
         setFormLoading?.(false);
     }
@@ -286,28 +264,16 @@ const handleDeleteTag = async (
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-
         const response = await InteractTag.deleteTag(id);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Failed to delete tag.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred when deleting tag.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.DELETE, showError)) {
             return;
         }
 
-        showSuccess(data?.message || "Tag deleted successfully!");
-        setTimeout(() => {
-            onSuccess?.();
-        }, 2000);
+        showSuccess(TAG_MESSAGES.SUCCESS.DELETE);
+        setTimeout(() => onSuccess?.(), 2000);
     } catch (err: any) {
-        const errorMessage = err?.response?.data?.message ?? err.message ?? "Failed to delete tag.";
-        showError(errorMessage);
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.DELETE);
     } finally {
         setFormLoading?.(false);
     }

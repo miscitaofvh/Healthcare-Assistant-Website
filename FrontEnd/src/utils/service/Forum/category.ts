@@ -1,3 +1,4 @@
+// src/utils/api/forum/category-actions.ts
 import { Dispatch, SetStateAction } from "react";
 import { toast } from "react-toastify";
 
@@ -5,19 +6,34 @@ import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Category, NewCategory, SummaryCategory } from "../../../types/Forum/category";
 import { PaginationData } from "../../../types/Forum/pagination";
 import { Thread } from "../../../types/Forum/thread";
+import { FORUM_MESSAGES, buildDetailedErrors } from "../../constants/forum-messages";
 
 const validateInputs = (category: NewCategory): string | null => {
-    const categoryName = category.category_name.trim();
-    const description = category.description?.trim() || "";
+    const { category_name, description } = category;
+    const trimmedName = category_name.trim();
+    const trimmedDesc = description?.trim() || "";
 
-    if (!categoryName) return "Category name is required";
-    if (categoryName.length < 3 || categoryName.length > 50) {
-        return "Category name must be from 3 to 50 characters";
+    if (!trimmedName) return FORUM_MESSAGES.ERROR.CATEGORY.VALIDATION.NAME_REQUIRED;
+    if (trimmedName.length < 3 || trimmedName.length > 50) {
+        return FORUM_MESSAGES.ERROR.CATEGORY.VALIDATION.NAME_LENGTH;
     }
-    if (description && (description.length < 10 || description.length > 200)) {
-        return "Description must be from 10 to 200 characters long";
+    if (trimmedDesc && (trimmedDesc.length < 10 || trimmedDesc.length > 200)) {
+        return FORUM_MESSAGES.ERROR.CATEGORY.VALIDATION.DESC_LENGTH;
     }
     return null;
+};
+
+const handleApiError = (
+    error: any,
+    defaultMessage: string,
+    showError: (message: string) => void
+): void => {
+    const errorMessage = error?.response?.data?.message
+        || error?.message
+        || defaultMessage;
+    const detailedErrors = buildDetailedErrors(error?.response?.data);
+
+    showError(`${errorMessage}${detailedErrors ? `\n${detailedErrors}` : ''}`);
 };
 
 const loadCategories = async (
@@ -33,25 +49,26 @@ const loadCategories = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractiveCategory.getAllCategories(page, limit, sortBy, sortOrder);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Error occurred while loading categories.");
+        if (response.status !== 200 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.CATEGORY.LOAD,
+                showError
+            );
             return;
         }
 
-        setCategories(data.categories ?? []);
-        setPagination(data.pagination ?? "");
-        showSuccess(data.message || "Categories loaded successfully!");
-    } catch (err: any) {
-        const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Error occurred while loading categories.";
-        showError(errorMsg);
+        setCategories(response.data.categories ?? []);
+        setPagination(response.data.pagination ?? {});
+        showSuccess(FORUM_MESSAGES.SUCCESS.CATEGORY.LOAD);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.GENERIC.SERVER,
+            showError
+        );
     } finally {
         setLoading(false);
     }
@@ -59,52 +76,54 @@ const loadCategories = async (
 
 const loadCategoriesSummary = async (
     onSuccess: (categories: SummaryCategory[]) => void,
-    onError: (error: string) => void
+    onError: (error: string) => void = toast.error
 ): Promise<void> => {
     try {
         const response = await InteractiveCategory.getSummaryCategories();
-        
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            onError(data?.message ?? "Error occurred while loading categories");
+        if (response.status !== 200 || !response.data?.success) {
+            onError(response.data?.message || FORUM_MESSAGES.ERROR.CATEGORY.LOAD);
             return;
         }
 
-        onSuccess(data.categories ?? []);
-    } catch (err: any) {
-        const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Error occurred while loading categories";
-        onError(errorMsg);
+        onSuccess(response.data.categories ?? []);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.LOAD,
+            onError
+        );
     }
 };
 
-const loadCategorieById = async (
+const loadCategoryById = async (
     id: number,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
     showError: (message: string) => void = toast.error,
-    onSuccess: () => void,
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
         setLoading(true);
         const response = await InteractiveCategory.getCategoryById(id);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Unknown server error occurred");
+        if (response.status !== 200 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.CATEGORY.LOAD_SINGLE,
+                showError
+            );
             return;
         }
 
-        setCategory(data.category || null);
+        setCategory(response.data.category || null);
         onSuccess();
-    } catch (err: unknown) {
-        const errorMsg =
-            (err as any)?.response?.data?.message ??
-            (err instanceof Error ? err.message : "Failed to load category");
-        showError(errorMsg);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.LOAD_SINGLE,
+            showError
+        );
     } finally {
         setLoading(false);
     }
@@ -114,12 +133,9 @@ const handleCreateCategory = async (
     newCategory: NewCategory,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void,
+    onSuccess: () => void = () => { },
     setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
-    const trimmedName = newCategory.category_name.trim();
-    const trimmedDescription = newCategory.description?.trim();
-
     try {
         setFormLoading?.(true);
         const validationError = validateInputs(newCategory);
@@ -127,30 +143,29 @@ const handleCreateCategory = async (
             showError(validationError);
             return;
         }
+
         const response = await InteractiveCategory.createCategory({
-            category_name: trimmedName,
-            description: trimmedDescription,
+            category_name: newCategory.category_name.trim(),
+            description: newCategory.description?.trim(),
         });
 
-        const { status, data } = response;
-
-        if (status !== 201 || !data?.success) {
-            const defaultMsg = "Cannot create category.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Error occurred while creating category.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (response.status !== 201 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.CATEGORY.CREATE,
+                showError
+            );
             return;
         }
-        showSuccess("Category created successfully!");
-        setTimeout(() => {
-            onSuccess();
-        }, 2000);
-    } catch (err: any) {
-        const errorMessage = err?.response?.data?.message ?? err.message ?? "Failed to create category.";
-        showError(errorMessage);
+
+        showSuccess(FORUM_MESSAGES.SUCCESS.CATEGORY.CREATE);
+        setTimeout(onSuccess, 2000);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.CREATE,
+            showError
+        );
     } finally {
         setFormLoading?.(false);
     }
@@ -161,7 +176,7 @@ const handleUpdateCategory = async (
     updatedCategory: NewCategory,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void,
+    onSuccess: () => void = () => { },
     setFormLoading?: Dispatch<SetStateAction<boolean>>
 ): Promise<void> => {
     try {
@@ -171,35 +186,26 @@ const handleUpdateCategory = async (
             showError(validationError);
             return;
         }
+
         const response = await InteractiveCategory.updateCategory(categoryId, updatedCategory);
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Cannot update category.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (response.status !== 200 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.CATEGORY.UPDATE,
+                showError
+            );
             return;
         }
 
-        showSuccess(data?.message || "Category updated successfully!");
-        setTimeout(() => {
-            onSuccess();
-        }, 2000);
-    } catch (error: unknown) {
-        console.error("Error updating category:", error);
-
-        let errorMessage = "Failed to update category. Please try again.";
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        } else if (typeof error === 'string') {
-            errorMessage = error;
-        }
-
-        showError(errorMessage);
+        showSuccess(FORUM_MESSAGES.SUCCESS.CATEGORY.UPDATE);
+        setTimeout(onSuccess, 2000);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.UPDATE,
+            showError
+        );
     } finally {
         setFormLoading?.(false);
     }
@@ -214,40 +220,31 @@ const handleDeleteCategory = async (
 ): Promise<void> => {
     try {
         setFormLoading?.(true);
-
         const response = await InteractiveCategory.deleteCategory(id);
 
-        const { status, data } = response;
-
-        if (status !== 200 || !data?.success) {
-            const defaultMsg = "Cannot delete category.";
-            const errorMsg = typeof data === "string" ? data : data?.message || "Unknown error occurred.";
-            const detailedMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? data.errors.map((err: { message: string }) => err.message).join("\n")
-                : "";
-
-            showError(`${defaultMsg}\n${errorMsg}${detailedMsg ? `\n${detailedMsg}` : ""}`);
+        if (response.status !== 200 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.CATEGORY.DELETE,
+                showError
+            );
             return;
         }
-        showSuccess(data?.message || "Category deleted successfully!");
 
-        setTimeout(() => {
-            onSuccess?.();
-        }, 2000);
-
-    } catch (error: unknown) {
-        const errorMessage =
-            error instanceof Error
-                ? error.message
-                : "An unexpected error occurred while deleting the category.";
-
-        showError(errorMessage);
+        showSuccess(FORUM_MESSAGES.SUCCESS.CATEGORY.DELETE);
+        setTimeout(() => onSuccess?.(), 2000);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.DELETE,
+            showError
+        );
     } finally {
         setFormLoading?.(false);
     }
 };
 
-const loadThreadsandCategoryByCategory = async (
+const loadThreadsAndCategoryByCategory = async (
     id: string,
     setLoading: Dispatch<SetStateAction<boolean>>,
     setCategory: Dispatch<SetStateAction<Category | null>>,
@@ -262,7 +259,6 @@ const loadThreadsandCategoryByCategory = async (
 ): Promise<void> => {
     try {
         setLoading(true);
-
         const response = await InteractiveCategory.getThreadsByCategory(
             Number(id),
             page,
@@ -270,25 +266,26 @@ const loadThreadsandCategoryByCategory = async (
             sortBy,
             sortOrder
         );
-        
-        const { status, data } = response;
 
-        if (status !== 200 || !data?.success) {
-            showError(data?.message ?? "Error occurred while loading category threads.");
+        if (response.status !== 200 || !response.data?.success) {
+            handleApiError(
+                response.data,
+                FORUM_MESSAGES.ERROR.THREAD.LOAD,
+                showError
+            );
             return;
         }
 
-        setCategory(data.category ?? null);
-        setThreads(data.threads ?? []);
-        setPagination(data.pagination ?? "");
-
-        showSuccess(data.message || "Category threads loaded successfully!");
-    } catch (err: any) {
-        const errorMsg =
-            err?.response?.data?.message ??
-            err?.message ??
-            "Error occurred while loading category threads.";
-        showError(errorMsg);
+        setCategory(response.data.category ?? null);
+        setThreads(response.data.threads ?? []);
+        setPagination(response.data.pagination ?? {});
+        showSuccess(FORUM_MESSAGES.SUCCESS.THREAD.LOAD);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.THREAD.LOAD,
+            showError
+        );
     } finally {
         setLoading(false);
     }
@@ -297,9 +294,9 @@ const loadThreadsandCategoryByCategory = async (
 export default {
     loadCategories,
     loadCategoriesSummary,
-    loadCategorieById,
+    loadCategoryById,
     handleCreateCategory,
     handleUpdateCategory,
     handleDeleteCategory,
-    loadThreadsandCategoryByCategory
-}
+    loadThreadsAndCategoryByCategory
+};

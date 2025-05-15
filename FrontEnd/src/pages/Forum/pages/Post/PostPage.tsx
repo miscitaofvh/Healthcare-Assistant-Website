@@ -101,8 +101,7 @@ const ForumPage: React.FC = () => {
           const commentTree = buildCommentTree(rawComments);
           setComments(commentTree);
         },
-        (errorMessage) => toast.error(errorMessage),
-        (successMessage) => toast.success(successMessage)
+        (errorMessage) => toast.error(errorMessage)
       );
     } catch (err: any) {
       toast.error(err?.message || "Failed to load post details.");
@@ -126,7 +125,7 @@ const ForumPage: React.FC = () => {
         ? comments.find((c) => c.comment_id === parentId)?.depth || 0
         : 0;
 
-      await requestComment.addCommenttoPost(
+      await requestComment.addCommentToPost(
         id || "",
         text,
         parentId?.toString(),
@@ -141,6 +140,7 @@ const ForumPage: React.FC = () => {
           }
         },
         (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         async () => {
           setReplyingTo(null);
           await loadInitialData();
@@ -163,6 +163,7 @@ const ForumPage: React.FC = () => {
         editCommentContent,
         setLoading,
         (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         () => {
           setEditingComment(null);
           setEditCommentContent("");
@@ -208,12 +209,14 @@ const ForumPage: React.FC = () => {
         await requestLike.unlikePostFE(
           post.post_id.toString(),
           (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likePostFE(
           post.post_id.toString(),
           (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
@@ -233,12 +236,14 @@ const ForumPage: React.FC = () => {
           comment.comment_id.toString(),
           post?.post_id.toString() || "",
           (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       } else {
         await requestLike.likeCommentFE(
           comment.comment_id.toString(),
           (errorMessage) => toast.error(errorMessage),
+          (successMessage) => toast.success(successMessage),
           () => loadInitialData()
         );
       }
@@ -276,6 +281,7 @@ const ForumPage: React.FC = () => {
         commentToDelete.toString(),
         setLoading,
         (errorMessage) => toast.error(errorMessage),
+        (successMessage) => toast.success(successMessage),
         () => {
           loadInitialData();
           setCommentToDelete(null);

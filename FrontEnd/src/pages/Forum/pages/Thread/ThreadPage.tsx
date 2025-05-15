@@ -49,7 +49,7 @@ const ThreadPage: React.FC = () => {
     }
 
     try {
-      await requestThread.loadPostsandThreadByCategory(
+      await requestThread.loadPostsAndThreadByCategory(
         id,
         setLoading,
         setThread,

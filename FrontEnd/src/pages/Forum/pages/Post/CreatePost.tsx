@@ -61,7 +61,7 @@ const CreatePost: React.FC = () => {
           setTagsLoading,
           setTags,
           (error) => toast.error(error),
-          () => {}
+          () => { }
         );
       } catch (err) {
         toast.error("Failed to load initial data");
@@ -122,8 +122,8 @@ const CreatePost: React.FC = () => {
     try {
       setLoading(true);
       await requestPost.createPostFE(
-        setLoading,
         post,
+        setLoading,
         (error) => toast.error(error),
         (success) => toast.success(success),
         () => {
@@ -295,18 +295,16 @@ const CreatePost: React.FC = () => {
               <div className={styles.tabButtons}>
                 <button
                   type="button"
-                  className={`${styles.tabButton} ${
-                    activeTab === "write" ? styles.activeTab : ""
-                  }`}
+                  className={`${styles.tabButton} ${activeTab === "write" ? styles.activeTab : ""
+                    }`}
                   onClick={() => setActiveTab("write")}
                 >
                   ✏️ Write
                 </button>
                 <button
                   type="button"
-                  className={`${styles.tabButton} ${
-                    activeTab === "preview" ? styles.activeTab : ""
-                  }`}
+                  className={`${styles.tabButton} ${activeTab === "preview" ? styles.activeTab : ""
+                    }`}
                   onClick={() => setActiveTab("preview")}
                 >
                   👁️ Preview

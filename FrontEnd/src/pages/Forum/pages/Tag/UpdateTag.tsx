@@ -50,6 +50,7 @@ const UpdateTag: React.FC = () => {
         tag.tag_id,
         updatedTag,
         (error) => toast.error(error),
+        (success) => toast.success(success),
         () => {
           toast.success("Tag updated successfully!");
           navigate(`/forum/tags/${tag.tag_id}`);

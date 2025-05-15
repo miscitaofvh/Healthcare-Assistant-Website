@@ -18,7 +18,7 @@ const UpdateCategory: React.FC = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        await requestCategory.loadCategorieById(
+        await requestCategory.loadCategoryById(
           parseInt(id || ""),
           setInitialLoad,
           setCategory,

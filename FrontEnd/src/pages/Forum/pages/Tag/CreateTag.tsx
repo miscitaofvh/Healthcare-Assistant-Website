@@ -24,9 +24,10 @@ const CreateTag: React.FC = () => {
             await requestTag.handleCreateTag(
                 {
                     tag_name: newTag.tag_name.trim(),
-                    description: newTag.description?.trim() || undefined
+                    description: newTag.description?.trim() || ""
                 },
                 (error) => toast.error(error),
+                (success) => toast.success(success),
                 () => {
                     toast.success("Tag created successfully!");
                     navigate("/forum/tags");

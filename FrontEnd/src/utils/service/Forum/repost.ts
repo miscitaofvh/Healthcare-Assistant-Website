@@ -1,36 +1,50 @@
 import { toast } from "react-toastify";
+import InteractReport from "../../../utils/api/Forum/repost";
+import { REPORT_MESSAGES } from "../../constants/forum-messages";
 
-import  InteractReport  from "../../api/Forum/repost";
+
+const handleReportResponse = (
+    response: any,
+    errorMessage: string,
+    showError: (message: string) => void
+): boolean => {
+    if (response.status !== 201 || !response.data?.success) {
+        const errorMsg = response.data?.errors?.[0]?.message ||
+            response.data?.message ||
+            errorMessage;
+        showError(errorMsg);
+        return false;
+    }
+    return true;
+};
+
 const reportPostFE = async (
     postId: string,
     reportReason: string,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
-        const response = await InteractReport.reportPost(postId, reportReason);
-
-        const { status, data } = response;
-
-        if (status !== 201 || !data?.success) {
-            showError(data?.errors[0]?.message || data?.message || 'Failed to report comment');
+        if (!reportReason.trim()) {
+            showError(REPORT_MESSAGES.ERROR.EMPTY_REASON);
             return;
         }
 
-        showSuccess(response.data.message || 'Post reported successfully');
-        onSuccess();
+        const response = await InteractReport.reportPost(postId, reportReason.trim());
 
-    } catch (err: unknown) {
-        let errorMessage = 'Failed to report post';
-
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        } else if (typeof err === 'string') {
-            errorMessage = err;
+        if (!handleReportResponse(response, REPORT_MESSAGES.ERROR.POST, showError)) {
+            return;
         }
 
-        showError(errorMessage);
+        showSuccess(REPORT_MESSAGES.SUCCESS.POST);
+        onSuccess();
+    } catch (err: unknown) {
+        showError(
+            err instanceof Error ? err.message :
+                typeof err === 'string' ? err :
+                    REPORT_MESSAGES.ERROR.GENERIC
+        );
     }
 };
 
@@ -39,34 +53,28 @@ const reportCommentFE = async (
     reason: string,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
-    onSuccess: () => void
+    onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
-        const reportData = {
-            commentId,
-            reason: reason
-        };
-
-        const response = await InteractReport.reportComment(commentId, reportData);
-
-        const { status, data } = response;
-
-        if (status !== 201 || !data?.success) {
-            showError(data?.errors[0]?.message || data?.message || 'Failed to report comment');
+        if (!reason.trim()) {
+            showError(REPORT_MESSAGES.ERROR.EMPTY_REASON);
             return;
         }
 
-        showSuccess('Comment reported successfully');
+        const response = await InteractReport.reportComment(commentId, { reason: reason.trim() });
+
+        if (!handleReportResponse(response, REPORT_MESSAGES.ERROR.COMMENT, showError)) {
+            return;
+        }
+
+        showSuccess(REPORT_MESSAGES.SUCCESS.COMMENT);
         onSuccess();
-
     } catch (err: unknown) {
-        const errorMessage = err instanceof Error
-            ? err.message
-            : typeof err === 'string'
-                ? err
-                : 'Failed to report comment';
-
-                showError(errorMessage);
+        showError(
+            err instanceof Error ? err.message :
+                typeof err === 'string' ? err :
+                    REPORT_MESSAGES.ERROR.GENERIC
+        );
     }
 };
 
