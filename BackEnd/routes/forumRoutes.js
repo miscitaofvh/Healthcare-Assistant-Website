@@ -263,7 +263,7 @@ router.get(
 router.post(
   "/posts/:postId/comments",
   auth.required,
-  // commentLimiter,
+  commentLimiter,
   forumValidatorsComment.validateCommentPost,
   asyncHandler(commentController.addCommentToPost)
 );
