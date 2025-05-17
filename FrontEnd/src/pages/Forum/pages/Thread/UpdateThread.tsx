@@ -6,13 +6,13 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../../../../components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "../../../../utils/service/Forum/thread";
-import { NewThread, ThreadSummary } from "../../../../types/Forum/thread";
+import { NewThread, SummaryThread } from "../../../../types/Forum/thread";
 
 const UpdateThread: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [thread, setThread] = useState<ThreadSummary | null>(null);
+    const [thread, setThread] = useState<SummaryThread | null>(null);
     const [formLoading, setFormLoading] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
 

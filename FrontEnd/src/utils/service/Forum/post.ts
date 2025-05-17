@@ -2,7 +2,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Dispatch, SetStateAction } from 'react';
 import InteractPost from '../../../utils/api/Forum/post';
-import { PostListMain, Post, NewPost } from '../../../types/Forum/post';
+import { PostListMain, Post, NewPost, SummaryPost } from '../../../types/Forum/post';
 import { CommentPost } from '../../../types/Forum/comment';
 import { PaginationData } from '../../../types/Forum/pagination';
 import { SummaryTag } from '../../../types/Forum/tag';
@@ -74,6 +74,50 @@ const loadPosts = async (
         });
 
         showSuccess(POST_MESSAGES.SUCCESS.LOAD);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD);
+    } finally {
+        setLoading(false);
+    }
+};
+
+const loadSummaryPosts = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setPosts: Dispatch<SetStateAction<PostListMain[]>>,
+    showError: (message: string) => void = toast.error
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await InteractPost.getSummaryPosts();
+
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.LOAD, showError)) {
+            return;
+        }
+
+        setPosts(response.data.posts ?? []);
+
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD);
+    } finally {
+        setLoading(false);
+    }
+};
+
+const loadPopularPosts = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setPosts: Dispatch<SetStateAction<PostListMain[]>>,
+    showError: (message: string) => void = toast.error
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await InteractPost.getPopularPosts();
+
+        if (!handleApiResponse(response, 200, POST_MESSAGES.ERROR.LOAD, showError)) {
+            return;
+        }
+
+        setPosts(response.data.posts ?? []);
+
     } catch (err: any) {
         showError(err?.response?.data?.message ?? err?.message ?? POST_MESSAGES.ERROR.LOAD);
     } finally {
@@ -258,6 +302,8 @@ const deletePostFE = async (
 
 export default {
     loadPosts,
+    loadSummaryPosts,
+    loadPopularPosts,
     loadPostPageById,
     loadUpdatePostFE,
     createPostFE,

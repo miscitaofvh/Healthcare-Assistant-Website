@@ -10,7 +10,7 @@ import requestTag from "../../../../utils/service/Forum/tag";
 import requestImage from "../../../../utils/service/Forum/image";
 import { SummaryCategory } from "../../../../types/Forum/category";
 import { ThreadDropdown } from "../../../../types/Forum/thread";
-import { SummaryTag, Tag } from "../../../../types/Forum/tag";
+import { SummaryTag } from "../../../../types/Forum/tag";
 import { Post, NewPost } from "../../../../types/Forum/post";
 
 const UpdatePost: React.FC = () => {
@@ -40,11 +40,10 @@ const UpdatePost: React.FC = () => {
           (error) => toast.error(error),
           () => toast.success("Post loaded successfully")
         );
-        requestTag.loadTagsPostSummary(
-          setTagsLoading, 
-          setTags, 
-          (error) => toast.error(error), 
-          () => { });
+        requestTag.getSummaryTagsPost(
+          setTagsLoading,
+          setTags,
+          (error) => toast.error(error));
       } catch {
         toast.error("Failed to load post details");
       }

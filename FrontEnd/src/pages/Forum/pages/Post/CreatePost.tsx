@@ -52,12 +52,12 @@ const CreatePost: React.FC = () => {
         setCategoriesLoading(true);
         setTagsLoading(true);
 
-        await requestCategory.loadCategoriesSummary(
+        await requestCategory.loadSummaryCategories(
           (categories) => setCategories(categories),
           (error) => toast.error(error)
         );
 
-        await requestTag.loadTagsSummary(
+        await requestTag.getSummaryTags(
           setTagsLoading,
           setTags,
           (error) => toast.error(error),

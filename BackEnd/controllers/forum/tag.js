@@ -195,6 +195,33 @@ const getSummaryTags = async (req, res) => {
     }
 };
 
+const getPopularTags = async (req, res) => {
+    try {
+        let { limit } = req.query;
+        if (limit !== undefined && (isNaN(limit) || parseInt(limit) < 1)) {
+            throw new ValidationError('Limit must be a positive number', { limit });
+        }
+        limit = limit ? parseInt(limit) : null;
+
+        const tags = await TagDB.getPopularTagsDB(limit);
+
+        if (!tags || tags.length === 0) {
+            throw new NotFoundError('No tags found');
+        }
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            tags,
+            metadata: {
+                count: tags.length,
+                retrievedAt: new Date().toISOString(),
+            },
+        });
+    } catch (error) {
+        errorHandler(error, req, res, 'fetch summary tags');
+    }
+};
+
 const getSummaryLittleTags = async (req, res) => {
     try {
         let { limit } = req.query;
@@ -339,34 +366,6 @@ const getPostsByTag = async (req, res) => {
     }
 };
 
-const getPopularTags = async (req, res) => {
-    try {
-        const { limit = 10 } = req.query;
-        const parsedLimit = parseInt(limit);
-        if (isNaN(parsedLimit) || parsedLimit < 1) {
-            throw new ValidationError('Limit must be a positive number', { limit });
-        }
-
-        const tags = await TagDB.getPopularTagsDB(parsedLimit);
-
-        if (!tags || tags.length === 0) {
-            throw new NotFoundError('No tags found');
-        }
-
-        res.status(StatusCodes.OK).json({
-            success: true,
-            tags,
-            metadata: {
-                count: tags.length,
-                limit: parsedLimit,
-                retrievedAt: new Date().toISOString(),
-            },
-        });
-    } catch (error) {
-        errorHandler(error, req, res, 'fetch popular tags');
-    }
-};
-
 const getTagsByUser = async (req, res) => {
     try {
         const { username } = req.params;
@@ -489,12 +488,12 @@ app.use((err, req, res, next) => {
 export default {
     getAllTags,
     getSummaryTags,
+    getPopularTags,
     getSummaryLittleTags,
     getSummaryTagById,
     getTagById,
     getTagByName,
     getPostsByTag,
-    getPopularTags,
     getTagsByUser,
     createTag,
     updateTagById,

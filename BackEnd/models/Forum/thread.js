@@ -108,6 +108,49 @@ const getSummaryThreadsDB = async (limit = null) => {
     }
 };
 
+const getPopularThreadsDB = async (limit = 6) => {
+    let conn;
+
+    if (!limit) {
+        limit = 6;
+    }
+    
+    try {
+        conn = await connection.getConnection();
+
+        const sql = `
+            SELECT 
+                ft.thread_id,
+                ft.thread_name,
+                ft.category_id,
+                ft.created_at,
+                COUNT(DISTINCT fp.post_id) as post_count,
+                MAX(fp.created_at) as last_post_date
+            FROM forum_threads ft
+            LEFT JOIN forum_posts fp ON ft.thread_id = fp.thread_id
+            GROUP BY ft.thread_id, ft.thread_name, ft.category_id, ft.created_at
+            ORDER BY post_count DESC
+            LIMIT ?
+        `;
+
+        const [threads] = await conn.execute(sql, [limit.toString()]);
+
+        if (!threads.length) {
+            throw new Error("No threads found");
+        }
+
+        return threads.map(thread => ({
+            ...thread,
+            post_count: Number(thread.post_count)
+        }));
+    } catch (error) {
+        console.error("Database error in getSummaryThreadsDB:", error);
+        throw new Error(error.message || "Failed to retrieve thread summaries");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 const getThreadByIdDB = async (threadId) => {
     let conn;
     try {
@@ -473,6 +516,7 @@ const deleteThreadDB = async (threadId) => {
 export default {
     getAllThreadsDB,
     getSummaryThreadsDB,
+    getPopularThreadsDB,
     getThreadByIdDB,
     getPostsByThreadDB,
     getThreadByNameDB,

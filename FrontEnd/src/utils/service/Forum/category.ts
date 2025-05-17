@@ -74,12 +74,34 @@ const loadCategories = async (
     }
 };
 
-const loadCategoriesSummary = async (
+const loadSummaryCategories = async (
     onSuccess: (categories: SummaryCategory[]) => void,
     onError: (error: string) => void = toast.error
 ): Promise<void> => {
     try {
         const response = await InteractiveCategory.getSummaryCategories();
+
+        if (response.status !== 200 || !response.data?.success) {
+            onError(response.data?.message || FORUM_MESSAGES.ERROR.CATEGORY.LOAD);
+            return;
+        }
+
+        onSuccess(response.data.categories ?? []);
+    } catch (error) {
+        handleApiError(
+            error,
+            FORUM_MESSAGES.ERROR.CATEGORY.LOAD,
+            onError
+        );
+    }
+};
+
+const loadPopularCategories = async (
+    onSuccess: (categories: SummaryCategory[]) => void,
+    onError: (error: string) => void = toast.error
+): Promise<void> => {
+    try {
+        const response = await InteractiveCategory.getPopularCategories();
 
         if (response.status !== 200 || !response.data?.success) {
             onError(response.data?.message || FORUM_MESSAGES.ERROR.CATEGORY.LOAD);
@@ -293,7 +315,8 @@ const loadThreadsAndCategoryByCategory = async (
 
 export default {
     loadCategories,
-    loadCategoriesSummary,
+    loadSummaryCategories,
+    loadPopularCategories,
     loadCategoryById,
     handleCreateCategory,
     handleUpdateCategory,

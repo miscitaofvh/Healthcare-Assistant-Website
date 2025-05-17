@@ -265,6 +265,35 @@ const getSummaryCategories = async (req, res) => {
     }
 };
 
+const getPopularCategories = async (req, res) => {
+    try {
+        let { limit } = req.query;
+        if (limit !== undefined && (isNaN(limit) || parseInt(limit) < 1)) {
+            throw new ValidationError('Limit must be a positive number', { limit });
+        }
+        limit = limit ? parseInt(limit) : null;
+
+        const categories = await CategoryDB.getPopularCategoriesDB(limit);
+
+        if (!categories || categories.length === 0) {
+            throw new NotFoundError('No categories found');
+        }
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            count: categories.length,
+            categories,
+            message: 'Category populars retrieved successfully',
+            metadata: {
+                source: 'database',
+                generatedAt: new Date().toISOString(),
+            },
+        });
+    } catch (error) {
+        errorHandler(error, req, res, 'fetch category summaries');
+    }
+};
+
 const getCategoryByName = async (req, res) => {
     try {
         const { categoryName } = req.params;
@@ -496,6 +525,7 @@ app.use((err, req, res, next) => {
 export default {
     getAllCategories,
     getSummaryCategories,
+    getPopularCategories,
     getCategoryByName,
     getCategoryById,
     getThreadsByCategory,

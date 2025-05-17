@@ -11,12 +11,16 @@ export interface ThreadDropdown {
     thread_id: number;
     thread_name: string;
 }
-export interface ThreadSummary {
+export interface SummaryThread {
     category_id: number;
     category_name: string;
     thread_id: number;
     thread_name: string;
     description: string;
+    post_count?: number;
+    created_at?: string;
+    last_updated?: string;
+    last_post_date?: string | null;
 }
 export interface Thread {
     thread_id: number;

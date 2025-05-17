@@ -12,6 +12,11 @@ async function getSummaryCategories() {
     return response;
 }
 
+async function getPopularCategories() {
+    const response = await requestAPI(BASE_URL, "/categories/popular", "GET");
+    return response;
+}
+
 async function getCategoryName(id: number) {
     const response = await requestAPI(BASE_URL, `/categories/${id}/name`, "GET");
     return response;
@@ -70,6 +75,7 @@ async function deleteCategory(id: number) {
 export default {
     getAllCategories,
     getSummaryCategories,
+    getPopularCategories,
     getCategoryName,
     getCategoryById,
     getThreadsByCategory,

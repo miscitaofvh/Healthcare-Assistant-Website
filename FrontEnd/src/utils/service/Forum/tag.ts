@@ -99,11 +99,10 @@ const loadTagByID = async (
     }
 };
 
-const loadTagsSummary = async (
+const getSummaryTags = async (
     setLoading: Dispatch<SetStateAction<boolean>>,
     setTags: (tags: SummaryTag[]) => void,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
@@ -115,7 +114,6 @@ const loadTagsSummary = async (
         }
 
         setTags(response.data.tags ?? []);
-        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_SUMMARY);
         onSuccess();
     } catch (err: any) {
         showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SUMMARY);
@@ -124,11 +122,33 @@ const loadTagsSummary = async (
     }
 };
 
-const loadTagsPostSummary = async (
+const getPopularTags = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setTags: (tags: SummaryTag[]) => void,
+    showError: (message: string) => void = toast.error,
+    onSuccess: () => void = () => { }
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await InteractTag.getPopularTags();
+
+        if (!handleApiResponse(response, 200, TAG_MESSAGES.ERROR.LOAD_SUMMARY, showError)) {
+            return;
+        }
+
+        setTags(response.data.tags ?? []);
+        onSuccess();
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SUMMARY);
+    } finally {
+        setLoading(false);
+    }
+};
+
+const getSummaryTagsPost = async (
     setTagsLoading: Dispatch<SetStateAction<boolean>>,
     setTags: (tags: SummaryTag[]) => void,
     showError: (message: string) => void = toast.error,
-    showSuccess: (message: string) => void = toast.success,
     onSuccess: () => void = () => { }
 ): Promise<void> => {
     try {
@@ -140,7 +160,6 @@ const loadTagsPostSummary = async (
         }
 
         setTags(response.data.tags ?? []);
-        showSuccess(TAG_MESSAGES.SUCCESS.LOAD_SUMMARY);
         onSuccess();
     } catch (err: any) {
         showError(err?.response?.data?.message ?? err?.message ?? TAG_MESSAGES.ERROR.LOAD_SUMMARY);
@@ -283,8 +302,9 @@ export default {
     validateTagInputs,
     loadTags,
     loadTagByID,
-    loadTagsSummary,
-    loadTagsPostSummary,
+    getSummaryTags,
+    getPopularTags,
+    getSummaryTagsPost,
     loadPostsandTagByTag,
     handleCreateTag,
     handleUpdateTag,

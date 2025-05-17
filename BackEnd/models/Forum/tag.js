@@ -13,7 +13,7 @@ const getAllTagsDB = async (page = 1, limit = 20, search = '', sortBy = 'usage_c
             'post_count'
         ];
 
-        if(!validTagsColumn.includes(sortBy)){
+        if (!validTagsColumn.includes(sortBy)) {
             sortBy = 'usage_count';
         }
 
@@ -95,7 +95,7 @@ const getSummaryTagsDB = async () => {
             FROM forum_tags t
         `;
 
-        const [tags]  = await conn.execute(tagsSql);
+        const [tags] = await conn.execute(tagsSql);
 
         if (!tags.length) {
             throw new Error("No threads found");
@@ -359,7 +359,7 @@ const getPostsByTagDB = async (tagId, page = 1, limit = 10, author_id = null) =>
         `;
 
         const [[tagRows], [posts], [countRows]] = await Promise.all([
-            conn.execute(sqlTag,  author_id ? [author_id, tagId] : [tagId]),
+            conn.execute(sqlTag, author_id ? [author_id, tagId] : [tagId]),
             conn.execute(sqlPost, [tagId, limit.toString(), offset.toString()]),
             conn.execute(sqlCount, [tagId])
         ]);
@@ -403,8 +403,13 @@ const getPostsByTagDB = async (tagId, page = 1, limit = 10, author_id = null) =>
     }
 };
 
-const getPopularTagsDB = async (limit = 10) => {
+const getPopularTagsDB = async (limit = 6) => {
     let conn;
+
+    if (!limit) {
+        limit = 6;
+    }
+
     try {
         conn = await connection.getConnection();
 

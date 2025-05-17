@@ -206,6 +206,35 @@ const getSummaryThreads = async (req, res) => {
     }
 };
 
+const getPopularThreads = async (req, res) => {
+    try {
+        let { limit } = req.query;
+        if (limit !== undefined && (isNaN(limit) || parseInt(limit) < 1)) {
+            throw new ValidationError('Limit must be a positive number', { limit });
+        }
+        limit = limit ? parseInt(limit) : null;
+
+        const threads = await ThreadDB.getPopularThreadsDB(limit);
+
+        if (!threads || threads.length === 0) {
+            throw new NotFoundError('No threads found');
+        }
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            count: threads.length,
+            threads,
+            metadata: {
+                message: 'Thread summaries retrieved successfully',
+                source: 'database',
+                generatedAt: new Date().toISOString(),
+            },
+        });
+    } catch (error) {
+        errorHandler(error, req, res, 'fetch thread summaries');
+    }
+};
+
 const getThreadById = async (req, res) => {
     try {
         const { threadId } = req.params;
@@ -415,6 +444,7 @@ app.use((err, req, res, next) => {
 export default {
     getAllThreads,
     getSummaryThreads,
+    getPopularThreads,
     getThreadById,
     getPostsByThread,
     getThreadByName,

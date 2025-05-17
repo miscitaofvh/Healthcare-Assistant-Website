@@ -41,9 +41,18 @@ router.post(
 // ====================================================================================
 // Category Routes
 // ====================================================================================
-router.get("/categories", paginate(), asyncHandler(categoryController.getAllCategories));
+router.get(
+  "/categories", 
+  paginate(),
+  asyncHandler(categoryController.getAllCategories));
 
-router.get("/categories/summary/", asyncHandler(categoryController.getSummaryCategories));
+router.get(
+  "/categories/summary/", 
+  asyncHandler(categoryController.getSummaryCategories));
+
+router.get(
+  "/categories/popular/", 
+  asyncHandler(categoryController.getPopularCategories));
 
 router.get(
   "/categories/:categoryId",
@@ -113,12 +122,19 @@ router.delete(
 // ====================================================================================
 // Thread Routes
 // ====================================================================================
-router.get("/threads", paginate(), asyncHandler(threadController.getAllThreads));
+router.get(
+  "/threads",
+  paginate(),
+  asyncHandler(threadController.getAllThreads));
 
 router.get(
   "/threads/summary",
-  paginate({ limit: 5 }),
   asyncHandler(threadController.getSummaryThreads)
+);
+
+router.get(
+  "/threads/popular",
+  asyncHandler(threadController.getPopularThreads)
 );
 
 router.get(
@@ -176,12 +192,19 @@ router.delete(
 // ====================================================================================
 // Post Routes
 // ====================================================================================
-router.get("/posts", paginate(), asyncHandler(postController.getAllPosts));
+router.get(
+  "/posts", 
+  paginate(), 
+  asyncHandler(postController.getAllPosts));
 
 router.get(
   "/posts/summary",
-  paginate({ limit: 5 }),
   asyncHandler(postController.getSummaryPosts)
+);
+
+router.get(
+  "/posts/popular",
+  asyncHandler(postController.getPopularPosts)
 );
 
 router.get(
@@ -380,6 +403,12 @@ router.get(
   "/tags/summary",
   forumValidatorsTag.validateTagQuery,
   asyncHandler(tagController.getSummaryTags)
+);
+
+router.get(
+  "/tags/popular",
+  forumValidatorsTag.validateTagQuery,
+  asyncHandler(tagController.getPopularTags)
 );
 
 router.get(

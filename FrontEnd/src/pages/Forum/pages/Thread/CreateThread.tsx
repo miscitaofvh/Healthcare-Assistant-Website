@@ -28,7 +28,7 @@ const CreateThread: React.FC = () => {
         const fetchCategories = async () => {
             try {
                 setCategoriesLoading(true);
-                await requestCategory.loadCategoriesSummary(
+                await requestCategory.loadSummaryCategories(
                     (categories) => setCategories(categories),
                     (error) => toast.error(error)
                 );

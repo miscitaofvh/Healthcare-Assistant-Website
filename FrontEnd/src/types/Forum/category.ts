@@ -7,6 +7,9 @@ export interface SummaryCategory {
     category_id?: number;
     category_name: string;
     description?: string;
+    thread_count?: number;
+    post_count?: number;
+    created_at?: string;
 }
 
 export interface Category {

@@ -236,6 +236,47 @@ const getSummaryCategoriesDB = async (limit = null) => {
     }
 }
 
+const getPopularCategoriesDB = async (limit = 6) => {
+    let conn;
+
+    if (!limit) {
+        limit = 6;
+    }
+
+    try {
+        conn = await connection.getConnection();
+
+        const sql = `
+            SELECT 
+                fc.category_id, 
+                fc.category_name,
+                fc.created_at,
+                COUNT(DISTINCT ft.thread_id) as thread_count,
+                COUNT(DISTINCT fp.post_id) as post_count
+            FROM forum_categories fc
+            LEFT JOIN forum_threads ft ON fc.category_id = ft.category_id
+            LEFT JOIN forum_posts fp ON ft.thread_id = fp.thread_id
+            GROUP BY fc.category_id, fc.category_name, fc.created_at
+            ORDER BY post_count DESC
+            LIMIT ?
+        `;
+
+        const [categories] = await conn.execute(sql, [limit.toString()]);
+
+        if (!categories) {
+            throw new Error("No categories found");
+        }
+
+        return categories;
+
+    } catch (error) {
+        console.error("Database error in getSummaryCategoriesDB:", error);
+        throw new Error(error.message || "Failed to retrieve category summaries");
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
 const getCategoryByNameDB = async (name) => {
     let conn;
     try {
@@ -578,6 +619,7 @@ const deleteCategoryDB = async (categoryId) => {
 
 export default {
     getAllCategoriesDB,
+    getPopularCategoriesDB,
     getThreadsByCategoryDB,
     getSummaryCategoriesDB,
     getCategoryByNameDB,

@@ -3,7 +3,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import InteractiveThread from "../../../utils/api/Forum/thread";
 import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Dispatch, SetStateAction } from "react";
-import { Thread, NewThread, ThreadSummary, ThreadDropdown } from "../../../types/Forum/thread";
+import { Thread, NewThread, SummaryThread, ThreadDropdown } from "../../../types/Forum/thread";
 import { Post } from "../../../types/Forum/post";
 import { PaginationData } from "../../../types/Forum/pagination";
 import { THREAD_MESSAGES } from "../../constants/forum-messages";
@@ -76,10 +76,52 @@ const loadThreads = async (
     }
 };
 
+const loadSummaryThreads = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setThreads: Dispatch<SetStateAction<SummaryThread[]>>,
+    showError: (message: string) => void = toast.error
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await InteractiveThread.getSummaryThreads();
+
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.LOAD, showError)) {
+            return;
+        }
+
+        setThreads(response.data.threads ?? []);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.LOAD);
+    } finally {
+        setLoading(false);
+    }
+};
+
+const loadPopularThreads = async (
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    setThreads: Dispatch<SetStateAction<SummaryThread[]>>,
+    showError: (message: string) => void = toast.error
+): Promise<void> => {
+    try {
+        setLoading(true);
+        const response = await InteractiveThread.getPopularThreads();
+
+        if (!handleApiResponse(response, 200, THREAD_MESSAGES.ERROR.LOAD, showError)) {
+            return;
+        }
+
+        setThreads(response.data.threads ?? []);
+    } catch (err: any) {
+        showError(err?.response?.data?.message ?? err?.message ?? THREAD_MESSAGES.ERROR.LOAD);
+    } finally {
+        setLoading(false);
+    }
+};
+
 const loadThreadByID = async (
     id: number,
     setLoading: Dispatch<SetStateAction<boolean>>,
-    setThread: Dispatch<SetStateAction<ThreadSummary | null>>,
+    setThread: Dispatch<SetStateAction<SummaryThread | null>>,
     showError: (message: string) => void = toast.error,
     showSuccess: (message: string) => void = toast.success,
     onSuccess: () => void = () => { }
@@ -257,6 +299,8 @@ const loadThreadsByCategory = async (
 export default {
     validateThreadInputs,
     loadThreads,
+    loadSummaryThreads,
+    loadPopularThreads,
     loadThreadByID,
     loadPostsAndThreadByCategory,
     handleCreateThread,

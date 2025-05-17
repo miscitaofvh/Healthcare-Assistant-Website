@@ -34,7 +34,7 @@ export interface PostListMain {
     tags: SummaryTag[];
 }
 
-export interface PostSummary {
+export interface SummaryPost {
     created_by: string;
     post_id: number;
     title: string;

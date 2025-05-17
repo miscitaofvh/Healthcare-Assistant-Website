@@ -22,6 +22,11 @@ async function getSummaryThreads() {
     return response;
 }
 
+async function getPopularThreads() {
+    const response = await requestAPI(BASE_URL, "/threads/popular", "GET");
+    return response;
+}
+
 async function getThreadById(threadId: number) {
     const response = await requestAPI(BASE_URL, `/threads/${threadId}`, "GET");
     return response;
@@ -77,6 +82,7 @@ async function deleteThread(threadId: number) {
 export default {
     getAllThreads,
     getSummaryThreads,
+    getPopularThreads,
     getThreadById,
     getThreadName,
     getPostsByThread,

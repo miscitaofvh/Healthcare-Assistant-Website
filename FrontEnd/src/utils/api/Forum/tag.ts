@@ -14,6 +14,11 @@ async function getAllTagsSummary() {
     return response;
 }
 
+async function getPopularTags() {
+    const response = await requestAPI(BASE_URL, "/tags/popular", "GET");
+    return response;
+}
+
 async function getAllTagsLittleSummary() {
     const response = await requestAPI(BASE_URL, "/tags/summary/little", "GET");
     return response;
@@ -54,11 +59,6 @@ async function getPostsByTag(
         `/tags/${id}/posts?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
         "GET"
     );
-    return response;
-}
-// Get popular tags
-async function getPopularTags() {
-    const response = await requestAPI(BASE_URL, "/tags/popular", "GET");
     return response;
 }
 

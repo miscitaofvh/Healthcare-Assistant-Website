@@ -190,29 +190,48 @@ const getAllPosts = async (req, res) => {
 const getSummaryPosts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 5;
-    const type = req.query.type || 'recent';
 
     if (isNaN(limit) || limit < 1 || limit > 20) {
       throw new ValidationError('Invalid limit parameter. Must be between 1 and 20', { limit });
     }
 
-    const validTypes = ['recent', 'popular', 'trending', 'featured'];
-    if (!validTypes.includes(type)) {
-      throw new ValidationError(`Invalid type parameter. Valid types are: ${validTypes.join(', ')}`, { type });
-    }
-
-    const posts = await PostDB.getSummaryPostsDB(limit, type);
+    const posts = await PostDB.getSummaryPostsDB(limit);
 
     if (!posts || posts.length === 0) {
       throw new NotFoundError('No posts found');
     }
 
-    res.set('Cache-Control', 'public, max-age=300'); // 5 minute cache
     res.status(StatusCodes.OK).json({
       success: true,
       posts,
       metadata: {
-        type,
+        count: posts.length,
+        generatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    errorHandler(error, req, res, 'fetch post summaries');
+  }
+};
+
+const getPopularPosts = async (req, res) => {
+  try {
+    let { limit } = req.query;
+    if (limit !== undefined && (isNaN(limit) || parseInt(limit) < 1)) {
+      throw new ValidationError('Limit must be a positive number', { limit });
+    }
+    limit = limit ? parseInt(limit) : null;
+
+    const posts = await PostDB.getPopularPostsDB(limit);
+
+    if (!posts || posts.length === 0) {
+      throw new NotFoundError('No posts found');
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      posts,
+      metadata: {
         count: posts.length,
         generatedAt: new Date().toISOString(),
       },
@@ -452,6 +471,7 @@ app.use((err, req, res, next) => {
 export default {
   getAllPosts,
   getSummaryPosts,
+  getPopularPosts,
   getPostById,
   getPostsByUser,
   createPost,

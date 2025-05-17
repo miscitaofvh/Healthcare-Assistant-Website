@@ -9,4 +9,3 @@ async function uploadImage(formData: FormData) {
 export default {
     uploadImage
 };
-

@@ -15,8 +15,13 @@ async function getPosts(
     return response;
 }
 
-async function getPostsSummary() {
+async function getSummaryPosts() {
     const response = await requestAPI(BASE_URL, "/posts/summary", "GET");
+    return response;
+}
+
+async function getPopularPosts() {
+    const response = await requestAPI(BASE_URL, "/posts/popular", "GET");
     return response;
 }
 
@@ -52,7 +57,8 @@ async function getTagByForumPost(forum_post_id: string) {
 
 export default {
     getPosts,
-    getPostsSummary,
+    getSummaryPosts,
+    getPopularPosts,
     getPostsByUser,
     getPostById,
     createPost,

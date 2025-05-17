@@ -78,6 +78,123 @@ const getAllPostsDB = async (page, limit, orderByField, orderDirection) => {
     }
 };
 
+const getSummaryPostsDB = async (limit = null) => {
+    let conn;
+    try {
+        conn = await connection.getConnection();
+
+        const sql = `
+            SELECT 
+                p.post_id,
+                p.title,
+                p.content,
+                p.view_count,
+                p.comment_count,
+                p.like_count,
+                p.created_at,
+                p.last_updated,
+                u.username as created_by,
+                ft.thread_id,
+                ft.thread_name,
+                fc.category_id,
+                fc.category_name,
+                (
+                    SELECT GROUP_CONCAT(DISTINCT ft2.tag_name)
+                    FROM forum_tags_mapping ftm2
+                    JOIN forum_tags ft2 ON ftm2.tag_id = ft2.tag_id
+                    WHERE ftm2.post_id = p.post_id
+                ) AS tags
+            FROM forum_posts p
+            JOIN users u ON p.user_id = u.user_id
+            JOIN forum_threads ft ON p.thread_id = ft.thread_id
+            JOIN forum_categories fc ON ft.category_id = fc.category_id
+            GROUP BY p.post_id
+            ORDER BY p.created_at DESC
+            ${limit ? 'LIMIT ?' : 'LIMIT 6'}
+        `;
+
+        const [posts] = await conn.execute(sql, limit ? [limit.toString()] : []);
+
+        if (!posts.length) {
+            throw new Error("No posts found");
+        }
+
+        return posts.map(post => ({
+            ...post,
+            view_count: Number(post.view_count),
+            comment_count: Number(post.comment_count),
+            like_count: Number(post.like_count),
+            tags: post.tags ? post.tags.split(',') : []
+        }));
+    } catch (error) {
+        console.error("Database error in getSummaryPostsDB:", error);
+        throw new Error(error.message || "Failed to retrieve post summaries");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+const getPopularPostsDB = async (limit = 6) => {
+    let conn;
+
+    if (!limit) {
+        limit = 6;
+    }
+    
+    try {
+        conn = await connection.getConnection();
+
+        const sql = `
+            SELECT 
+                p.post_id,
+                p.title,
+                p.content,
+                p.view_count,
+                p.comment_count,
+                p.like_count,
+                p.created_at,
+                p.last_updated,
+                u.username as created_by,
+                ft.thread_id,
+                ft.thread_name,
+                fc.category_id,
+                fc.category_name,
+                (
+                    SELECT GROUP_CONCAT(DISTINCT ft2.tag_name)
+                    FROM forum_tags_mapping ftm2
+                    JOIN forum_tags ft2 ON ftm2.tag_id = ft2.tag_id
+                    WHERE ftm2.post_id = p.post_id
+                ) AS tags
+            FROM forum_posts p
+            JOIN users u ON p.user_id = u.user_id
+            JOIN forum_threads ft ON p.thread_id = ft.thread_id
+            JOIN forum_categories fc ON ft.category_id = fc.category_id
+            GROUP BY p.post_id
+            ORDER BY p.view_count DESC, p.like_count DESC, p.comment_count DESC, p.created_at DESC
+            LIMIT ?
+        `;
+
+        const [posts] = await conn.execute(sql, [limit.toString()]);
+
+        if (!posts.length) {
+            throw new Error("No posts found");
+        }
+
+        return posts.map(post => ({
+            ...post,
+            view_count: Number(post.view_count),
+            comment_count: Number(post.comment_count),
+            like_count: Number(post.like_count),
+            tags: post.tags ? post.tags.split(',') : []
+        }));
+    } catch (error) {
+        console.error("Database error in getPopularPostsDB:", error);
+        throw new Error(error.message || "Failed to retrieve popular posts");
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
 const getPostByIdDB = async (postId, options = {}, author_id) => {
     const {
         includeComments = false,
@@ -483,6 +600,8 @@ const getPostsByUserDB = async (userId, page = 1, limit = 10) => {
 
 export default {
     getAllPostsDB,
+    getSummaryPostsDB,
+    getPopularPostsDB,
     getPostByIdDB,
     createPostDB,
     updatePostDB,

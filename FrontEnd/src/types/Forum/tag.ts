@@ -14,6 +14,9 @@ export interface SummaryTag {
     tag_id: number;
     tag_name: string;
     description?: string;
+    post_count?: number;
+    created_by?: string;
+    last_used_at?: string;
 }
 
 export interface Tag {
