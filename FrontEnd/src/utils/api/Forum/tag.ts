@@ -1,5 +1,5 @@
 import { requestAPI } from "../request";
-import { NewTag } from "../../../types/Forum/tag";
+import { NewTag } from "../../../types/forum/tag";
 
 const BASE_URL = "http://localhost:5000/api/forum";
 

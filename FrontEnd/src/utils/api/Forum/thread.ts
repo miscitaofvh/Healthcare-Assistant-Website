@@ -1,5 +1,5 @@
 import { requestAPI } from "../request";
-import { NewThread } from "../../../types/Forum/thread";
+import { NewThread } from "../../../types/forum/thread";
 
 const BASE_URL = "http://localhost:5000/api/forum";
 

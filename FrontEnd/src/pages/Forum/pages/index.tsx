@@ -3,17 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import Navbar from "../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from '../styles/Forum.module.css';
-import CategoryActions from "../../../utils/service/Forum/category";
-import ThreadActions from "../../../utils/service/Forum/thread";
-import PostActions from "../../../utils/service/Forum/post";
-import TagActions from "../../../utils/service/Forum/tag";
-import { SummaryCategory } from '../../../types/Forum/category';
-import { SummaryThread } from '../../../types/Forum/thread';
-import { PostListMain } from '../../../types/Forum/post';
-import { SummaryTag } from '../../../types/Forum/tag';
-import { formatDate, stripMarkdown } from "../../../utils/helpers/dateFormatter";
+import CategoryActions from "@utils/service/Forum/category";
+import ThreadActions from "@utils/service/Forum/thread";
+import PostActions from "@utils/service/Forum/post";
+import TagActions from "@utils/service/Forum/tag";
+import { SummaryTag, SummaryCategory, SummaryThread, PostListMain } from 'forum';
+import { formatDate, stripMarkdown } from "@utils/helpers/dateFormatter";
 
 // Helper function to truncate text
 const truncateText = (text: string | undefined, wordLimit: number, charLimit: number): string => {

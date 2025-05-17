@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestCategory from "../../../../utils/service/Forum/category";
-import { NewCategory } from "../../../../types/Forum/category";
+import requestCategory from "@utils/service/Forum/category";
+import { NewCategory } from "forum";
 
 const CreateCategory: React.FC = () => {
     const [newCategory, setNewCategory] = useState<NewCategory>({

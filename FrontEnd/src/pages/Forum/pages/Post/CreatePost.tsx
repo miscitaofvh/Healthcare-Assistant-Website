@@ -4,19 +4,14 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactMarkdown from "react-markdown";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestCategory from "../../../../utils/service/Forum/category";
-import requestThread from "../../../../utils/service/Forum/thread";
-import requestTag from "../../../../utils/service/Forum/tag";
-import requestPost from "../../../../utils/service/Forum/post";
-import requestImage from "../../../../utils/service/Forum/image";
-
-import { SummaryCategory } from "../../../../types/Forum/category";
-import { ThreadDropdown } from "../../../../types/Forum/thread";
-import { NewPost } from "../../../../types/Forum/post";
-import { SummaryTag } from "../../../../types/Forum/tag";
-import tag from "../../../../utils/api/Forum/tag";
+import requestCategory from "@utils/service/Forum/category";
+import requestThread from "@utils/service/Forum/thread";
+import requestTag from "@utils/service/Forum/tag";
+import requestPost from "@utils/service/Forum/post";
+import requestImage from "@utils/service/Forum/image";
+import { SummaryCategory, ThreadDropdown, NewPost, SummaryTag } from "forum";
 
 const CreatePost: React.FC = () => {
   const [searchParams] = useSearchParams();

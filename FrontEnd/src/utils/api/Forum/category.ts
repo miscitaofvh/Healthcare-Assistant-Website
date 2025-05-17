@@ -1,5 +1,5 @@
 import { requestAPI } from "../request";
-import { NewCategory } from "../../../types/Forum/category";
+import { NewCategory } from "../../../types/forum/category";
 const BASE_URL = "http://localhost:5000/api/forum";
 
 async function getAllCategories(page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC') {

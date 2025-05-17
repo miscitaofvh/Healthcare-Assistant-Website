@@ -1,6 +1,6 @@
 import { toast } from 'react-toastify';
 import InteractComment from "../../../utils/api/Forum/comment";
-import { CommentPost } from "../../../types/Forum/comment";
+import { CommentPost } from "../../../types/forum/comment";
 import { COMMENT_MESSAGES } from "../../constants/forum-messages";
 
 // Utility functions

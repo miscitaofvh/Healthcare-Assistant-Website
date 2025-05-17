@@ -1,9 +1,9 @@
 import { Dispatch, SetStateAction } from "react";
 import { toast } from "react-toastify";
 import InteractTag from "../../../utils/api/Forum/tag";
-import { Tag, NewTag, SummaryTag } from "../../../types/Forum/tag";
-import { PostbyTag } from "../../../types/Forum/post";
-import { PaginationData } from "../../../types/Forum/pagination";
+import { Tag, NewTag, SummaryTag } from "../../../types/forum/tag";
+import { PostbyTag } from "../../../types/forum/post";
+import { PaginationData } from "../../../types/forum/pagination";
 import { TAG_MESSAGES } from "../../constants/forum-messages";
 
 const validateTagInputs = (tag: NewTag): string | null => {

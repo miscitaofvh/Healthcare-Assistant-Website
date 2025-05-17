@@ -3,14 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Navbar from "../../../../components/Navbar";
-import ConfirmationModal from "../../../../components/ConfirmationModal";
+import Navbar from "@components/Navbar";
+import ConfirmationModal from "@components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { Category } from "../../../../types/Forum/category";
-import { Thread } from "../../../../types/Forum/thread";
-import { PaginationData } from "../../../../types/Forum/pagination";
-import requestCategory from "../../../../utils/service/Forum/category";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import { Category, Thread, PaginationData } from "forum";
+import requestCategory from "@utils/service/Forum/category";
+import { formatDate } from "@utils/helpers/dateFormatter";
 
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";

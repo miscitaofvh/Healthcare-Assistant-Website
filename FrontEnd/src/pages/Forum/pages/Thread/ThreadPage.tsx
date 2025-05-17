@@ -3,14 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Navbar from "../../../../components/Navbar";
-import ConfirmationModal from "../../../../components/ConfirmationModal";
+import Navbar from "@components/Navbar";
+import ConfirmationModal from "@components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { Thread } from "../../../../types/Forum/thread";
-import { Post } from "../../../../types/Forum/post";
-import { PaginationData } from "../../../../types/Forum/pagination";
-import requestThread from "../../../../utils/service/Forum/thread";
-import { formatDate, stripMarkdown } from "../../../../utils/helpers/dateFormatter";
+import { Thread, Post, PaginationData } from "forum";
+import requestThread from "@utils/service/Forum/thread";
+import { formatDate, stripMarkdown } from "@utils/helpers/dateFormatter";
 
 const ThreadPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

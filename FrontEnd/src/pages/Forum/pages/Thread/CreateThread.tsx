@@ -3,12 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestCategory from "../../../../utils/service/Forum/category";
-import requestThread from "../../../../utils/service/Forum/thread";
-import { SummaryCategory } from "../../../../types/Forum/category";
-import { NewThread } from "../../../../types/Forum/thread";
+import requestCategory from "@utils/service/Forum/category";
+import requestThread from "@utils/service/Forum/thread";
+import { SummaryCategory, NewThread } from "forum";
+
 const CreateThread: React.FC = () => {
     const [searchParams] = useSearchParams();
     const categoryIdFromUrl = searchParams.get('category');

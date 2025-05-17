@@ -3,9 +3,9 @@ import { Dispatch, SetStateAction } from "react";
 import { toast } from "react-toastify";
 
 import InteractiveCategory from "../../../utils/api/Forum/category";
-import { Category, NewCategory, SummaryCategory } from "../../../types/Forum/category";
-import { PaginationData } from "../../../types/Forum/pagination";
-import { Thread } from "../../../types/Forum/thread";
+import { Category, NewCategory, SummaryCategory } from "../../../types/forum/category";
+import { PaginationData } from "../../../types/forum/pagination";
+import { Thread } from "../../../types/forum/thread";
 import { FORUM_MESSAGES, buildDetailedErrors } from "../../constants/forum-messages";
 
 const validateInputs = (category: NewCategory): string | null => {

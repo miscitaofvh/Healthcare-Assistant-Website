@@ -2,12 +2,12 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Dispatch, SetStateAction } from 'react';
 import InteractPost from '../../../utils/api/Forum/post';
-import { PostListMain, Post, NewPost, SummaryPost } from '../../../types/Forum/post';
-import { CommentPost } from '../../../types/Forum/comment';
-import { PaginationData } from '../../../types/Forum/pagination';
-import { SummaryTag } from '../../../types/Forum/tag';
-import { SummaryCategory } from '../../../types/Forum/category';
-import { ThreadDropdown } from '../../../types/Forum/thread';
+import { PostListMain, Post, NewPost, SummaryPost } from '../../../types/forum/post';
+import { CommentPost } from '../../../types/forum/comment';
+import { PaginationData } from '../../../types/forum/pagination';
+import { SummaryTag } from '../../../types/forum/tag';
+import { SummaryCategory } from '../../../types/forum/category';
+import { ThreadDropdown } from '../../../types/forum/thread';
 import { POST_MESSAGES } from '../../constants/forum-messages';
 
 const validatePostInputs = (post: NewPost): string | null => {

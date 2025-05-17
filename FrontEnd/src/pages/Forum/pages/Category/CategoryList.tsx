@@ -5,12 +5,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { FaRegCalendar } from "react-icons/fa";
 import { CiCalendar } from "react-icons/ci";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestCategory from "../../../../utils/service/Forum/category";
-import { Category } from "../../../../types/Forum/category";
-import { PaginationData } from "../../../../types/Forum/pagination";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import requestCategory from "@utils/service/Forum/category";
+import { Category, PaginationData } from "forum";
+import { formatDate } from "@utils/helpers/dateFormatter";
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {
   if (!text) return "No description available";

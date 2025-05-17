@@ -3,10 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestTag from "../../../../utils/service/Forum/tag";
-import { Tag, NewTag } from "../../../../types/Forum/tag";
+import requestTag from "@utils/service/Forum/tag";
+import { Tag, NewTag } from "forum";
 
 const UpdateTag: React.FC = () => {
   const { id } = useParams<{ id: string }>();

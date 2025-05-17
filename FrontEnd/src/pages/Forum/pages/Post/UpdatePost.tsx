@@ -2,16 +2,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import ReactMarkdown from "react-markdown";
-import requestPost from "../../../../utils/service/Forum/post";
-import requestTag from "../../../../utils/service/Forum/tag";
-import requestImage from "../../../../utils/service/Forum/image";
-import { SummaryCategory } from "../../../../types/Forum/category";
-import { ThreadDropdown } from "../../../../types/Forum/thread";
-import { SummaryTag } from "../../../../types/Forum/tag";
-import { Post, NewPost } from "../../../../types/Forum/post";
+import requestPost from "@utils/service/Forum/post";
+import requestTag from "@utils/service/Forum/tag";
+import requestImage from "@utils/service/Forum/image";
+import { SummaryCategory, ThreadDropdown, SummaryTag, Post, NewPost } from "forum";
 
 const UpdatePost: React.FC = () => {
   const { id } = useParams<{ id: string }>();

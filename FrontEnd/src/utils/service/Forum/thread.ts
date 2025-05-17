@@ -3,9 +3,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import InteractiveThread from "../../../utils/api/Forum/thread";
 import InteractiveCategory from "../../../utils/api/Forum/category";
 import { Dispatch, SetStateAction } from "react";
-import { Thread, NewThread, SummaryThread, ThreadDropdown } from "../../../types/Forum/thread";
-import { Post } from "../../../types/Forum/post";
-import { PaginationData } from "../../../types/Forum/pagination";
+import { Thread, NewThread, SummaryThread, ThreadDropdown } from "../../../types/forum/thread";
+import { Post } from "../../../types/forum/post";
+import { PaginationData } from "../../../types/forum/pagination";
 import { THREAD_MESSAGES } from "../../constants/forum-messages";
 
 const validateThreadInputs = (thread: NewThread): string | null => {

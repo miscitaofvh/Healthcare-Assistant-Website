@@ -1,4 +1,4 @@
-import { NewPost } from "../../../types/Forum/post";
+import { NewPost } from "../../../types/forum/post";
 import { requestAPI } from "../request";
 const BASE_URL = "http://localhost:5000/api/forum";
 

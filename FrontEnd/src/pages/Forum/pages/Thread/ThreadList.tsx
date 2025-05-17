@@ -4,12 +4,11 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaRegCalendar } from "react-icons/fa";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import requestThread from "../../../../utils/service/Forum/thread";
-import { Thread } from "../../../../types/Forum/thread";
-import { PaginationData } from "../../../../types/Forum/pagination";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import requestThread from "@utils/service/Forum/thread";
+import { Thread, PaginationData } from "forum";
+import { formatDate } from "@utils/helpers/dateFormatter";
 
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {

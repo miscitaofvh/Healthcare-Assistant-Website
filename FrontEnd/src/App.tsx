@@ -33,7 +33,8 @@ function App() {
                     <Route path="/test" element={<Test />} />
                     <Route path="/error" element={<Error />} />
                     <Route path="/verify-pending" element={<VerifyPending />} />
-                    <Route path="/verify" element={<VerifyEmail />} />                    <Route path="/user/profile" element={<UserProfile />} />
+                    <Route path="/verify" element={<VerifyEmail />} />                    
+                    <Route path="/user/profile" element={<UserProfile />} />
                     <Route path="/appointDoctor" element={<AppointDoctor />} />
                     <Route path="/user/chat-history" element={<ChatHistory />} />
                     <Route path="/user/health-tracking" element={<HealthTracking />} />

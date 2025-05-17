@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactMarkdown from "react-markdown";
-import { formatDate } from "../../../../utils/helpers/dateFormatter";
+import { formatDate } from "@utils/helpers/dateFormatter";
 import {
   FaEdit,
   FaUser,
@@ -21,15 +21,14 @@ import { AiFillDelete } from "react-icons/ai";
 import { FiMoreVertical } from "react-icons/fi";
 import { MdReportProblem } from "react-icons/md";
 
-import Navbar from "../../../../components/Navbar";
+import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { Post } from "../../../../types/Forum/post";
-import { CommentPost } from "../../../../types/Forum/comment";
-import requestPost from "../../../../utils/service/Forum/post";
-import requestComment from "../../../../utils/service/Forum/comment";
-import requestLike from "../../../../utils/service/Forum/like";
-import requestReport from "../../../../utils/service/Forum/repost";
-import ConfirmationModal from "../../../../components/ConfirmationModal";
+import { Post, CommentPost } from "forum";
+import requestPost from "@utils/service/Forum/post";
+import requestComment from "@utils/service/Forum/comment";
+import requestLike from "@utils/service/Forum/like";
+import requestReport from "@utils/service/Forum/repost";
+import ConfirmationModal from "@components/ConfirmationModal";
 
 // Transform flat comments into a tree structure
 const buildCommentTree = (comments: CommentPost[]): CommentPost[] => {
