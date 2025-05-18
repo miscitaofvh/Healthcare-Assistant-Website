@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Navbar from '../../components/Navbar';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faComments } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faComments, faChevronLeft, faList } from '@fortawesome/free-solid-svg-icons';
 import styles from './ChatHistory.module.css';
 import { 
   getChatHistory, 
@@ -29,6 +29,9 @@ const ChatHistory = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // State cho Mobile View
+  const [showSidebar, setShowSidebar] = useState<boolean>(true);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -81,10 +84,14 @@ const ChatHistory = () => {
       setLoadingChat(false);
     }
   };
-
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversation(conversationId);
     fetchChatDetail(conversationId);
+    
+    // On mobile, switch to chat view after selecting a conversation
+    if (window.innerWidth <= 768) {
+      setShowSidebar(false);
+    }
   };
 
   const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
@@ -168,13 +175,28 @@ const ChatHistory = () => {
     <>
       <Navbar />
       <div className={styles.container}>
+        {/* Mobile Navigation Toggle */}        
+        <div className={styles.mobileNavToggle}>
+          <button 
+            className={styles.toggleButton}
+            onClick={() => setShowSidebar(!showSidebar)}
+          >
+            {showSidebar ? (
+              <>
+                <FontAwesomeIcon icon={faComments} /> Xem cuộc trò chuyện
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faList} /> Danh sách trò chuyện
+              </>
+            )}
+          </button>
+        </div>
+        
         {/* Sidebar bên trái - Danh sách cuộc trò chuyện */}
-        <div className={styles.sidebar}>
+        <div className={`${styles.sidebar} ${!showSidebar ? styles.hiddenOnMobile : ''}`}>
           <div className={styles.sidebarHeader}>
             <h2 className={styles.sidebarTitle}>Lịch sử trò chuyện</h2>
-            <Link to="/" className={styles.newChatButton}>
-              Cuộc trò chuyện mới
-            </Link>
           </div>
           
           {loading && <p className={styles.loading}>Đang tải...</p>}
@@ -227,7 +249,7 @@ const ChatHistory = () => {
         </div>
         
         {/* Nội dung chính - Chi tiết cuộc trò chuyện */}
-        <div className={styles.main}>
+        <div className={`${styles.main} ${showSidebar ? styles.hiddenOnMobile : ''}`}>
           {!selectedConversation && (
             <div className={styles.emptyState}>
               <FontAwesomeIcon icon={faComments} className={styles.emptyIcon} />
@@ -241,13 +263,21 @@ const ChatHistory = () => {
           {selectedConversation && loadingChat && (
             <div className={styles.loading}>Đang tải cuộc trò chuyện...</div>
           )}
-          
-          {selectedConversation && !loadingChat && chatData && (
+            {selectedConversation && !loadingChat && chatData && (
             <>
-              <div className={styles.chatHeader}>
-                <h2 className={styles.chatTitle}>{chatData.title || 'Cuộc trò chuyện không có tiêu đề'}</h2>
-                <div className={styles.chatInfo}>
-                  Cập nhật: {formatDate(chatData.messages[chatData.messages.length - 1]?.timestamp || '')}
+              <div className={styles.chatHeader}>                <button 
+                  className={styles.backButton}
+                  onClick={() => setShowSidebar(true)}
+                  title="Quay lại danh sách"
+                  aria-label="Quay lại danh sách"
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </button>
+                <div className={styles.chatHeaderContent}>
+                  <h2 className={styles.chatTitle}>{chatData.title || 'Cuộc trò chuyện không có tiêu đề'}</h2>
+                  <div className={styles.chatInfo}>
+                    Cập nhật: {formatDate(chatData.messages[chatData.messages.length - 1]?.timestamp || '')}
+                  </div>
                 </div>
               </div>
               
