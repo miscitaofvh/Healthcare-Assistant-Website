@@ -35,6 +35,29 @@ CREATE TABLE doctors (
 
 CREATE INDEX idx_specialty ON doctors(specialty);
 
+-- ========== MEDICAL RECORDS ==========
+CREATE TABLE medical_records (
+    record_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id CHAR(36) NOT NULL,
+    record_date DATE NOT NULL,
+    diagnosis TEXT NOT NULL,
+    symptoms TEXT,
+    treatments TEXT,
+    medications TEXT,
+    doctor_name VARCHAR(255),
+    hospital VARCHAR(255),
+    notes TEXT,
+    record_type ENUM('checkup', 'hospitalization', 'surgery', 'other') NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE INDEX idx_medical_record_user ON medical_records(user_id);
+CREATE INDEX idx_medical_record_date ON medical_records(record_date);
+CREATE INDEX idx_medical_record_type ON medical_records(record_type);
+
 -- ========== HEALTH TRACKING ==========
 CREATE TABLE health_tracking (
     tracking_id CHAR(36) PRIMARY KEY DEFAULT (UUID()),

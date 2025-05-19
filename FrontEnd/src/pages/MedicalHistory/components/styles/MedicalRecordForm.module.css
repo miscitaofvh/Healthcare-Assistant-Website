@@ -1,0 +1,243 @@
+/* MedicalRecordForm styles */
+
+/* Form styles */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.formInput, .formTextarea, .formSelect {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.formTextarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.formInput:focus, .formTextarea:focus, .formSelect:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+  background-color: white;
+}
+
+.requiredField::after {
+  content: "*";
+  color: #dc2626;
+  font-size: 1.2rem;
+  margin-left: 4px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+}
+
+.button {
+  padding: 0.95rem 2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white;
+  border: 2px solid #1e40af;
+}
+
+.primaryButton:hover {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+}
+
+.primaryButton:active {
+  transform: translateY(0);
+}
+
+.secondaryButton {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e0;
+}
+
+.secondaryButton:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.secondaryButton:active {
+  transform: translateY(0);
+}
+
+/* Medications Table Editing Styles */
+.medicationsTableContainer {
+  width: 100%;
+  margin: 0.75rem 0 1.5rem 0;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #bfdbfe;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.1);
+}
+
+.medicationsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.medicationsTable th {
+  background: linear-gradient(to right, #2563eb, #3b82f6);
+  color: white;
+  font-weight: 700;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 2px solid #93c5fd;
+}
+
+.medicationsTable td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.medicationsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.medicationsTable tr:nth-child(even) {
+  background-color: #eff6ff;
+}
+
+.medicationsTableInput {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background-color: white;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.medicationsTableInput:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.medicationActions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.medicationActionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4a5568;
+  font-size: 1.1rem;
+  padding: 0.3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.medicationActionButton:hover {
+  background-color: #dbeafe;
+  color: #1e40af;
+  transform: translateY(-2px);
+}
+
+.medicationDeleteButton:hover {
+  color: #b91c1c;
+  background-color: #fee2e2;
+}
+
+.medicationAddButton {
+  padding: 0.65rem 1.25rem;
+  background-color: #dbeafe;
+  border: 2px dashed #60a5fa;
+  border-radius: 8px;
+  color: #1e40af;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.medicationAddButton:hover {
+  background-color: #bfdbfe;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+}
+
+.medicationEmptyRow {
+  text-align: center;
+  padding: 1.5rem;
+  color: #64748b;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
