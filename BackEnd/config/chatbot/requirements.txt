@@ -1,1 +1,11 @@
-ollama 
+ollama
+pytesseract
+pillow
+pdf2image
+python-docx
+PyPDF2
+opencv-python
+numpy
+regex
+matplotlib
+argparse

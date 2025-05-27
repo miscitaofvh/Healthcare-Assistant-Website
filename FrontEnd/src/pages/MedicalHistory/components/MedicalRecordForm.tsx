@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FaCalendarAlt, 
   FaStethoscope, 
@@ -9,12 +9,16 @@ import {
   FaNotesMedical, 
   FaClipboardList,
   FaPlus,
-  FaTrash
+  FaTrash,
+  FaFileUpload,
+  FaSpinner
 } from 'react-icons/fa';
 
 import { MedicalRecordFormData, Medication } from '../../../types/medicalRecord';
 import { parseMedicationsFromString, stringifyMedications, createEmptyMedication } from '../../../utils/medicationUtils';
+import { processMedicalRecordFile } from '../medicalRecordFileUtils';
 import styles from './styles/MedicalRecordForm.module.css';
+import uploadStyles from './styles/fileUpload.module.css';
 
 interface MedicalRecordFormProps {
   initialData: MedicalRecordFormData;
@@ -33,6 +37,9 @@ const MedicalRecordForm: React.FC<MedicalRecordFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<MedicalRecordFormData>(initialData);
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cập nhật form data khi initialData thay đổi
   useEffect(() => {
@@ -86,13 +93,117 @@ const MedicalRecordForm: React.FC<MedicalRecordFormProps> = ({
     }));
   };
 
+  const handleFileUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      setUploadError(null);
+      
+      // Display the file being processed
+      console.log(`Processing file: ${file.name} (${file.type}, ${file.size} bytes)`);
+      
+      const result = await processMedicalRecordFile(file);
+      
+      if (!result.success || !result.data) {
+        setUploadError(result.error || 'Failed to process file');
+        return;
+      }
+      
+      // Update form with extracted data
+      const extractedData = result.data;
+      console.log('Received data from OCR processing:', extractedData);
+        setFormData(prevData => ({
+        ...prevData,
+        record_date: extractedData.record_date || prevData.record_date,
+        diagnosis: extractedData.diagnosis || prevData.diagnosis,
+        symptoms: extractedData.symptoms || prevData.symptoms,
+        treatments: extractedData.treatments || prevData.treatments,
+        medications: extractedData.medications || prevData.medications,
+        doctor_name: extractedData.doctor_name || prevData.doctor_name,
+        hospital: extractedData.hospital || prevData.hospital,
+        notes: extractedData.notes || prevData.notes,
+        record_type: extractedData.record_type || prevData.record_type,
+      }));
+      
+      // Update medications state if medications were extracted
+      if (extractedData.medications) {
+        try {
+          const extractedMedications = parseMedicationsFromString(extractedData.medications);
+          if (extractedMedications.length > 0) {
+            setMedications(extractedMedications);
+          }
+        } catch (err) {
+          console.error('Error parsing medications:', err);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setUploadError('Error uploading file. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  };
+  
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(e, formData);
   };
-
   return (
     <form onSubmit={handleSubmit}>
+      <div className={styles.formGroup}>
+        <div className={uploadStyles.uploadFeatureIntro}>
+          <h3 className={uploadStyles.uploadTitle}><FaFileUpload /> Tự động nhận dạng thông tin</h3>
+          <p className={uploadStyles.uploadDescription}>
+            Tải lên hồ sơ y tế để hệ thống tự động nhận dạng và điền thông tin, giúp bạn tiết kiệm thời gian.
+          </p>
+        </div>
+        <div className={uploadStyles.fileUploadContainer}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className={uploadStyles.fileInput}
+            accept=".jpg,.jpeg,.png,.pdf,.docx,.txt"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          <button
+            type="button"
+            className={uploadStyles.fileUploadButton}
+            onClick={triggerFileInput}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <>
+                <FaSpinner className={uploadStyles.spinnerIcon} /> Đang xử lý...
+              </>
+            ) : (
+              <>
+                <FaFileUpload /> Tải lên hình ảnh hoặc tài liệu
+              </>
+            )}
+          </button>
+          <p className={uploadStyles.fileUploadHint}>
+            Hỗ trợ file: .jpg, .png, .pdf, .docx, .txt
+          </p>
+          {uploadError && (
+            <p className={uploadStyles.uploadError}>{uploadError}</p>
+          )}
+        </div>
+      </div>
+
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label className={`${styles.formLabel} ${styles.requiredField}`} htmlFor="record_date">
@@ -305,8 +416,7 @@ const MedicalRecordForm: React.FC<MedicalRecordFormProps> = ({
           placeholder="Ghi chú thêm"
           value={formData.notes}
           onChange={handleInputChange}
-        />
-      </div>
+        />      </div>
 
       <div className={styles.buttonGroup}>
         {onCancel && (
@@ -317,7 +427,8 @@ const MedicalRecordForm: React.FC<MedicalRecordFormProps> = ({
         <button type="submit" className={`${styles.button} ${styles.primaryButton}`}>
           {isEditMode ? 'Cập nhật hồ sơ' : 'Thêm hồ sơ'}
         </button>
-      </div>    </form>
+      </div>
+    </form>
   );
 };
 

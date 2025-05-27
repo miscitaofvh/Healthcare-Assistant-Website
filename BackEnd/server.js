@@ -14,6 +14,7 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import healthTrackingRoutes from "./routes/healthTrackingRoutes.js";
 import medicalRecordRoutes from "./routes/medicalRecordRoutes.js";
+import medicalRecordFileRoutes from "./routes/medicalRecordFileRoutes.js";
 import errorHandler from "./middleware/errorHandler.js"; 
 
 dotenv.config();
@@ -51,6 +52,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use("/api/user", userRoutes); // Add the new user routes
 app.use("/api/health", healthTrackingRoutes); 
 app.use("/api/medical-records", medicalRecordRoutes); 
+app.use("/api/medical-record-files", medicalRecordFileRoutes);
 // app.get('/profile', authenticateUser, async (req, res) => {
 //     const user = await getUserById(req.user.user_id);
 //     res.json({ success: true, user });
