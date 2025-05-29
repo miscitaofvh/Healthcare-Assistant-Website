@@ -190,7 +190,12 @@
   font-weight: bold;
 }
 
+.mobile-only {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
+  
   .dropdown-menu {
     width: 200px;
   }
@@ -250,6 +255,9 @@
     display: block;
   }
 
+  .mobile-only {
+    display: block !important;
+  }
   .nav-links a {
     padding: 12px 0;
     text-align: center;

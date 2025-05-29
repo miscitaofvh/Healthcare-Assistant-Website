@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { requestAPI } from "../../utils/api/request";
 import { getApiUrl } from '../../config/env';
 import styles from "./VerifyPending.module.css";
+import { waitForDebugger } from "inspector";
 
-const BASE_URL = getApiUrl('');
+const BASE_URL = getApiUrl('/verify');
 
 const VerifyPending = () => {
     const navigate = useNavigate();
@@ -18,6 +19,8 @@ const VerifyPending = () => {
         const fetchEmail = async () => {
             try {
                 const response = await requestAPI(BASE_URL, "/get-email", "GET", null, null);
+                console.log("Response from /get-email:", response.data);
+                
                 if (response.data?.email && response.data?.type) {
                     setEmail(response.data.email);
                     setType(response.data.type);
@@ -34,7 +37,7 @@ const VerifyPending = () => {
                 }
             } catch (error) {
                 console.error("Failed to get email from cookie:", error);
-                navigate("/");
+                //navigate("/");
             }
         };
         fetchEmail();

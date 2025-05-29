@@ -4,7 +4,20 @@ import "./Navbar.css";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { FaHome, FaNewspaper, FaComments, FaInfoCircle, FaPhone, FaUser, FaHeartbeat, FaHistory, FaCalendarAlt, FaComment, FaSignOutAlt, FaCaretDown } from "react-icons/fa";
+import {
+  FaHome,
+  FaNewspaper,
+  FaComments,
+  FaInfoCircle,
+  FaPhone,
+  FaUser,
+  FaHeartbeat,
+  FaHistory,
+  FaCalendarAlt,
+  FaComment,
+  FaSignOutAlt,
+  FaCaretDown,
+} from "react-icons/fa";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,13 +28,13 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const closeMenu = () => setIsOpen(false);
-  
+
   const toggleDropdown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDropdownOpen(prev => !prev);
+    setIsDropdownOpen((prev) => !prev);
   };
-  
+
   const closeDropdown = () => setIsDropdownOpen(false);
 
   const handleLogout = (e: React.MouseEvent) => {
@@ -34,18 +47,21 @@ const Navbar = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
 
     // Add event listener only when dropdown is open
     if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isDropdownOpen]);
 
@@ -60,7 +76,9 @@ const Navbar = () => {
             <Link
               to="/"
               onClick={closeMenu}
-              className={location.pathname === "/" ? "active" : ""}
+              className={`mobile-only ${
+                location.pathname === "/" ? "active" : ""
+              }`}
             >
               <FaHome /> Home
             </Link>
@@ -109,8 +127,8 @@ const Navbar = () => {
           <div className="auth-links">
             {user ? (
               <div className="user-dropdown" ref={dropdownRef}>
-                <button 
-                  className="dropdown-toggle" 
+                <button
+                  className="dropdown-toggle"
                   onClick={toggleDropdown}
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
@@ -120,34 +138,19 @@ const Navbar = () => {
                 </button>
                 {isDropdownOpen && (
                   <div className="dropdown-menu">
-                    <Link
-                      to="/user/profile"
-                      className="dropdown-item"
-                    >
+                    <Link to="/user/profile" className="dropdown-item">
                       <FaUser /> Hồ sơ cá nhân
                     </Link>
-                    <Link
-                      to="/user/health-tracking"
-                      className="dropdown-item"
-                    >
+                    <Link to="/user/health-tracking" className="dropdown-item">
                       <FaHeartbeat /> Theo dõi sức khỏe
                     </Link>
-                    <Link
-                      to="/user/medical-history"
-                      className="dropdown-item"
-                    >
+                    <Link to="/user/medical-history" className="dropdown-item">
                       <FaHistory /> Lịch sử y tế
                     </Link>
-                    <Link
-                      to="/appointDoctor"
-                      className="dropdown-item"
-                    >
+                    <Link to="/appointDoctor" className="dropdown-item">
                       <FaCalendarAlt /> Lịch hẹn
                     </Link>
-                    <Link
-                      to="/user/chat-history"
-                      className="dropdown-item"
-                    >
+                    <Link to="/user/chat-history" className="dropdown-item">
                       <FaComment /> Lịch sử chat
                     </Link>
                     <div className="dropdown-divider"></div>
