@@ -123,6 +123,7 @@ const getPopularThreadsDB = async (limit = 6) => {
                 ft.thread_id,
                 ft.thread_name,
                 ft.category_id,
+                ft.description,
                 ft.created_at,
                 COUNT(DISTINCT fp.post_id) as post_count,
                 MAX(fp.created_at) as last_post_date

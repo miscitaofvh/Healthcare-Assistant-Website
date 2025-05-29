@@ -251,6 +251,7 @@ const getPopularCategoriesDB = async (limit = 6) => {
                 fc.category_id, 
                 fc.category_name,
                 fc.created_at,
+                fc.description,
                 COUNT(DISTINCT ft.thread_id) as thread_count,
                 COUNT(DISTINCT fp.post_id) as post_count
             FROM forum_categories fc
