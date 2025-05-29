@@ -27,7 +27,7 @@ import { Post, CommentPost } from "src/types/forum";
 import requestPost from "@utils/service/Forum/post";
 import requestComment from "@utils/service/Forum/comment";
 import requestLike from "@utils/service/Forum/like";
-import requestReport from "@utils/service/Forum/repost";
+import requestReport from "@utils/service/Forum/report";
 import ConfirmationModal from "@components/ConfirmationModal";
 
 // Transform flat comments into a tree structure

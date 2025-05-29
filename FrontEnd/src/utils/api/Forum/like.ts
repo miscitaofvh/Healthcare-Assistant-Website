@@ -1,5 +1,7 @@
 import { requestAPI } from "../request";
-const BASE_URL = "http://localhost:5000/api/forum";
+import { getApiUrl } from '../../../config/env';
+
+const BASE_URL = getApiUrl('/forum');
 
 async function likeComment(commentId: string) {
     const response = await requestAPI(BASE_URL, `/comments/${commentId}/likes`, "POST",);

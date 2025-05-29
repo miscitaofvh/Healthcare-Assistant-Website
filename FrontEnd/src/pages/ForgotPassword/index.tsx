@@ -5,8 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useModal } from "../../contexts/ModalContext";
 import { requestAPI } from "../../utils/api/request";
+import { getApiUrl } from '../../config/env';
 
-const BASE_URL = "http://localhost:5000/api/auth";
+const BASE_URL = getApiUrl('/auth');
 
 const ForgotPassword: React.FC = () => {
   const [formData, setFormData] = useState({

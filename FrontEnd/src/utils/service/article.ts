@@ -1,5 +1,7 @@
 import { requestAPI } from "../api/request";
-const BASE_URL = "http://localhost:5000/api/article";
+import { getApiUrl } from '../../config/env';
+
+const BASE_URL = getApiUrl('/article');
 
 export async function getCategories() {
     const response = await requestAPI(BASE_URL, "/categories", "GET");

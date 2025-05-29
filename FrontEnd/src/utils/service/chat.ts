@@ -1,4 +1,5 @@
 import API from '../api/api';
+import { getApiUrl } from '../../config/env';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -10,7 +11,7 @@ interface SaveChatRequest {
   title: string;
 }
 
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = getApiUrl('/chat');
 
 export async function streamChatMessage(
   message: string, 
@@ -20,7 +21,7 @@ export async function streamChatMessage(
   onComplete: (fullResponse: string, newConversationId?: string) => void
 ) {
   try {
-    const response = await fetch(`${BASE_URL}/chat/stream`, {
+    const response = await fetch(`${BASE_URL}/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { requestAPI } from "../../utils/api/request";
+import { getApiUrl } from '../../config/env';
+
+const BASE_URL = getApiUrl('');
+
 export default function VerifyEmail() {
     const [status, setStatus] = useState("Verifying...");
     const searchParams = new URLSearchParams(window.location.search);
     const token = searchParams.get("token");
-    const BASE_URL = "http://localhost:5000/api/verify";
 
     useEffect(() => {
         if (!token) {

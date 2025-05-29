@@ -1,14 +1,15 @@
 import { requestAPI } from '../api/request';
 import { MedicalRecord, MedicalRecordPagination } from '../../types/medicalRecord';
+import { getApiUrl } from '../../config/env';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = getApiUrl('/medical-record');
 
 // Lấy tất cả hồ sơ bệnh án của người dùng đã đăng nhập
 export async function getMedicalRecords(page: number = 1, limit: number = 10) {
   try {
     const response = await requestAPI(
       BASE_URL,
-      `/medical-records?page=${page}&limit=${limit}`,
+      `?page=${page}&limit=${limit}`,
       'GET'
     );
     const { data, status } = response;
@@ -42,7 +43,7 @@ export async function getMedicalRecordById(recordId: string) {
   try {
     const response = await requestAPI(
       BASE_URL,
-      `/medical-records/${recordId}`,
+      `/${recordId}`,
       'GET'
     );
     const { data, status } = response;
@@ -73,7 +74,7 @@ export async function addMedicalRecord(recordData: MedicalRecord) {
   try {
     const response = await requestAPI(
       BASE_URL,
-      '/medical-records',
+      '',
       'POST',
       recordData
     );
@@ -104,7 +105,7 @@ export async function updateMedicalRecord(recordId: string, recordData: MedicalR
   try {
     const response = await requestAPI(
       BASE_URL,
-      `/medical-records/${recordId}`,
+      `/${recordId}`,
       'PUT',
       recordData
     );

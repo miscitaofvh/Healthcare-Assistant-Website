@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestAPI } from "../../utils/api/request";
+import { getApiUrl } from '../../config/env';
 import styles from "./VerifyPending.module.css";
 
-const BASE_URL = "http://localhost:5000/api/verify";
+const BASE_URL = getApiUrl('');
 
 const VerifyPending = () => {
     const navigate = useNavigate();

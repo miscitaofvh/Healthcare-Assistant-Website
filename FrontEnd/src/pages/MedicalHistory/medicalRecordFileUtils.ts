@@ -3,6 +3,9 @@
  */
 
 import { MedicalRecordFormData } from '../../types/medicalRecord';
+import { getApiUrl } from '../../config/env';
+
+const apiUrl = getApiUrl('/medical-record-files');
 
 /**
  * Upload a medical record file for OCR processing
@@ -19,8 +22,7 @@ export const processMedicalRecordFile = async (file: File): Promise<{
     formData.append('file', file);
     formData.append('processMode', 'processed'); // Use enhanced OCR processing
     
-    const apiUrl = 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/api/medical-record-files/upload`, {
+    const response = await fetch(`${apiUrl}/upload`, {
       method: 'POST',
       credentials: 'include', // This will include cookies in the request
       body: formData

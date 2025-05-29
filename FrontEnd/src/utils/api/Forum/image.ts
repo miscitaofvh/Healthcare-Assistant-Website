@@ -1,5 +1,7 @@
 import { requestAPIFormdata } from "../request";
-const BASE_URL = "http://localhost:5000/api/forum";
+import { getApiUrl } from '../../../config/env';
+
+const BASE_URL = getApiUrl('/forum');
 
 async function uploadImage(formData: FormData) {
     const response = await requestAPIFormdata(BASE_URL, `/upload-image`, "POST", formData);

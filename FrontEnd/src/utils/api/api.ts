@@ -1,7 +1,8 @@
 import axios from 'axios';
-const API_URL = "http://localhost:5000";
+import { config } from '../../config/env';
+
 const API = axios.create({
-    baseURL: `${API_URL}/api`,
+    baseURL: `${config.API_URL}${config.API_BASE_PATH}`,
     withCredentials: true, // ✅ Allows sending HTTP-only cookies
 });
 

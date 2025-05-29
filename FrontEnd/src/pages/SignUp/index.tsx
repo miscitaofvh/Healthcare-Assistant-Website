@@ -9,8 +9,9 @@ import { useModal } from "../../contexts/ModalContext";
 import { isUsernameValid, isEmailValid } from "../../utils/validate/identifier";
 import { PasswordStrength, PasswordCheckService } from "../../utils/validate/passwd";
 import Image from "../../assets/images/Login/image.jpg";
+import { getApiUrl } from '../../config/env';
 
-const BASE_URL = "http://localhost:5000/api/verify";
+const BASE_URL = getApiUrl('/verify');
 
 const validateInput = (name: string, value: string) => {
     if (name === "username") {

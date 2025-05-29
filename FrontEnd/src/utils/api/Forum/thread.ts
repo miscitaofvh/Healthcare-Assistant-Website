@@ -1,7 +1,8 @@
 import { requestAPI } from "../request";
 import { NewThread } from "../../../types/forum/thread";
+import { getApiUrl } from '../../../config/env';
 
-const BASE_URL = "http://localhost:5000/api/forum";
+const BASE_URL = getApiUrl('/forum');
 
 async function getAllThreads(
     page: number = 1,

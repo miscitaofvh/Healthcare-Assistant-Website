@@ -1,6 +1,7 @@
 import { requestAPI } from '../api/request';
+import { getApiUrl } from '../../config/env';
 
-const BASE_URL = 'http://localhost:5000/api/health';
+const BASE_URL = getApiUrl('/health');
 
 export interface HealthRecord {
   tracking_id?: string;

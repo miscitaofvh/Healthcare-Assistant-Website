@@ -1,7 +1,8 @@
 import { requestAPI } from "../request";
 import { NewTag } from "../../../types/forum/tag";
+import { getApiUrl } from '../../../config/env';
 
-const BASE_URL = "http://localhost:5000/api/forum";
+const BASE_URL = getApiUrl('/forum');
 
 // Get all tags
 async function getAllTags(page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC') {

@@ -1,6 +1,8 @@
 import { requestAPI } from "../request";
 import { NewCategory } from "../../../types/forum/category";
-const BASE_URL = "http://localhost:5000/api/forum";
+import { getApiUrl } from '../../../config/env';
+
+const BASE_URL = getApiUrl('/forum');
 
 async function getAllCategories(page = 1, limit = 10, sortBy = 'name', sortOrder = 'ASC') {
     const response = await requestAPI(BASE_URL, `/categories?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`, "GET");

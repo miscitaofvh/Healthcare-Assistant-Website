@@ -1,5 +1,7 @@
 import { requestAPI } from "../api/request";
-const BASE_URL = "http://localhost:5000/api/auth";
+import { getApiUrl } from '../../config/env';
+
+const BASE_URL = getApiUrl('/auth');
 
 export async function register(username: string, email: string, password: string) {
     try {

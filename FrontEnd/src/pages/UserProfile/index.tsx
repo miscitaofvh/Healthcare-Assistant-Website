@@ -7,7 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import Navbar from '../../components/Navbar';
 import { FaUser, FaCalendar, FaPhone, FaMapMarkerAlt, FaVenusMars, FaCamera, FaSave, FaArrowLeft, FaKey, FaExclamationTriangle } from 'react-icons/fa';
+import { getApiUrl } from '../../config/env';
 
+const BASE_URL = getApiUrl('/user');
 interface UserProfile {
   user_id: string;
   username: string;
@@ -52,7 +54,7 @@ const UserProfile = () => {
         setLoading(true);
         
         // Use real API endpoint with withCredentials to include cookies for auth
-        const response = await axios.get('http://localhost:5000/api/user/profile', {
+        const response = await axios.get(BASE_URL + '/profile', {
           withCredentials: true
         });
         
@@ -124,7 +126,7 @@ const UserProfile = () => {
 
     try {
       // Real API call to update profile
-      const response = await axios.put('http://localhost:5000/api/user/profile', formValues, {
+      const response = await axios.put(BASE_URL + '/profile', formValues, {
         withCredentials: true
       });
 
@@ -180,7 +182,7 @@ const UserProfile = () => {
       formData.append('profilePicture', file);
       
       // Upload to ImageKit via your backend API
-      const response = await axios.post('http://localhost:5000/api/user/upload-avatar', formData, {
+      const response = await axios.post(BASE_URL + '/upload-avatar', formData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'

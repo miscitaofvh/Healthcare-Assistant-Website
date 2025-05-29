@@ -6,8 +6,9 @@ import React, {
     ReactNode,
   } from "react";
   import { requestAPI } from "../utils/api/request";
+  import { getApiUrl } from '../config/env';
   
-  const BASE_URL = "http://localhost:5000/api";
+  const BASE_URL = getApiUrl('/auth');
   
   export interface User {
     user_id: string;
@@ -40,7 +41,7 @@ import React, {
     const checkAuth = async () => {
       setAuthLoading(true);
       try {
-        const { data, status } = await requestAPI(BASE_URL, "/auth/me", "GET");
+        const { data, status } = await requestAPI(BASE_URL, "/me", "GET");
         if (status === 200 && data.success) {
           setUser(data.user);
         } else {
@@ -59,7 +60,7 @@ import React, {
   
     const login = async (identifier: string, password: string) => {
       try {
-        const { data, status } = await requestAPI(BASE_URL, "/auth/login", "POST", { identifier, password });
+        const { data, status } = await requestAPI(BASE_URL, "/login", "POST", { identifier, password });
         if (status === 200 && data.success) {
           await checkAuth();
           return { success: true, message: data.message || "Đăng nhập thành công" };
@@ -75,7 +76,7 @@ import React, {
   
     const logout = async () => {
       try {
-        const { data, status } = await requestAPI(BASE_URL, "/auth/logout", "POST", {});
+        const { data, status } = await requestAPI(BASE_URL, "/logout", "POST", {});
         if (status === 200 && data.success) setUser(null);
       } catch (e) {
         console.error("Logout error", e);

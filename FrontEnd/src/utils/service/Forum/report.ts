@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import InteractReport from "../../../utils/api/Forum/repost";
+import InteractReport from "../../../utils/api/Forum/report";
 import { REPORT_MESSAGES } from "../../constants/forum-messages";
 
 
