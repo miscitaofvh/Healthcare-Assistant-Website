@@ -50,6 +50,7 @@ export const verifyPending = async (req, res) => {
 
 export const getPendingEmail = (req, res) => {
     const token = req.cookies?.pendingEmail;
+    console.log("📨 Received get pending email request with token:", token);
     if (!token) {
         console.log("No pending email found");
         return res.status(400).json({ success: false, error: "No pending email found" });
@@ -58,7 +59,8 @@ export const getPendingEmail = (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const { email, type } = decoded;
-
+        
+        console.log("📨 Decoded token (verify-pending):", decoded);
         // Accept both register and reset_password types
         if (!["register", "reset_password"].includes(type)) {
             console.log("❌ Invalid token type");

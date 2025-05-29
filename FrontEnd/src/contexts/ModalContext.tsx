@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState } from "react";
 import SignUp from "../pages/SignUp";
 import Login from "../pages/Login";
-import ForgotPassword from "../pages/ForgotPassword"
+import ForgotPassword from "../pages/ForgotPassword";
+import MessageModal from "../components/MessageModal";
 import styled from "styled-components";
 
+// Modal layout
 const ModalContent = styled.div`
     background: red;
     position: fixed;
@@ -25,36 +27,54 @@ const Overlay = styled.div`
     justify-content: center;
 `;
 
-type ModalType = "sign-up" | "login" | "forgot-password" | null;
+// Modal types
+type ModalType = "sign-up" | "login" | "forgot-password" | "message" | null;
 
 interface ModalContextProps {
-    openModal: (type: ModalType) => void;
-    closeModal: () => void;
+  openModal: (type: ModalType, props?: any) => void;
+  closeModal: () => void;
 }
 
+// Context
 const ModalContext = createContext<ModalContextProps | undefined>(undefined);
 
+// Provider
 export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [modalType, setModalType] = useState<ModalType>(null);
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [modalProps, setModalProps] = useState<any>(null);
 
-    return (
-        <ModalContext.Provider value={{ openModal: setModalType, closeModal: () => {setModalType(null); window.location.reload();}}}>
-            {children}
-            {modalType && (
-                <Overlay onClick={() => setModalType(null)}>
-                    <ModalContent onClick={(e) => e.stopPropagation()}>
-                        {modalType === "sign-up" && <SignUp />}
-                        {modalType === "login" && <Login />}
-                        {modalType === "forgot-password" && <ForgotPassword />}
-                    </ModalContent>
-                </Overlay>
+  const openModal = (type: ModalType, props?: any) => {
+    setModalType(type);
+    setModalProps(props || null);
+  };
+
+  const closeModal = () => {
+    setModalType(null);
+    setModalProps(null);
+  };
+
+  return (
+    <ModalContext.Provider value={{ openModal, closeModal }}>
+      {children}
+      {modalType && (
+        <Overlay onClick={closeModal}>
+          <ModalContent onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
+            {modalType === "sign-up" && <SignUp />}
+            {modalType === "login" && <Login />}
+            {modalType === "forgot-password" && <ForgotPassword />}
+            {modalType === "message" && (
+              <MessageModal message={modalProps?.message} onClose={closeModal} />
             )}
-        </ModalContext.Provider>
-    );
+          </ModalContent>
+        </Overlay>
+      )}
+    </ModalContext.Provider>
+  );
 };
 
+// Hook
 export const useModal = () => {
-    const context = useContext(ModalContext);
-    if (!context) throw new Error("useModal must be used within a ModalProvider");
-    return context;
+  const context = useContext(ModalContext);
+  if (!context) throw new Error("useModal must be used within a ModalProvider");
+  return context;
 };

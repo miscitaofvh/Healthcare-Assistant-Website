@@ -3,7 +3,6 @@ import { Route, Routes } from "react-router-dom";
 import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import VerifyPending from './pages/VerifyPending';
 import Error from './pages/Error';
 import VerifyEmail from './pages/VerifyEmail';
 import Article from './pages/Article';
@@ -31,7 +30,6 @@ function App() {
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/error" element={<Error />} />
-                    <Route path="/verify-pending" element={<VerifyPending />} />
                     <Route path="/verify" element={<VerifyEmail />} />
                     <Route path="/user/profile" element={<UserProfile />} />
                     <Route path="/appointDoctor" element={<AppointDoctor />} />

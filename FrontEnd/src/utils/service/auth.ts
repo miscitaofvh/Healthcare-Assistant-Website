@@ -15,9 +15,10 @@ export async function register(username: string, email: string, password: string
                 data: data
             };
         } else {
+            console.log("Registration failed:", data);
             return { 
                 success: false, 
-                message: data.errors[0].msg || "Registration failed",
+                message: data.message || "Registration failed",
                 data: data
             };
         }
