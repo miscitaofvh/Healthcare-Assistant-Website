@@ -91,7 +91,7 @@ const Home: React.FC = () => {
               setTimeFilter={setTimeFilter}
             />
           ) : (
-            <p className={styles.loading}>Không có dữ liệu để hiển thị biểu đồ.</p>
+            <p className={styles.loading}>Không có dữ liệu.</p>
           )}
         </div>
 

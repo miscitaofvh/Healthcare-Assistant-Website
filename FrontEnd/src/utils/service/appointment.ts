@@ -2,7 +2,7 @@ import { requestAPI } from "../api/request";
 import { Appointment } from "../../types/appointment";
 import { getApiUrl } from '../../config/env';
 
-const BASE_URL = getApiUrl('/appointment');
+const BASE_URL = getApiUrl('/appointments');
 
 interface BookPayload {
   doctor_id: string;
