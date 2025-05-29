@@ -17,7 +17,8 @@ const ENDPOINTS = {
   HISTORY: '/chat/history',
   CHAT_DETAIL: (id: string) => `/chat/${id}`,
   DELETE: (id: string) => `/chat/${id}`,
-  UPDATE_TITLE: (id: string) => `/chat/${id}/title`
+  UPDATE_TITLE: (id: string) => `/chat/${id}/title`,
+  UPLOAD_SKIN_IMAGE: '/chat/upload-skin-image'
 };
 
 /**
@@ -118,6 +119,42 @@ export async function updateConversationTitle(chatId: string, title: string): Pr
     }
     
     return response.data;
+  } catch (error: any) {
+    const errorResponse = handleError(error);
+    throw errorResponse;
+  }
+}
+
+/**
+ * Upload skin image for disease classification
+ * @param file Image file to upload
+ * @param conversationId Conversation ID to link the image with (optional)
+ * @returns Promise with API response
+ */
+export async function uploadSkinImage(file: File, conversationId?: string | null): Promise<ApiResponse> {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    if (conversationId) {
+      formData.append('conversationId', conversationId);
+    }
+    
+    const baseURL = API.defaults.baseURL || '';
+    
+    const response = await fetch(`${baseURL}${ENDPOINTS.UPLOAD_SKIN_IMAGE}`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Lỗi khi tải lên hình ảnh');
+    }
+    
+    return data;
   } catch (error: any) {
     const errorResponse = handleError(error);
     throw errorResponse;

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { addMessageQuery, addBulkMessagesQuery, getMessagesByChatIdQuery } from '../queries/chatQueries.js';
+import { addMessageQuery, addBulkMessagesQuery, getMessagesByChatIdQuery, addMessageWithImageQuery } from '../queries/chatQueries.js';
 
 /**
  * Hàm lấy tin nhắn theo ID cuộc trò chuyện và format cho frontend
@@ -10,11 +10,11 @@ import { addMessageQuery, addBulkMessagesQuery, getMessagesByChatIdQuery } from 
 export const formatMessagesForFrontend = async (chatId) => {
   try {
     const messages = await getMessagesByChatIdQuery(chatId);
-    
-    // Format tin nhắn cho frontend
+      // Format tin nhắn cho frontend
     const formattedMessages = messages.map(msg => ({
       role: msg.sender_type === 'user' ? 'user' : 'assistant',
       content: msg.content,
+      image_url: msg.image_url || undefined,
       timestamp: msg.created_at
     }));
     
@@ -102,5 +102,44 @@ export const addMultipleMessages = async (conversationId, userId, messages) => {
   } catch (error) {
     console.error('Error adding multiple messages:', error);
     throw new Error('Failed to add multiple messages');
+  }
+};
+
+/**
+ * Thêm tin nhắn người dùng có hình ảnh vào cuộc trò chuyện
+ * 
+ * @param {string} conversationId - ID cuộc trò chuyện
+ * @param {string} userId - ID người dùng
+ * @param {string} message - Nội dung tin nhắn
+ * @param {string} imageUrl - URL hình ảnh
+ * @returns {Promise<string>} - ID tin nhắn đã thêm
+ */
+export const addUserMessageWithImage = async (conversationId, userId, message, imageUrl) => {
+  try {
+    const messageId = uuidv4();
+    await addMessageWithImageQuery(messageId, conversationId, 'user', userId, message, imageUrl);
+    return messageId;
+  } catch (error) {
+    console.error('Error adding user message with image:', error);
+    throw new Error('Failed to add user message with image');
+  }
+};
+
+/**
+ * Thêm tin nhắn từ trợ lý có hình ảnh vào cuộc trò chuyện
+ * 
+ * @param {string} conversationId - ID cuộc trò chuyện
+ * @param {string} assistantResponse - Nội dung tin nhắn từ trợ lý
+ * @param {string} imageUrl - URL hình ảnh (optional)
+ * @returns {Promise<string>} - ID tin nhắn đã thêm
+ */
+export const addAssistantMessageWithImage = async (conversationId, assistantResponse, imageUrl = null) => {
+  try {
+    const messageId = uuidv4();
+    await addMessageWithImageQuery(messageId, conversationId, 'bot', null, assistantResponse, imageUrl);
+    return messageId;
+  } catch (error) {
+    console.error('Error adding assistant message with image:', error);
+    throw new Error('Failed to add assistant message with image');
   }
 };

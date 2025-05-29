@@ -197,6 +197,7 @@ CREATE TABLE chatbot_messages (
     sender_type ENUM('user', 'bot', 'doctor') NOT NULL,
     sender_id CHAR(36),
     message_text TEXT NOT NULL,
+    image_url VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (conversation_id) REFERENCES chatbot_conversations(conversation_id) ON DELETE CASCADE,

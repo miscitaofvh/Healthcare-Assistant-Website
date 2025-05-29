@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { streamChat } from '../utils/service/chatStreamService';
+import { uploadSkinImage } from '../utils/api/chatbotApi';
 import { Message } from '../types/chat';
 
 /**
@@ -10,6 +11,7 @@ export default function useChatbot() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamingIndex, setCurrentStreamingIndex] = useState<number | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
 
@@ -84,15 +86,67 @@ export default function useChatbot() {
         }];
       });
     }
-  }, [messages, isStreaming, conversationId]);
-
+  }, [messages, isStreaming, conversationId]);  const uploadImage = useCallback(async (imageFile: File) => {
+    if (!imageFile || isStreaming || isUploading) return;
+    
+    try {
+      setError(null);
+      setIsUploading(true);
+      
+      // Call the upload API directly to get the image URL and analysis results
+      const uploadResponse = await uploadSkinImage(imageFile, conversationId);
+      
+      if (!uploadResponse.success) {
+        throw new Error(uploadResponse.error || 'Lỗi khi tải lên hình ảnh');
+      }      // Extract image URL and conversation ID from response  
+      const imageUrl = (uploadResponse as any).imageUrl;
+      const newConversationId = (uploadResponse as any).conversationId;
+      const userMessage = `Tôi đã tải lên một hình ảnh da để phân tích`;
+      
+      // Update conversation ID if a new one was created
+      if (newConversationId && !conversationId) {
+        setConversationId(newConversationId);
+      }
+      
+      // Add user message with image URL
+      const updatedMessages = [...messages, { 
+        role: 'user' as const, 
+        content: userMessage,
+        image_url: imageUrl
+      }];
+      setMessages(updatedMessages);
+        // Add assistant response from the classification
+      if (uploadResponse.message && typeof uploadResponse.message === 'string') {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: uploadResponse.message as string
+        }]);
+      }
+      
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      setError(error.message || 'Lỗi khi tải lên và phân tích hình ảnh');
+      
+      // Add error message
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Xin lỗi, tôi đã gặp lỗi khi phân tích hình ảnh. Có thể do định dạng ảnh không được hỗ trợ hoặc chất lượng ảnh không đủ tốt. Vui lòng thử tải lên một ảnh khác rõ ràng hơn.'
+      }]);
+    } finally {
+      setIsUploading(false);
+      setCurrentStreamingIndex(null);
+    }
+  }, [messages, isStreaming, conversationId, isUploading]);
   return {
     messages,
     isStreaming,
+    isUploading,
     currentStreamingIndex,
     error,
+    conversationId,
     initializeChat,
     sendMessage,
+    uploadImage,
     resetChat: initializeChat
   };
 }

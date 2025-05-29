@@ -345,6 +345,34 @@
   max-width: 500px;
 }
 
+/* Image display in chat history messages */
+.messageImage {
+  margin-bottom: 10px;
+}
+
+.uploadedImage {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  border: 1px solid #e0e7ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.uploadedImage:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive image sizing for chat history */
+@media (max-width: 480px) {
+  .uploadedImage {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {

@@ -52,6 +52,7 @@ export const getMessagesByChatIdQuery = async (chatId) => {
       sender_type,
       sender_id,
       message_text as content,
+      image_url,
       created_at
     FROM chatbot_messages
     WHERE conversation_id = ?
@@ -171,4 +172,29 @@ export const checkConversationExistsQuery = async (conversationId) => {
   `;
   const [existingConversations] = await pool.execute(query, [conversationId]);
   return existingConversations.length > 0;
+};
+
+/**
+ * Thêm tin nhắn có hình ảnh vào cuộc trò chuyện
+ * 
+ * @param {string} messageId - ID tin nhắn
+ * @param {string} conversationId - ID cuộc trò chuyện
+ * @param {string} senderType - Loại người gửi (user/bot)
+ * @param {string|null} senderId - ID người gửi (null đối với bot)
+ * @param {string} messageText - Nội dung tin nhắn
+ * @param {string} imageUrl - URL hình ảnh
+ * @returns {Promise<void>}
+ */
+export const addMessageWithImageQuery = async (messageId, conversationId, senderType, senderId, messageText, imageUrl) => {
+  const query = `
+    INSERT INTO chatbot_messages (
+      message_id,
+      conversation_id,
+      sender_type,
+      sender_id,
+      message_text,
+      image_url
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  await pool.execute(query, [messageId, conversationId, senderType, senderId, messageText, imageUrl]);
 };

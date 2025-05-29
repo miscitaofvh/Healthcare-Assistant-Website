@@ -1,4 +1,4 @@
-import { streamChat as apiStreamChat } from '../api/chatbotApi';
+import { streamChat as apiStreamChat, uploadSkinImage as apiUploadSkinImage } from '../api/chatbotApi';
 import { Message } from '../../types/chat';
 
 /**
@@ -46,6 +46,47 @@ export async function streamChat(
     }
   } catch (error) {
     console.error('Lỗi trong streamChat:', error);
+    throw error;
+  }
+}
+
+/**
+ * Service for handling image analysis for skin disease detection
+ * @param imageFile Image file to analyze
+ * @param history Chat history
+ * @param conversationId Conversation ID (if available)
+ * @param onChunk Callback when receiving each chunk from stream
+ * @param onComplete Callback when analysis is complete
+ */
+export async function analyzeImage(
+  imageFile: File,
+  _history: Message[],
+  conversationId: string | null = null,
+  onChunk: (chunk: string) => void,
+  onComplete: (newConversationId?: string) => void
+) {
+  try {
+    const response = await apiUploadSkinImage(imageFile, conversationId);
+    
+    if (response.success && response.message) {
+      // Simulate streaming for the analysis result
+      const message = response.message;
+      const chunks = message.split(' ');
+      
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = (i === 0 ? chunks[i] : ' ' + chunks[i]);
+        onChunk(chunk);
+        
+        // Add a small delay to simulate streaming
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      onComplete(conversationId || undefined);
+    } else {
+      throw new Error(response.error || 'Lỗi khi phân tích hình ảnh');
+    }
+  } catch (error) {
+    console.error('Lỗi trong analyzeImage:', error);
     throw error;
   }
 }

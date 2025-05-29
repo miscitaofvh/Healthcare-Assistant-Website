@@ -286,12 +286,21 @@ const ChatHistory = () => {
                   <div 
                     key={index} 
                     className={`${styles.message} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
-                  >
-                    <div 
+                  >                    <div 
                       className={`${styles.messageBubble} ${
                         message.role === 'user' ? styles.userMessageBubble : styles.assistantMessageBubble
                       }`}
                     >
+                      {message.image_url && (
+                        <div className={styles.messageImage}>
+                          <img 
+                            src={message.image_url} 
+                            alt="Uploaded image" 
+                            className={styles.uploadedImage}
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
                       <ReactMarkdown>{message.content}</ReactMarkdown>
                     </div>
                     <div 

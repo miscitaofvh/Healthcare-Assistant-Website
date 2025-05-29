@@ -1,6 +1,7 @@
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
+  image_url?: string; // URL hình ảnh (nếu có)
 }
 
 export interface ChatConversation {

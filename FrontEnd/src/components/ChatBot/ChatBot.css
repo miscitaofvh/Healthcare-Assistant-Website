@@ -322,3 +322,117 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+  /* Image display in messages */
+.message-image {
+  margin-bottom: 10px;
+}
+
+.uploaded-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  border: 1px solid #e0e7ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.uploaded-image:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive image sizing */
+@media (max-width: 480px) {
+  .uploaded-image {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}
+
+/* Loading message during image processing */
+.loading-message {
+  align-self: flex-start;
+  background-color: #f0f7fa;
+  color: #293241;
+  border-radius: 16px 16px 16px 0;
+  padding: 12px 16px;
+  max-width: 85%;
+  border: 2px solid #98c1d9;
+  animation: loading-pulse 1.5s infinite;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #bdd5e7;
+  border-top: 2px solid #98c1d9;
+  border-radius: 50%;
+  animation: loading-spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(152, 193, 217, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(152, 193, 217, 0.6);
+  }
+}
+
+@keyframes loading-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced upload button styling when uploading */
+.upload-button.uploading {
+  animation: upload-pulse 1s infinite;
+}
+
+@keyframes upload-pulse {
+  0%, 100% { 
+    background-color: #98c1d9;
+    transform: scale(1);
+  }
+  50% { 
+    background-color: #7aabc8;
+    transform: scale(1.1);
+  }
+}
+
+/* Disabled input styling during upload */
+.chatbot-input input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Upload progress indicator */
+.upload-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #98c1d9, #7aabc8, #98c1d9);
+  background-size: 200% 100%;
+  animation: progress-flow 1.5s infinite;
+}
+
+@keyframes progress-flow {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
