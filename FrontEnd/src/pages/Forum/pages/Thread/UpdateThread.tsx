@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "@utils/service/Forum/thread";
-import { NewThread, SummaryThread } from "forum";
+import { NewThread, SummaryThread } from "src/types/forum";
 
 const UpdateThread: React.FC = () => {
     const { id } = useParams<{ id: string }>();

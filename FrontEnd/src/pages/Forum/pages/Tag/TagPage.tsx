@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import ConfirmationModal from "@components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { PostbyTag, Tag, PaginationData } from "forum";
+import { PostbyTag, Tag, PaginationData } from "src/types/forum";
 import requestTag from "@utils/service/Forum/tag";
 import { stripMarkdown } from "@utils/helpers/dateFormatter";
 

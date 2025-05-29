@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import ConfirmationModal from "@components/ConfirmationModal";
 import styles from "../../styles/Forum.module.css";
-import { Thread, Post, PaginationData } from "forum";
+import { Thread, Post, PaginationData } from "src/types/forum";
 import requestThread from "@utils/service/Forum/thread";
 import { formatDate, stripMarkdown } from "@utils/helpers/dateFormatter";
 

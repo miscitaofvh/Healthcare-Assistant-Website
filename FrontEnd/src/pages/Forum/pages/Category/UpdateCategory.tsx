@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "@utils/service/Forum/category";
-import { Category, NewCategory } from "forum";
+import { Category, NewCategory } from "src/types/forum";
 
 const UpdateCategory: React.FC = () => {
   const { id } = useParams<{ id: string }>();

@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestTag from "@utils/service/Forum/tag";
-import { NewTag } from "forum";
+import { NewTag } from "src/types/forum";
 
 const CreateTag: React.FC = () => {
     const [newTag, setNewTag] = useState<NewTag>({

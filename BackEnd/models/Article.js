@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import connection from "../config/connection.js";
-import pool from "../config/db.js";
+import pool from "../config/connection.js";
 
 dotenv.config();
 const FIXED_LIMIT = 18;

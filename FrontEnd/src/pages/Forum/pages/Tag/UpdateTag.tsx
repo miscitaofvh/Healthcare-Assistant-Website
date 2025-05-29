@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestTag from "@utils/service/Forum/tag";
-import { Tag, NewTag } from "forum";
+import { Tag, NewTag } from "src/types/forum";
 
 const UpdateTag: React.FC = () => {
   const { id } = useParams<{ id: string }>();

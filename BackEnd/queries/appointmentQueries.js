@@ -1,4 +1,4 @@
-import pool from "../config/db.js";
+import pool from "../config/connection.js";
 
 export const createAppointmentQuery = async ({appointment_id, patient_id, doctor_id, appointment_time, patient_notes,}) => 
 {

@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import InteractPost from "@utils/service/Forum/post";
-import { PostListMain, PaginationData } from "forum";
+import { PostListMain, PaginationData } from "src/types/forum";
 import { formatDate, stripMarkdown } from "@utils/helpers/dateFormatter";
 
 const PostList: React.FC = () => {

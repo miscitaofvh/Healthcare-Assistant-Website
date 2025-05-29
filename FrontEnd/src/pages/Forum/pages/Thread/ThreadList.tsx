@@ -7,7 +7,7 @@ import { FaRegCalendar } from "react-icons/fa";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestThread from "@utils/service/Forum/thread";
-import { Thread, PaginationData } from "forum";
+import { Thread, PaginationData } from "src/types/forum";
 import { formatDate } from "@utils/helpers/dateFormatter";
 
 // Helper function to truncate text

@@ -11,7 +11,7 @@ import requestThread from "@utils/service/Forum/thread";
 import requestTag from "@utils/service/Forum/tag";
 import requestPost from "@utils/service/Forum/post";
 import requestImage from "@utils/service/Forum/image";
-import { SummaryCategory, ThreadDropdown, NewPost, SummaryTag } from "forum";
+import { SummaryCategory, ThreadDropdown, NewPost, SummaryTag } from "src/types/forum";
 
 const CreatePost: React.FC = () => {
   const [searchParams] = useSearchParams();

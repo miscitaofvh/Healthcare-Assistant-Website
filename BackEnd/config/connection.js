@@ -29,9 +29,9 @@ const dbConfig = {
         rejectUnauthorized: true
     } : undefined,
     // Thêm timeout settings
-    connectTimeout: 10000,
-    acquireTimeout: 10000,
-    timeout: 10000
+    connectTimeout: 60000,
+    acquireTimeout: 60000,
+    timeout: 60000
 };
 
 // Tạo connection pool với error handling

@@ -8,7 +8,7 @@ import { CiCalendar } from "react-icons/ci";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "@utils/service/Forum/category";
-import { Category, PaginationData } from "forum";
+import { Category, PaginationData } from "src/types/forum";
 import { formatDate } from "@utils/helpers/dateFormatter";
 // Helper function to truncate text
 const truncateText = (text: string, wordLimit: number, charLimit: number) => {

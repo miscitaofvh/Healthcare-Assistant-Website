@@ -7,7 +7,7 @@ import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "@utils/service/Forum/category";
 import requestThread from "@utils/service/Forum/thread";
-import { SummaryCategory, NewThread } from "forum";
+import { SummaryCategory, NewThread } from "src/types/forum";
 
 const CreateThread: React.FC = () => {
     const [searchParams] = useSearchParams();

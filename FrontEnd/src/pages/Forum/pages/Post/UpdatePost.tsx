@@ -8,7 +8,7 @@ import ReactMarkdown from "react-markdown";
 import requestPost from "@utils/service/Forum/post";
 import requestTag from "@utils/service/Forum/tag";
 import requestImage from "@utils/service/Forum/image";
-import { SummaryCategory, ThreadDropdown, SummaryTag, Post, NewPost } from "forum";
+import { SummaryCategory, ThreadDropdown, SummaryTag, Post, NewPost } from "src/types/forum";
 
 const UpdatePost: React.FC = () => {
   const { id } = useParams<{ id: string }>();

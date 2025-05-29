@@ -7,7 +7,7 @@
         "build-backend": "cd BackEnd && npm install --omit=dev",
         "build-all": "concurrently \"cd FrontEnd && npm install && cd ..\" \"cd BackEnd && npm install && cd ..\"",
         "run-frontend": "cd FrontEnd && npm run dev",
-        "run-backend": "cd BackEnd && npm start",
+        "run-backend": "cd BackEnd && npm run start",
         "dev": "concurrently \"npm run run-frontend\" \"npm run run-backend\""
     },
     "devDependencies": {

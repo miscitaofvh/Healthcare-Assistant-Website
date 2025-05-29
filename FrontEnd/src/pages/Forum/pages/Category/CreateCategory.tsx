@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestCategory from "@utils/service/Forum/category";
-import { NewCategory } from "forum";
+import { NewCategory } from "src/types/forum";
 
 const CreateCategory: React.FC = () => {
     const [newCategory, setNewCategory] = useState<NewCategory>({

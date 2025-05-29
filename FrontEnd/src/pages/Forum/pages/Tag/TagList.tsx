@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
 import requestTag from "@utils/service/Forum/tag";
-import { Tag, PaginationData } from "forum";
+import { Tag, PaginationData } from "src/types/forum";
 import { formatDate } from "@utils/helpers/dateFormatter";
 
 // Reuse the same truncateText helper from CategoryList

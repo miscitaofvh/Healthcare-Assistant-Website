@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import pool from '../config/connection.js';
 
 // Lấy tất cả hồ sơ bệnh án của người dùng với phân trang
 export const getMedicalRecords = async (userId, page = 1, limit = 10) => {

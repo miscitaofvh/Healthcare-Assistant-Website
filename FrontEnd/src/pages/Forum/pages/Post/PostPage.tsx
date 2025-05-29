@@ -23,7 +23,7 @@ import { MdReportProblem } from "react-icons/md";
 
 import Navbar from "@components/Navbar";
 import styles from "../../styles/Forum.module.css";
-import { Post, CommentPost } from "forum";
+import { Post, CommentPost } from "src/types/forum";
 import requestPost from "@utils/service/Forum/post";
 import requestComment from "@utils/service/Forum/comment";
 import requestLike from "@utils/service/Forum/like";

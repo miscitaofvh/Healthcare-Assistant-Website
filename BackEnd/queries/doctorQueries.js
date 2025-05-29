@@ -1,4 +1,4 @@
-import pool from "../config/db.js";
+import pool from "../config/connection.js";
 
 export async function listDoctorsQuery() {
   const sql = `

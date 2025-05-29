@@ -9,7 +9,7 @@ import CategoryActions from "@utils/service/Forum/category";
 import ThreadActions from "@utils/service/Forum/thread";
 import PostActions from "@utils/service/Forum/post";
 import TagActions from "@utils/service/Forum/tag";
-import { SummaryTag, SummaryCategory, SummaryThread, PostListMain } from 'forum';
+import { SummaryTag, SummaryCategory, SummaryThread, PostListMain } from 'src/types/forum';
 import { formatDate, stripMarkdown } from "@utils/helpers/dateFormatter";
 
 // Helper function to truncate text
@@ -163,7 +163,7 @@ const ForumHome: React.FC = () => {
             {/* Threads Section */}
             <section className="mb-8">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Recent Threads</h2>
+                <h2 className="text-xl font-semibold">Popular Threads</h2>
                 <button
                   className={styles.secondaryButton}
                   onClick={() => handleViewAllClick('threads')}
@@ -215,7 +215,7 @@ const ForumHome: React.FC = () => {
             {/* Posts Section */}
             <section className="mb-8">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Recent Posts</h2>
+                <h2 className="text-xl font-semibold">Popular Posts</h2>
                 <button
                   className={styles.secondaryButton}
                   onClick={() => handleViewAllClick('posts')}
