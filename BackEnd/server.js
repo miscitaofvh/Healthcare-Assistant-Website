@@ -34,9 +34,14 @@ app.use(cookieParser());
 // Middleware
 app.use(express.json());
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://healthcare-assistant-service.up.railway.app"
+];
+
 app.use(
     cors({
-        origin: "http://localhost:5173", 
+        origin: allowedOrigins,
         credentials: true,
     })
 );
