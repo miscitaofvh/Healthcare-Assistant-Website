@@ -1,0 +1,134 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.chartWrapper {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.loading {
+  text-align: center;
+  color: #555;
+}
+
+.recentSection {
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.recentSection h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
+.recentList {
+  list-style: none;
+  padding: 0;
+}
+
+.recentList li {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e0e6ed;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.recentList li:hover {
+  background: #f9f9f9;
+}
+
+.recentImage {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 1rem;
+}
+
+.recentContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.recentTitle {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.recentDate {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.cardWrapper {
+  display: inline-flex;
+  align-items: center;
+  position: fixed;
+  top: 4rem;
+  right: 1.5rem;
+  z-index: 1000;
+  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.cardWrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.iconBox {
+  font-size: 2rem;
+  margin-right: 0.75rem;
+}
+
+.infoBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.number {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #006064;
+}
+
+.text {
+  font-size: 0.9rem;
+  color: #004d40;
+  text-transform: capitalize;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #d32f2f;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}

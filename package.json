@@ -12,5 +12,24 @@
     },
     "devDependencies": {
         "concurrently": "^9.1.2"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.5.0",
+        "express": "^5.1.0",
+        "express-rate-limit": "^7.5.0",
+        "express-validator": "^7.2.1",
+        "http-status-codes": "^2.3.0",
+        "imagekit": "^6.0.0",
+        "jsonwebtoken": "^9.0.2",
+        "multer": "^2.0.0",
+        "mysql2": "^3.14.1",
+        "nodemailer": "^7.0.3",
+        "ollama": "^0.5.15",
+        "pino": "^9.7.0",
+        "pino-pretty": "^13.0.0",
+        "redis": "^5.1.0"
     }
 }
