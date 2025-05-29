@@ -2,7 +2,7 @@ import { requestAPI } from '../api/request';
 import { MedicalRecord, MedicalRecordPagination } from '../../types/medicalRecord';
 import { getApiUrl } from '../../config/env';
 
-const BASE_URL = getApiUrl('/medical-record');
+const BASE_URL = getApiUrl('/medical-records');
 
 // Lấy tất cả hồ sơ bệnh án của người dùng đã đăng nhập
 export async function getMedicalRecords(page: number = 1, limit: number = 10) {

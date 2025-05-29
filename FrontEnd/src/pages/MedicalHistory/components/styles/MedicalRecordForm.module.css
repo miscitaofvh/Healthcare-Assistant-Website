@@ -3,9 +3,16 @@
 /* Form styles */
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .formGroup {
@@ -32,6 +39,7 @@
   background-color: #f8fafc;
   color: #0f172a;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .formTextarea {
@@ -113,15 +121,35 @@
   margin: 0.75rem 0 1.5rem 0;
   background-color: #f8fafc;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
   border: 2px solid #bfdbfe;
   box-shadow: 0 4px 8px rgba(37, 99, 235, 0.1);
 }
 
 .medicationsTable {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .medicationsTable {
+    min-width: 500px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .medicationsTable {
+    min-width: 400px;
+    font-size: 0.8rem;
+  }
+  
+  .medicationsTable th,
+  .medicationsTable td {
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 .medicationsTable th {

@@ -4,6 +4,7 @@ pillow
 pdf2image
 python-docx
 PyPDF2
+PyMuPDF
 opencv-python
 numpy
 regex
