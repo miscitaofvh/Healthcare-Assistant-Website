@@ -4,7 +4,7 @@ import "./Navbar.css";
 import { useModal } from "../../contexts/ModalContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { FaNewspaper, FaComments, FaInfoCircle, FaPhone, FaUser, FaHeartbeat, FaHistory, FaCalendarAlt, FaComment, FaSignOutAlt, FaCaretDown } from "react-icons/fa";
+import { FaHome, FaNewspaper, FaComments, FaInfoCircle, FaPhone, FaUser, FaHeartbeat, FaHistory, FaCalendarAlt, FaComment, FaSignOutAlt, FaCaretDown } from "react-icons/fa";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,6 +57,13 @@ const Navbar = () => {
             <div className="logo"></div>
           </Link>
           <div className={`nav-links ${isOpen ? "mobile-menu" : ""}`}>
+            <Link
+              to="/"
+              onClick={closeMenu}
+              className={location.pathname === "/" ? "active" : ""}
+            >
+              <FaHome /> Home
+            </Link>
             <Link
               to="/article"
               onClick={(e) => {
