@@ -25,7 +25,7 @@ const PostList: React.FC = () => {
   const sortOptions = [
     { value: 'created', label: 'Created Date' },
     { value: 'updated', label: 'Updated Date' },
-    { value: 'like', label: 'Like Count' },
+    { value: 'likes', label: 'Like Count' },
     { value: 'title', label: 'Post Title' },
     { value: 'views', label: 'View Count' },
     { value: 'comments', label: 'Comment Count' }
