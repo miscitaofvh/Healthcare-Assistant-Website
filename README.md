@@ -137,26 +137,17 @@ Healthcare-Assistant-Website/
 
 ```bash
 # Đăng nhập vào MySQL
-mysql -u root -p
-
-# Khởi tạo database từ file SQL
-# Thay đường dẫn phù hợp với hệ thống của bạn
-mysql> source <đường_dẫn_tới_dự_án>/BackEnd/config/db.sql
-
-# Hoặc sử dụng lệnh từ terminal (Unix/Linux/MacOS/Windows với Git Bash)
-mysql -u root -p < <đường_dẫn_tới_dự_án>/BackEnd/config/db.sql
-
-# Với Windows Command Prompt/PowerShell
-# mysql -u root -p -e "source <đường_dẫn_tới_dự_án>/BackEnd/config/db.sql"
+cd <đường_dẫn_tới_dự_án>/BackEnd/config
+mysql --default-character-set=utf8mb4 -u amh -p healthcare_service_db < db.sql
 ```
 
-> **Lưu ý:** Thay `<đường_dẫn_tới_dự_án>` bằng đường dẫn thực tế đến thư mục dự án trên máy tính của bạn.
+**Lưu ý:** Thay `<đường_dẫn_tới_dự_án>` bằng đường dẫn thực tế đến thư mục dự án trên máy tính của bạn.
 
 #### 2️⃣ Khởi chạy toàn bộ dự án:
 
 ```bash
 # Cài đặt các phụ thuộc và khởi chạy cả frontend và backend
-npm run start
+npm run dev
 ```
 
 Lệnh này sẽ khởi động cả frontend và backend song song.
@@ -201,6 +192,11 @@ PORT=5000                       # Hoặc cổng tùy chọn khác
 
 # Cấu hình AI
 AI_MODEL_NAME=<tên_mô_hình>     # Trong dự án đang sử dụng mặc định là AMH_chatbot
+
+# Cấu hình ImageKit
+IMAGEKIT_PUBLIC_KEY=<public_key_của_bạn>
+IMAGEKIT_PRIVATE_KEY=<private_key_của_bạn>
+IMAGEKIT_URL_ENDPOINT=<endpoint>
 ```
 
 > **Lưu ý:** Thay thế các giá trị trong `< >` bằng thông tin thực tế của bạn. Tránh đưa các thông tin nhạy cảm vào hệ thống quản lý mã nguồn.

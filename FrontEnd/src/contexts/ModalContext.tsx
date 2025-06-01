@@ -7,7 +7,7 @@ import styled from "styled-components";
 
 // Modal layout
 const ModalContent = styled.div`
-    background: red;
+    background: white;
     position: fixed;
     z-index: 1001;
     border-radius: 25px;

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { register } from "../../utils/service/auth";
 import { requestAPI } from "../../utils/api/request";
-import { useNavigate } from "react-router-dom";
 import styles from "./SignUp.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -58,7 +57,6 @@ const SignUp: React.FC = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const { closeModal, openModal } = useModal();
-  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,12 +88,8 @@ const SignUp: React.FC = () => {
       formData.email,
       formData.password
     );
-
+    
     if (response.success) {
-      await requestAPI(BASE_URL, "/verify-pending", "POST", {
-        email: formData.email,
-        type: "register",
-      });
       closeModal();
       openModal("message", {
         message: "Liên kết xác thực đã được gửi về email của bạn.",

@@ -27,8 +27,8 @@ export const findUserByLoginField = async (loginField) => {
         conn = await connection.getConnection();
         await conn.beginTransaction();
         const sql = loginField.includes("@")
-            ? `SELECT user_id, email, role, password_hash FROM users WHERE email = ?`
-            : `SELECT user_id, username, role, password_hash FROM users WHERE username = ?`;
+            ? `SELECT user_id, email, role, verified_at, password_hash FROM users WHERE email = ?`
+            : `SELECT user_id, username, role, verified_at, password_hash FROM users WHERE username = ?`;
         const [rows] = await conn.execute(sql, [loginField]);
 
         await conn.commit();
@@ -109,11 +109,16 @@ export const loginUser = async (loginField, password) => {
             throw new Error("Tên đăng nhập hoặc email không tồn tại");
         }
 
+        
         const isPasswordValid = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordValid) {
             throw new Error("Mật khẩu không chính xác");
         }
-
+        
+        if (!user.verified_at) {
+            throw new Error("Tài khoản chưa được xác thực. Vui lòng kiểm tra email.");
+        }
+        
         await updateUserLastLogin(user.user_id);
 
         const { password_hash, ...userWithoutPassword } = user;

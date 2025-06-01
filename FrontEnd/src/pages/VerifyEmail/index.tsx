@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { requestAPI } from "../../utils/api/request";
 import { getApiUrl } from '../../config/env';
 
-const BASE_URL = getApiUrl('');
+const BASE_URL = getApiUrl("/verify");
 
 export default function VerifyEmail() {
     const [status, setStatus] = useState("Verifying...");

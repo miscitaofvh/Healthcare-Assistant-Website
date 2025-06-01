@@ -20,28 +20,32 @@ const Home: React.FC = () => {
   const { user, authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Appointments
+  // Appointment State
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const upcomingAppointments = appointments.filter(
+    (a) => new Date(a.appointment_time) > new Date()
+  );
+  const upcomingCount = upcomingAppointments.length;
+
   useEffect(() => {
     if (!user) return;
     (async () => {
       try {
         const data = await fetchAppointments();
         setAppointments(
-          data
-            .filter((a) => new Date(a.appointment_time) > new Date())
-            .sort((a, b) =>
-              new Date(a.appointment_time).getTime() - new Date(b.appointment_time).getTime()
-            )
+          data.sort(
+            (a, b) =>
+              new Date(a.appointment_time).getTime() -
+              new Date(b.appointment_time).getTime()
+          )
         );
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error("Failed to fetch appointments:", err);
       }
     })();
   }, [user]);
-  const upcomingCount = appointments.length;
 
-  // Health chart
+  // Health Tracking
   const { records, loading: chartLoading } = useHealthTracking();
   const [selectedMetrics, setSelectedMetrics] = useState({
     weight: true,
@@ -50,24 +54,25 @@ const Home: React.FC = () => {
     temperature: true,
     sleep_duration: true,
   });
-  const [timeFilter, setTimeFilter] = useState<string>("all");
+  const [timeFilter, setTimeFilter] = useState("all");
 
-  // Recent articles
+  // Recent Articles
   const [recent, setRecent] = useState<ArticleSummary[]>([]);
   useEffect(() => {
     (async () => {
       try {
         const resp = await getArticles(1);
-        const list: ArticleSummary[] = resp.data;
-        const top20 = [...list]
+        const articles: ArticleSummary[] = resp.data || [];
+        const top20 = articles
           .sort(
             (a, b) =>
-              new Date(b.last_updated || "").getTime() - new Date(a.last_updated || "").getTime()
+              new Date(b.last_updated || "").getTime() -
+              new Date(a.last_updated || "").getTime()
           )
           .slice(0, 20);
         setRecent(top20);
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error("Failed to fetch articles:", err);
       }
     })();
   }, []);
@@ -79,10 +84,8 @@ const Home: React.FC = () => {
       <Navbar />
       <div className={styles.container}>
         {/* Health Chart */}
-        <div className={styles.chartWrapper}>
-          {chartLoading ? (
-            <p className={styles.loading}>Đang tải biểu đồ...</p>
-          ) : records && records.length > 0 ? (
+        {!chartLoading && records.length > 0 && (
+          <div className={styles.chartWrapper}>
             <HealthMetricsChart
               records={records}
               selectedMetrics={selectedMetrics}
@@ -90,35 +93,40 @@ const Home: React.FC = () => {
               timeFilter={timeFilter}
               setTimeFilter={setTimeFilter}
             />
-          ) : (
-            <p className={styles.loading}>Không có dữ liệu.</p>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Recent Articles */}
-        <section className={styles.recentSection}>
-          <h2>Bài báo gần đây</h2>
-          <ul className={styles.recentList}>
-            {recent.map((a) => (
-              <li key={a.article_id} onClick={() => navigate(`/article/${a.article_id}`)}>
-                {a.image_url && (
-                  <img
-                    src={a.image_url}
-                    alt={a.title}
-                    className={styles.recentImage}
-                  />
-                )}
-                <div className={styles.recentContent}>
-                  <span className={styles.recentTitle}>{a.title}</span>
-                  <span className={styles.recentDate}>{a.last_updated?.slice(0, 10)}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {recent.length > 0 && (
+          <section className={styles.recentSection}>
+            <h2>Bài báo gần đây</h2>
+            <ul className={styles.recentList}>
+              {recent.map((a) => (
+                <li
+                  key={a.article_id}
+                  onClick={() => navigate(`/article/${a.article_id}`)}
+                >
+                  {a.image_url && (
+                    <img
+                      src={a.image_url}
+                      alt={a.title}
+                      className={styles.recentImage}
+                    />
+                  )}
+                  <div className={styles.recentContent}>
+                    <span className={styles.recentTitle}>{a.title}</span>
+                    <span className={styles.recentDate}>
+                      {a.last_updated?.slice(0, 10)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Appointment Summary */}
-        {user && (
+        {user && upcomingCount > 0 && (
           <section
             className={styles.cardWrapper}
             onClick={() => navigate("/appointDoctor")}
@@ -128,7 +136,7 @@ const Home: React.FC = () => {
               <span className={styles.number}>{upcomingCount}</span>
               <span className={styles.text}>lịch hẹn sắp tới</span>
             </div>
-            {upcomingCount > 0 && <div className={styles.badge}>{upcomingCount}</div>}
+            <div className={styles.badge}>{upcomingCount}</div>
           </section>
         )}
       </div>

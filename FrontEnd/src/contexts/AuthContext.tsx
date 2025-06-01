@@ -65,7 +65,7 @@ import React, {
           await checkAuth();
           return { success: true, message: data.message || "Đăng nhập thành công" };
         }
-        return { success: false, message: data.errors?.[0]?.msg || "Đăng nhập thất bại" };
+        return { success: false, message: data.message || "Đăng nhập thất bại" };
       } catch (e: any) {
         return {
           success: false,

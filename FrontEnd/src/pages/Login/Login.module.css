@@ -224,3 +224,10 @@
     margin-left: 10px;
     display: block;
 }
+
+.errorMessage {
+  color: red;
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
+}
