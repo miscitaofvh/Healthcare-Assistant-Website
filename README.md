@@ -152,9 +152,11 @@ npm run dev
 
 Lệnh này sẽ khởi động cả frontend và backend song song.
 
-#### 3️⃣ Cài đặt Chatbot (bắt buộc cho tính năng AI):
+#### 3️⃣ Cài đặt Chatbot và các thư viện cần thiết:
 
 ```bash
+# Di chuyển đến thư mục của dự án
+npm run build-all
 # Di chuyển đến thư mục cấu hình chatbot
 cd BackEnd/config/chatbot
 
@@ -188,7 +190,7 @@ JWT_SECRET=<khóa_bí_mật_jwt>   # Chuỗi ngẫu nhiên an toàn
 EMAIL_SECRET=<khóa_bí_mật_email>
 
 # Cấu hình Server
-PORT=5000                       # Hoặc cổng tùy chọn khác
+PORT=5000                       # Port của Server
 
 # Cấu hình AI
 AI_MODEL_NAME=<tên_mô_hình>     # Trong dự án đang sử dụng mặc định là AMH_chatbot
