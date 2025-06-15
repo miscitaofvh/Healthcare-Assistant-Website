@@ -150,6 +150,11 @@ Healthcare-Assistant-Website/
 ```
 </details>
 
+## 📊 Sơ Đồ Chức Năng
+
+![sodo drawio](https://github.com/user-attachments/assets/a39edab3-38f6-446e-9274-fd2e58dc1d62)
+
+
 ## 🚀 Hướng Dẫn Cài Đặt & Sử Dụng
 
 ### Yêu Cầu Hệ Thống
