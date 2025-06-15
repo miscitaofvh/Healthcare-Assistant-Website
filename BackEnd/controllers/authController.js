@@ -33,7 +33,7 @@ export const register = async (req, res) => {
     // });
 
     const redisClient = await getRedisClient();
-    const verificationLink = `https://healthcare-assistant-service.up.railway.app/verify?token=${token}&type=register`;
+    const verificationLink = `http://localhost:5173/verify?token=${token}&type=register`;
     const emailSubject = "⚕️ Confirm Your Email - HealthCare Service";
     const emailContent = `<div>Click <a href="${verificationLink}">here</a> to verify your email</div>`
     const tokenKey = `email_token:${email}:register`;
