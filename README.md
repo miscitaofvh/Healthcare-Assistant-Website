@@ -11,8 +11,36 @@
 
 </div>
 
+## 🎓 Thông Tin Môn Học
+
+<div align="center">
+
+| **Thông tin** | **Chi tiết** |
+|:---:|:---|
+| **Môn học** | Lập trình ứng dụng Web |
+| **Mã lớp** | NT208.P21.ANTN |
+| **Giảng viên hướng dẫn** | Trần Tuấn Dũng |
+
+</div>
+
+## 👥 Thành Viên Nhóm 4
+
+<div align="center">
+
+| **MSSV** | **Họ và Tên** | **Vai trò** |
+|:---:|:---|:---:|
+| 23520041 | Đoàn Đức Anh | Team Member |
+| 23520569 | Nguyễn Văn Hưng | Team Member |
+| 23520938 | Nguyễn Hoàng Bảo Minh | Team Member |
+
+</div>
+
+---
+
 ## 📋 Mục Lục
 
+- [Thông Tin Môn Học](#-thông-tin-môn-học)
+- [Thành Viên Nhóm](#-thành-viên-nhóm-4)
 - [Tổng Quan](#-tổng-quan)
 - [Tính Năng Chính](#-tính-năng-chính)
 - [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
@@ -157,6 +185,7 @@ Lệnh này sẽ khởi động cả frontend và backend song song.
 ```bash
 # Di chuyển đến thư mục của dự án
 npm run build-all
+
 # Di chuyển đến thư mục cấu hình chatbot
 cd BackEnd/config/chatbot
 
@@ -166,6 +195,26 @@ pip install -r requirements.txt
 # Khởi chạy cài đặt chatbot
 python start.py
 ```
+
+#### 4️⃣ Huấn luyện model phân loại hình ảnh da liễu:
+
+```bash
+# Di chuyển đến thư mục chứa notebook
+cd BackEnd/config/chatbot
+
+# Mở Jupyter Notebook hoặc JupyterLab
+jupyter notebook Skin_diseases_CNN_classification.ipynb
+```
+
+Trong notebook này:
+1. Chạy toàn bộ các cell theo thứ tự
+2. Notebook sẽ thực hiện các bước sau:
+    - Tải và xử lý dữ liệu hình ảnh da liễu
+    - Xây dựng và huấn luyện mô hình CNN
+    - Đánh giá mô hình
+    - Lưu mô hình đã huấn luyện
+
+Sau khi hoàn thành, bạn sẽ có file model đã được lưu trong thư mục `models/` để sử dụng cho tính năng phân loại hình ảnh da liễu.
 
 ### 🔧 Cấu Hình Môi Trường
 
@@ -212,15 +261,6 @@ Chúng tôi luôn chào đón mọi đóng góp! Dưới đây là các bước 
 3. 💾 Commit thay đổi (`git commit -m 'Thêm tính năng mới'`)
 4. 📤 Push lên nhánh của bạn (`git push origin feature/tinh-nang-moi`)
 5. 🔄 Tạo một Pull Request mới
-
-## 📞 Liên Hệ
-
-<div align="center">
-  
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/healthcare-assistant)
-[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:contact@healthcare-assistant.com)
-
-</div>
 
 ---
 
